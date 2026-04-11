@@ -5,6 +5,5 @@ test.describe('SpriteClaw sprite stage', () => {
     await completeSetup(page);
 
     await expect(page.getByTestId('sprite-stage')).toBeVisible();
-    await expect(page.getByTestId('sprite-stage').getByText('Sprite awake')).toBeVisible();
   });
 });

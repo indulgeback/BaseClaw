@@ -25,7 +25,7 @@ V1 当前落地内容包括：
 - `SpriteClaw` 品牌替换
 - Sprite 主题色与主界面视觉升级
 - Chat 页内嵌 `Sprite Stage`
-- `welcome / idle / listening / thinking / responding / success / error / sleeping` 八态状态系统
+- `idle / listen / working / sleep` 四态状态系统
 - 共享的 Sprite 状态载荷与角色配置
 - macOS / Windows 悬浮桌宠窗口
 - Settings 中的 Sprite 开关与桌宠控制入口
@@ -75,33 +75,23 @@ git merge dev
 当前 V1 的标准状态集合固定为：
 
 ```text
-welcome
 idle
-listening
-thinking
-responding
-success
-error
-sleeping
+listen
+working
+sleep
 ```
 
 状态语义如下：
 
-- `welcome`: Chat 空白欢迎页
 - `idle`: 普通待机
-- `listening`: 输入框聚焦、正在输入、或已添加附件但未发送
-- `thinking`: 发送后尚未开始稳定输出，或工具处理中
-- `responding`: assistant 正在流式回复
-- `success`: 一次正常回复结束后的短暂庆祝态
-- `error`: 发生错误后的短暂提示态
-- `sleeping`: 主窗口失焦、最小化、隐藏到托盘或进入不可见状态
+- `listen`: 输入框聚焦、正在输入、或已添加附件但未发送
+- `working`: 发送中、处理中、或正在流式输出
+- `sleep`: 主窗口失焦、最小化、隐藏到托盘或进入不可见状态
 
-其中：
+切换规则：
 
-- `success`
-- `error`
-
-属于短时瞬态，会在短暂播放后自动回落到基础状态。
+- 任何非 `idle` 状态之间切换，都会先退回 `idle`
+- 再从 `idle` 进入目标状态
 
 ---
 
@@ -158,13 +148,9 @@ raccoon
 后续正式资源到位时，优先替换：
 
 - `idle`
-- `thinking`
-- `responding`
-- `success`
-- `error`
-- `sleeping`
-
-`welcome` 和 `listening` 可以继续沿用轻量表现或静帧循环。
+- `listen`
+- `working`
+- `sleep`
 
 ---
 
@@ -248,3 +234,14 @@ raccoon
 - 当前首版先完整可用
 - 后续每一步都建立在已有的状态机和资源协议之上
 - 不会因为补资源或加角色而推翻现有实现
+
+---
+
+## 配套视频文档
+
+如果要开始为小浣熊生成状态视频，请同时参考：
+
+- `docs/spriteclaw-raccoon-video-production-plan.md`
+- `docs/spriteclaw-raccoon-video-shot-matrix.md`
+- `docs/spriteclaw-raccoon-video-prompts.md`
+- `docs/spriteclaw-raccoon-davinci-checklist.md`

@@ -2,16 +2,14 @@ export const SPRITE_CHARACTER_IDS = ['raccoon'] as const;
 export type SpriteCharacterId = (typeof SPRITE_CHARACTER_IDS)[number];
 
 export const SPRITE_STATES = [
-  'welcome',
   'idle',
-  'listening',
-  'thinking',
-  'responding',
-  'success',
-  'error',
-  'sleeping',
+  'listen',
+  'working',
+  'sleep',
 ] as const;
 export type SpriteState = (typeof SPRITE_STATES)[number];
+
+export const SPRITE_IDLE_BRIDGE_MS = 260;
 
 export interface SpriteOverlayBounds {
   x: number;

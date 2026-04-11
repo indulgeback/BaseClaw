@@ -58,7 +58,6 @@ export function Chat() {
   const currentSpriteState = useSpriteStore((s) => s.currentState);
   const setSpriteCharacterId = useSpriteStore((s) => s.setCharacterId);
   const setSpriteSignals = useSpriteStore((s) => s.setSignals);
-  const flashSpriteState = useSpriteStore((s) => s.flashState);
   const getSpritePayload = useSpriteStore((s) => s.getPayload);
 
   const [streamingTimestamp, setStreamingTimestamp] = useState<number>(0);
@@ -181,7 +180,6 @@ export function Chat() {
 
   useEffect(() => {
     setSpriteSignals({
-      isWelcome: isEmpty,
       inputFocused: composerPresence.inputFocused,
       hasDraft: composerPresence.hasDraft,
       sending,
@@ -203,26 +201,12 @@ export function Chat() {
   ]);
 
   useEffect(() => {
-    if (!error) return;
-    flashSpriteState('error');
-  }, [error, flashSpriteState]);
-
-  useEffect(() => {
     if (!spriteEnabled) {
       void invokeIpc('sprite:overlayHide').catch(() => {});
       return;
     }
     void invokeIpc('sprite:overlaySyncState', getSpritePayload()).catch(() => {});
   }, [currentSpriteState, getSpritePayload, spriteEnabled, spriteCharacterId]);
-
-  useEffect(() => {
-    if (!sending) return;
-    return () => {
-      if (!useChatStore.getState().error) {
-        flashSpriteState('success');
-      }
-    };
-  }, [flashSpriteState, sending]);
 
   const subagentCompletionInfos = messages.map((message) => parseSubagentCompletionInfo(message));
   const nextUserMessageIndexes = new Array<number>(messages.length).fill(-1);

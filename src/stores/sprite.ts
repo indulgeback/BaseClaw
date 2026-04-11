@@ -2,73 +2,75 @@ import { create } from 'zustand';
 import type { SpriteCharacterId, SpriteSignals, SpriteState } from '@/types/sprite';
 import { DEFAULT_SPRITE_CHARACTER_ID, DEFAULT_SPRITE_SIGNALS, buildSpritePayload, deriveSpriteState } from '@/lib/sprite';
 import type { SpriteStatePayload } from '@/types/sprite';
+import { SPRITE_IDLE_BRIDGE_MS } from '../../shared/sprite';
 
-type SpriteTransientState = {
-  state: Extract<SpriteState, 'success' | 'error'>;
-  expiresAt: number;
-} | null;
+let bridgeTimer: ReturnType<typeof setTimeout> | null = null;
 
-let transientTimer: ReturnType<typeof setTimeout> | null = null;
-
-function clearTransientTimer(): void {
-  if (transientTimer) {
-    clearTimeout(transientTimer);
-    transientTimer = null;
+function clearBridgeTimer(): void {
+  if (bridgeTimer) {
+    clearTimeout(bridgeTimer);
+    bridgeTimer = null;
   }
-}
-
-function resolveState(signals: SpriteSignals, transient: SpriteTransientState): SpriteState {
-  if (transient && transient.expiresAt > Date.now()) return transient.state;
-  return deriveSpriteState(signals);
 }
 
 interface SpriteStore {
   characterId: SpriteCharacterId;
   signals: SpriteSignals;
-  transient: SpriteTransientState;
   currentState: SpriteState;
+  desiredState: SpriteState;
+  transitionMode: 'steady' | 'bridging';
   setCharacterId: (characterId: SpriteCharacterId) => void;
   setSignals: (partial: Partial<SpriteSignals>) => void;
-  flashState: (state: Extract<SpriteState, 'success' | 'error'>, durationMs?: number) => void;
   getPayload: () => SpriteStatePayload;
 }
 
 export const useSpriteStore = create<SpriteStore>((set, get) => ({
   characterId: DEFAULT_SPRITE_CHARACTER_ID,
   signals: DEFAULT_SPRITE_SIGNALS,
-  transient: null,
   currentState: deriveSpriteState(DEFAULT_SPRITE_SIGNALS),
+  desiredState: deriveSpriteState(DEFAULT_SPRITE_SIGNALS),
+  transitionMode: 'steady',
   setCharacterId: (characterId) => {
     set({ characterId });
   },
   setSignals: (partial) => {
     const nextSignals = { ...get().signals, ...partial };
-    const activeTransient = get().transient;
-    const nextTransient = activeTransient && activeTransient.expiresAt > Date.now() ? activeTransient : null;
-    set({
-      signals: nextSignals,
-      transient: nextTransient,
-      currentState: resolveState(nextSignals, nextTransient),
-    });
-  },
-  flashState: (state, durationMs = 1400) => {
-    clearTransientTimer();
-    const nextTransient: SpriteTransientState = {
-      state,
-      expiresAt: Date.now() + durationMs,
-    };
-    set({
-      transient: nextTransient,
-      currentState: nextTransient.state,
-    });
-    transientTimer = setTimeout(() => {
-      const currentSignals = get().signals;
+    const desiredState = deriveSpriteState(nextSignals);
+    const { currentState, transitionMode } = get();
+
+    set({ signals: nextSignals, desiredState });
+
+    if (desiredState === currentState && transitionMode === 'steady') {
+      return;
+    }
+
+    if (desiredState === 'idle') {
+      clearBridgeTimer();
+      set({ currentState: 'idle', transitionMode: 'steady' });
+      return;
+    }
+
+    if (currentState === 'idle' && transitionMode === 'steady') {
+      clearBridgeTimer();
+      set({ currentState: desiredState, transitionMode: 'steady' });
+      return;
+    }
+
+    clearBridgeTimer();
+    set({ currentState: 'idle', transitionMode: 'bridging' });
+    bridgeTimer = setTimeout(() => {
+      const latest = get();
+      if (latest.desiredState === 'idle') {
+        set({ currentState: 'idle', transitionMode: 'steady' });
+        clearBridgeTimer();
+        return;
+      }
       set({
-        transient: null,
-        currentState: deriveSpriteState(currentSignals),
+        currentState: latest.desiredState,
+        transitionMode: 'steady',
       });
-      clearTransientTimer();
-    }, durationMs);
+      clearBridgeTimer();
+    }, SPRITE_IDLE_BRIDGE_MS);
   },
   getPayload: () => {
     const state = get().currentState;

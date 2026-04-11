@@ -13,6 +13,5 @@ test.describe('SpriteClaw overlay sprite', () => {
     const overlayPage = await electronApp.waitForEvent('window');
     await overlayPage.waitForLoadState('domcontentloaded');
     await expect(overlayPage.getByTestId('sprite-stage-compact')).toBeVisible();
-    await expect(overlayPage.getByTestId('sprite-stage-compact').getByText('Sprite awake')).toBeVisible();
   });
 });

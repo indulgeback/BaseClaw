@@ -5,14 +5,10 @@ import type { SpriteCharacterId, SpriteState } from '@/types/sprite';
 import { SpriteAvatar } from './SpriteAvatar';
 
 const STATE_BADGE_ICON: Record<SpriteState, typeof Sparkles> = {
-  welcome: Sparkles,
   idle: Bot,
-  listening: Waves,
-  thinking: Sparkles,
-  responding: Sparkles,
-  success: Sparkles,
-  error: Bot,
-  sleeping: MoonStar,
+  listen: Waves,
+  working: Sparkles,
+  sleep: MoonStar,
 };
 
 export function SpriteStage({

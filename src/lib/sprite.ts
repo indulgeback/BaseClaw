@@ -6,7 +6,7 @@ export const DEFAULT_SPRITE_CHARACTER_ID: SpriteCharacterId = 'raccoon';
 const makeAsset = (state: SpriteState, motion: SpriteAssetManifest['motion']): SpriteAssetManifest => ({
   state,
   kind: 'placeholder',
-  loop: state !== 'success' && state !== 'error',
+  loop: state !== 'idle',
   motion,
 });
 
@@ -18,20 +18,15 @@ export const SPRITE_PROFILES: Record<SpriteCharacterId, SpriteProfile> = {
     description: 'A nimble guide that keeps SpriteClaw lively, warm, and alert.',
     accent: 'hsl(28 76% 58%)',
     assets: {
-      welcome: makeAsset('welcome', 'spark'),
       idle: makeAsset('idle', 'breathe'),
-      listening: makeAsset('listening', 'bob'),
-      thinking: makeAsset('thinking', 'float'),
-      responding: makeAsset('responding', 'spark'),
-      success: makeAsset('success', 'spark'),
-      error: makeAsset('error', 'bob'),
-      sleeping: makeAsset('sleeping', 'rest'),
+      listen: makeAsset('listen', 'bob'),
+      working: makeAsset('working', 'float'),
+      sleep: makeAsset('sleep', 'rest'),
     },
   },
 };
 
 export const DEFAULT_SPRITE_SIGNALS: SpriteSignals = {
-  isWelcome: true,
   inputFocused: false,
   hasDraft: false,
   sending: false,
@@ -42,35 +37,19 @@ export const DEFAULT_SPRITE_SIGNALS: SpriteSignals = {
 };
 
 const SPRITE_COPY: Record<SpriteState, { title: string; subtitle: string }> = {
-  welcome: {
-    title: 'Sprite awake',
-    subtitle: 'Your raccoon guide is ready to start a fresh run.',
-  },
   idle: {
     title: 'Sprite calm',
     subtitle: 'Everything is steady. Drop a task whenever you are ready.',
   },
-  listening: {
+  listen: {
     title: 'Sprite listening',
     subtitle: 'Drafting, attaching, and lining up the next move.',
   },
-  thinking: {
-    title: 'Sprite thinking',
-    subtitle: 'Collecting clues, tools, and next-step intent.',
+  working: {
+    title: 'Sprite working',
+    subtitle: 'Processing the next move and keeping the run in motion.',
   },
-  responding: {
-    title: 'Sprite responding',
-    subtitle: 'The answer is taking shape right now.',
-  },
-  success: {
-    title: 'Sprite delighted',
-    subtitle: 'That run landed cleanly.',
-  },
-  error: {
-    title: 'Sprite concerned',
-    subtitle: 'Something drifted. Let us steady the flow.',
-  },
-  sleeping: {
+  sleep: {
     title: 'Sprite sleeping',
     subtitle: 'Quiet mode on until you come back.',
   },
@@ -85,11 +64,9 @@ export function getSpriteCopy(state: SpriteState): { title: string; subtitle: st
 }
 
 export function deriveSpriteState(signals: SpriteSignals): SpriteState {
-  if (!signals.windowFocused || !signals.documentVisible) return 'sleeping';
-  if (signals.isWelcome) return 'welcome';
-  if (signals.sending && signals.hasStreaming) return 'responding';
-  if (signals.sending || signals.pendingFinal) return 'thinking';
-  if (signals.inputFocused || signals.hasDraft) return 'listening';
+  if (!signals.windowFocused || !signals.documentVisible) return 'sleep';
+  if (signals.sending || signals.pendingFinal || signals.hasStreaming) return 'working';
+  if (signals.inputFocused || signals.hasDraft) return 'listen';
   return 'idle';
 }
 

@@ -3,25 +3,17 @@ import { cn } from '@/lib/utils';
 import type { SpriteState } from '@/types/sprite';
 
 const STATE_ACCENTS: Record<SpriteState, string> = {
-  welcome: 'from-amber-200 via-orange-200 to-lime-200',
   idle: 'from-orange-200 via-amber-200 to-lime-200',
-  listening: 'from-sky-200 via-cyan-200 to-emerald-200',
-  thinking: 'from-fuchsia-200 via-violet-200 to-sky-200',
-  responding: 'from-lime-200 via-emerald-200 to-sky-200',
-  success: 'from-yellow-200 via-emerald-200 to-lime-200',
-  error: 'from-rose-200 via-orange-200 to-red-200',
-  sleeping: 'from-slate-200 via-slate-300 to-indigo-200',
+  listen: 'from-sky-200 via-cyan-200 to-emerald-200',
+  working: 'from-fuchsia-200 via-violet-200 to-sky-200',
+  sleep: 'from-slate-200 via-slate-300 to-indigo-200',
 };
 
 const STATE_RING: Record<SpriteState, string> = {
-  welcome: 'rgba(251, 191, 36, 0.38)',
   idle: 'rgba(249, 115, 22, 0.28)',
-  listening: 'rgba(34, 211, 238, 0.32)',
-  thinking: 'rgba(168, 85, 247, 0.32)',
-  responding: 'rgba(16, 185, 129, 0.35)',
-  success: 'rgba(101, 163, 13, 0.38)',
-  error: 'rgba(244, 63, 94, 0.3)',
-  sleeping: 'rgba(100, 116, 139, 0.26)',
+  listen: 'rgba(34, 211, 238, 0.32)',
+  working: 'rgba(168, 85, 247, 0.32)',
+  sleep: 'rgba(100, 116, 139, 0.26)',
 };
 
 export function SpriteAvatar({
@@ -33,9 +25,9 @@ export function SpriteAvatar({
 }) {
   const sizeClasses = compact ? 'h-40 w-40' : 'h-56 w-56';
   const faceSize = compact ? 'h-28 w-28' : 'h-36 w-36';
-  const eyeClass = state === 'sleeping' ? 'h-0.5 w-3 rounded-full bg-slate-800/80' : 'h-3 w-3 rounded-full bg-slate-900';
-  const bobY = state === 'sleeping' ? [0, 2, 0] : [0, -6, 0];
-  const bobDuration = state === 'thinking' ? 2.1 : state === 'responding' ? 1.8 : 3.2;
+  const eyeClass = state === 'sleep' ? 'h-0.5 w-3 rounded-full bg-slate-800/80' : 'h-3 w-3 rounded-full bg-slate-900';
+  const bobY = state === 'sleep' ? [0, 2, 0] : [0, -6, 0];
+  const bobDuration = state === 'working' ? 2.1 : state === 'listen' ? 2.4 : 3.2;
 
   return (
     <div className={cn('relative flex items-center justify-center', sizeClasses)}>
@@ -43,8 +35,8 @@ export function SpriteAvatar({
         aria-hidden
         className={cn('absolute inset-3 rounded-full bg-gradient-to-br blur-2xl', STATE_ACCENTS[state])}
         animate={{
-          scale: state === 'success' ? [1, 1.08, 1] : [0.98, 1.04, 0.98],
-          opacity: state === 'sleeping' ? [0.36, 0.28, 0.36] : [0.48, 0.72, 0.48],
+          scale: [0.98, 1.04, 0.98],
+          opacity: state === 'sleep' ? [0.36, 0.28, 0.36] : [0.48, 0.72, 0.48],
         }}
         transition={{ duration: bobDuration, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
       />
@@ -53,12 +45,12 @@ export function SpriteAvatar({
         className="absolute inset-0 rounded-full border"
         style={{ borderColor: STATE_RING[state] }}
         animate={{ scale: [0.94, 1.02, 0.94], opacity: [0.3, 0.72, 0.3] }}
-        transition={{ duration: state === 'responding' ? 1.6 : 2.8, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
+        transition={{ duration: state === 'working' ? 1.6 : 2.8, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
       />
 
       <motion.div
         className="relative"
-        animate={{ y: bobY, rotate: state === 'thinking' ? [0, -2, 2, 0] : [0, 0, 0] }}
+        animate={{ y: bobY, rotate: state === 'working' ? [0, -2, 2, 0] : state === 'listen' ? [0, -1, 1, 0] : [0, 0, 0] }}
         transition={{ duration: bobDuration, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
       >
         <div className="relative flex items-center justify-center">
@@ -89,8 +81,8 @@ export function SpriteAvatar({
 
           <motion.div
             className="absolute -right-6 bottom-2 h-20 w-9 origin-bottom-left rounded-full bg-[#81553f]"
-            animate={{ rotate: state === 'sleeping' ? [-18, -10, -18] : [-18, 8, -18] }}
-            transition={{ duration: state === 'responding' ? 1.5 : 2.6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
+            animate={{ rotate: state === 'sleep' ? [-18, -10, -18] : [-18, 8, -18] }}
+            transition={{ duration: state === 'working' ? 1.6 : state === 'listen' ? 2.2 : 2.6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}
           >
             <div className="absolute inset-y-1 left-[9px] w-3 rounded-full bg-[#d5b193]" />
             <div className="absolute bottom-0 left-0 h-7 w-9 rounded-full bg-[#5d3d30]" />

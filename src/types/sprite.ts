@@ -23,7 +23,6 @@ export interface SpriteProfile {
 }
 
 export interface SpriteSignals {
-  isWelcome: boolean;
   inputFocused: boolean;
   hasDraft: boolean;
   sending: boolean;
