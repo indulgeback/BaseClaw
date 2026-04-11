@@ -50,6 +50,13 @@ const electronAPI = {
         'window:maximize',
         'window:close',
         'window:isMaximized',
+        'sprite:overlaySyncState',
+        'sprite:overlayShow',
+        'sprite:overlayHide',
+        'sprite:overlayToggle',
+        'sprite:overlayApplyPreference',
+        'sprite:overlayGetState',
+        'sprite:focusMainWindow',
         // Settings
         'settings:get',
         'settings:set',
@@ -178,6 +185,7 @@ const electronAPI = {
         'oauth:success',
         'oauth:error',
         'openclaw:cli-installed',
+        'sprite:overlay-state',
       ];
 
       if (validChannels.includes(channel)) {
@@ -226,6 +234,7 @@ const electronAPI = {
         'oauth:code',
         'oauth:success',
         'oauth:error',
+        'sprite:overlay-state',
       ];
 
       if (validChannels.includes(channel)) {

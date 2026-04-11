@@ -17,6 +17,7 @@ import { Skills } from './pages/Skills';
 import { Cron } from './pages/Cron';
 import { Settings } from './pages/Settings';
 import { Setup } from './pages/Setup';
+import { SpriteOverlayPage } from './pages/SpriteOverlay';
 import { useSettingsStore } from './stores/settings';
 import { useGatewayStore } from './stores/gateway';
 import { useProviderStore } from './stores/providers';
@@ -122,7 +123,12 @@ function App() {
 
   // Redirect to setup wizard if not complete
   useEffect(() => {
-    if (!setupComplete && !skipSetupForE2E && !location.pathname.startsWith('/setup')) {
+    if (
+      !setupComplete
+      && !skipSetupForE2E
+      && !location.pathname.startsWith('/setup')
+      && !location.pathname.startsWith('/sprite-overlay')
+    ) {
       navigate('/setup');
     }
   }, [setupComplete, skipSetupForE2E, location.pathname, navigate]);
@@ -170,6 +176,7 @@ function App() {
         <Routes>
           {/* Setup wizard (shown on first launch) */}
           <Route path="/setup/*" element={<Setup />} />
+          <Route path="/sprite-overlay" element={<SpriteOverlayPage />} />
 
           {/* Main application routes */}
           <Route element={<MainLayout />}>

@@ -4,6 +4,7 @@
  */
 import { Tray, Menu, BrowserWindow, app, nativeImage } from 'electron';
 import { join } from 'path';
+import type { SpriteOverlayManager } from './sprite-overlay';
 
 let tray: Tray | null = null;
 
@@ -20,7 +21,7 @@ function getIconsDir(): string {
 /**
  * Create system tray icon and menu
  */
-export function createTray(mainWindow: BrowserWindow): Tray {
+export function createTray(mainWindow: BrowserWindow, spriteOverlayManager?: SpriteOverlayManager | null): Tray {
   // Use platform-appropriate icon for system tray
   const iconsDir = getIconsDir();
   let iconPath: string;
@@ -57,7 +58,7 @@ export function createTray(mainWindow: BrowserWindow): Tray {
   tray = new Tray(icon);
   
   // Set tooltip
-  tray.setToolTip('BaseClaw - AI Assistant');
+  tray.setToolTip('SpriteClaw - Sprite Assistant');
   
   const showWindow = () => {
     if (mainWindow.isDestroyed()) return;
@@ -68,12 +69,26 @@ export function createTray(mainWindow: BrowserWindow): Tray {
   // Create context menu
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show BaseClaw',
+      label: 'Show SpriteClaw',
       click: showWindow,
     },
-    {
-      type: 'separator',
-    },
+    ...(spriteOverlayManager ? [
+      {
+        label: 'Show Sprite',
+        click: () => {
+          void spriteOverlayManager.show();
+        },
+      },
+      {
+        label: 'Hide Sprite',
+        click: () => {
+          void spriteOverlayManager.hide();
+        },
+      },
+      {
+        type: 'separator' as const,
+      },
+    ] : []),
     {
       label: 'Gateway Status',
       enabled: false,
@@ -122,7 +137,7 @@ export function createTray(mainWindow: BrowserWindow): Tray {
       type: 'separator',
     },
     {
-      label: 'Quit BaseClaw',
+      label: 'Quit SpriteClaw',
       click: () => {
         app.quit();
       },
@@ -157,7 +172,7 @@ export function createTray(mainWindow: BrowserWindow): Tray {
  */
 export function updateTrayStatus(status: string): void {
   if (tray) {
-    tray.setToolTip(`BaseClaw - ${status}`);
+    tray.setToolTip(`SpriteClaw - ${status}`);
   }
 }
 

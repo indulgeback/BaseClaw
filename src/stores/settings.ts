@@ -6,7 +6,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import i18n from '@/i18n';
 import { hostApiFetch } from '@/lib/host-api';
+import { invokeIpc } from '@/lib/api-client';
 import { resolveSupportedLanguage } from '../../shared/language';
+import type { SpriteCharacterId, SpriteOverlayBounds } from '../../shared/sprite';
 
 type Theme = 'light' | 'dark' | 'system';
 type UpdateChannel = 'stable' | 'beta' | 'dev';
@@ -37,6 +39,10 @@ interface SettingsState {
   // UI State
   sidebarCollapsed: boolean;
   devModeUnlocked: boolean;
+  spriteEnabled: boolean;
+  spriteOverlayEnabled: boolean;
+  spriteCharacterId: SpriteCharacterId;
+  spriteOverlayBounds: SpriteOverlayBounds | null;
 
   // Setup
   setupComplete: boolean;
@@ -61,6 +67,10 @@ interface SettingsState {
   setAutoDownloadUpdate: (value: boolean) => void;
   setSidebarCollapsed: (value: boolean) => void;
   setDevModeUnlocked: (value: boolean) => void;
+  setSpriteEnabled: (value: boolean) => void;
+  setSpriteOverlayEnabled: (value: boolean) => void;
+  setSpriteCharacterId: (value: SpriteCharacterId) => void;
+  setSpriteOverlayBounds: (value: SpriteOverlayBounds | null) => void;
   markSetupComplete: () => void;
   resetSettings: () => void;
 }
@@ -84,6 +94,10 @@ const defaultSettings = {
   autoDownloadUpdate: false,
   sidebarCollapsed: false,
   devModeUnlocked: false,
+  spriteEnabled: true,
+  spriteOverlayEnabled: true,
+  spriteCharacterId: 'raccoon' as SpriteCharacterId,
+  spriteOverlayBounds: null as SpriteOverlayBounds | null,
   setupComplete: false,
 };
 
@@ -172,6 +186,35 @@ export const useSettingsStore = create<SettingsState>()(
         void hostApiFetch('/api/settings/devModeUnlocked', {
           method: 'PUT',
           body: JSON.stringify({ value: devModeUnlocked }),
+        }).catch(() => { });
+      },
+      setSpriteEnabled: (spriteEnabled) => {
+        set({ spriteEnabled });
+        void hostApiFetch('/api/settings/spriteEnabled', {
+          method: 'PUT',
+          body: JSON.stringify({ value: spriteEnabled }),
+        }).catch(() => { });
+      },
+      setSpriteOverlayEnabled: (spriteOverlayEnabled) => {
+        set({ spriteOverlayEnabled });
+        void hostApiFetch('/api/settings/spriteOverlayEnabled', {
+          method: 'PUT',
+          body: JSON.stringify({ value: spriteOverlayEnabled }),
+        }).catch(() => { });
+        void invokeIpc('sprite:overlayApplyPreference', spriteOverlayEnabled).catch(() => { });
+      },
+      setSpriteCharacterId: (spriteCharacterId) => {
+        set({ spriteCharacterId });
+        void hostApiFetch('/api/settings/spriteCharacterId', {
+          method: 'PUT',
+          body: JSON.stringify({ value: spriteCharacterId }),
+        }).catch(() => { });
+      },
+      setSpriteOverlayBounds: (spriteOverlayBounds) => {
+        set({ spriteOverlayBounds });
+        void hostApiFetch('/api/settings/spriteOverlayBounds', {
+          method: 'PUT',
+          body: JSON.stringify({ value: spriteOverlayBounds }),
         }).catch(() => { });
       },
       markSetupComplete: () => set({ setupComplete: true }),

@@ -43,6 +43,7 @@ import { deviceOAuthManager } from '../utils/device-oauth';
 import { browserOAuthManager } from '../utils/browser-oauth';
 import { whatsAppLoginManager } from '../utils/whatsapp-login';
 import { syncAllProviderAuthToRuntime } from '../services/providers/provider-runtime-sync';
+import { SpriteOverlayManager } from './sprite-overlay';
 
 const WINDOWS_APP_USER_MODEL_ID = 'app.clawx.desktop';
 const isE2EMode = process.env.CLAWX_E2E === '1';
@@ -120,6 +121,7 @@ let gatewayManager!: GatewayManager;
 let clawHubService!: ClawHubService;
 let hostEventBus!: HostEventBus;
 let hostApiServer: Server | null = null;
+let spriteOverlayManager: SpriteOverlayManager | null = null;
 const mainWindowFocusState = createMainWindowFocusState();
 const quitLifecycleState = createQuitLifecycleState();
 
@@ -301,10 +303,11 @@ async function initialize(): Promise<void> {
 
   // Create the main window
   const window = createMainWindow();
+  spriteOverlayManager = new SpriteOverlayManager(() => mainWindow);
 
   // Create system tray
   if (!isE2EMode) {
-    createTray(window);
+    createTray(window, spriteOverlayManager);
   }
 
   // Override security headers ONLY for the OpenClaw Gateway Control UI.
@@ -331,7 +334,7 @@ async function initialize(): Promise<void> {
   );
 
   // Register IPC handlers
-  registerIpcHandlers(gatewayManager, clawHubService, window);
+  registerIpcHandlers(gatewayManager, clawHubService, window, spriteOverlayManager);
 
   hostApiServer = startHostApiServer({
     gatewayManager,
@@ -578,6 +581,7 @@ if (gotTheLock) {
 
     hostEventBus.closeAll();
     hostApiServer?.close();
+    spriteOverlayManager?.destroy();
 
     const stopPromise = gatewayManager.stop().catch((err) => {
       logger.warn('gatewayManager.stop() error during quit:', err);

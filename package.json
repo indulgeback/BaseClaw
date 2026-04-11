@@ -26,9 +26,9 @@
             ]
         }
     },
-    "description": "BaseClaw - Graphical AI Assistant based on OpenClaw",
+    "description": "SpriteClaw - Graphical AI Assistant based on OpenClaw",
     "main": "dist-electron/main/index.js",
-    "author": "BaseClaw Team",
+    "author": "SpriteClaw Team",
     "license": "MIT",
     "private": true,
     "scripts": {

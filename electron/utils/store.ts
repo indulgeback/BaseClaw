@@ -6,6 +6,7 @@
 import { randomBytes } from 'crypto';
 import { app } from 'electron';
 import { resolveSupportedLanguage } from '../../shared/language';
+import type { SpriteCharacterId, SpriteOverlayBounds } from '../../shared/sprite';
 
 // Lazy-load electron-store (ESM module)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +52,10 @@ export interface AppSettings {
   // UI State
   sidebarCollapsed: boolean;
   devModeUnlocked: boolean;
+  spriteEnabled: boolean;
+  spriteOverlayEnabled: boolean;
+  spriteCharacterId: SpriteCharacterId;
+  spriteOverlayBounds: SpriteOverlayBounds | null;
 
   // Presets
   selectedBundles: string[];
@@ -102,6 +107,10 @@ function createDefaultSettings(): AppSettings {
     // UI State
     sidebarCollapsed: false,
     devModeUnlocked: false,
+    spriteEnabled: true,
+    spriteOverlayEnabled: true,
+    spriteCharacterId: 'raccoon',
+    spriteOverlayBounds: null,
 
     // Presets
     selectedBundles: ['productivity', 'developer'],

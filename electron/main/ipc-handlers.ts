@@ -68,6 +68,7 @@ import {
   type AppRequest,
   type AppResponse,
 } from './ipc/request-helpers';
+import { SpriteOverlayManager } from './sprite-overlay';
 
 /**
  * Register all IPC handlers
@@ -75,7 +76,8 @@ import {
 export function registerIpcHandlers(
   gatewayManager: GatewayManager,
   clawHubService: ClawHubService,
-  mainWindow: BrowserWindow
+  mainWindow: BrowserWindow,
+  spriteOverlayManager?: SpriteOverlayManager,
 ): void {
   // Unified request protocol (non-breaking: legacy channels remain available)
   registerUnifiedRequestHandlers(gatewayManager);
@@ -126,7 +128,7 @@ export function registerIpcHandlers(
   registerCronHandlers(gatewayManager);
 
   // Window control handlers (for custom title bar on Windows/Linux)
-  registerWindowHandlers(mainWindow);
+  registerWindowHandlers(mainWindow, spriteOverlayManager);
 
   // WhatsApp handlers
   registerWhatsAppHandlers(mainWindow);
@@ -2206,7 +2208,7 @@ function registerUsageHandlers(): void {
 /**
  * Window control handlers (for custom title bar on Windows)
  */
-function registerWindowHandlers(mainWindow: BrowserWindow): void {
+function registerWindowHandlers(mainWindow: BrowserWindow, spriteOverlayManager?: SpriteOverlayManager): void {
   ipcMain.handle('window:minimize', () => {
     mainWindow.minimize();
   });
@@ -2225,6 +2227,40 @@ function registerWindowHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('window:isMaximized', () => {
     return mainWindow.isMaximized();
+  });
+
+  ipcMain.handle('sprite:overlaySyncState', async (_event, payload) => {
+    await spriteOverlayManager?.syncState(payload);
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayShow', async () => {
+    await spriteOverlayManager?.show();
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayHide', async () => {
+    await spriteOverlayManager?.hide();
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayToggle', async () => {
+    await spriteOverlayManager?.toggle();
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayApplyPreference', async (_event, enabled: boolean) => {
+    await spriteOverlayManager?.applyPreference(Boolean(enabled));
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayGetState', async () => {
+    return await spriteOverlayManager?.getState();
+  });
+
+  ipcMain.handle('sprite:focusMainWindow', () => {
+    spriteOverlayManager?.focusMainWindow();
+    return { success: true };
   });
 }
 

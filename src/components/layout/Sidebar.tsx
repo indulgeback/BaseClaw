@@ -115,6 +115,7 @@ function getAgentIdFromSessionKey(sessionKey: string): string {
 export function Sidebar() {
   const sidebarCollapsed = useSettingsStore((state) => state.sidebarCollapsed);
   const setSidebarCollapsed = useSettingsStore((state) => state.setSidebarCollapsed);
+  const spriteEnabled = useSettingsStore((state) => state.spriteEnabled);
 
   const sessions = useChatStore((s) => s.sessions);
   const currentSessionKey = useChatStore((s) => s.currentSessionKey);
@@ -220,6 +221,7 @@ export function Sidebar() {
       data-testid="sidebar"
       className={cn(
         'flex min-h-0 shrink-0 flex-col overflow-hidden border-r bg-[#eae8e1]/60 dark:bg-background transition-all duration-300',
+        'backdrop-blur-xl border-black/5 dark:border-white/10',
         sidebarCollapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -227,9 +229,9 @@ export function Sidebar() {
       <div className={cn("flex items-center p-2 h-12", sidebarCollapsed ? "justify-center" : "justify-between")}>
         {!sidebarCollapsed && (
           <div className="flex items-center gap-2 px-2 overflow-hidden">
-            <img src={logoSvg} alt="BaseClaw" className="h-5 w-auto shrink-0" />
+            <img src={logoSvg} alt="SpriteClaw" className="h-5 w-auto shrink-0" />
             <span className="text-sm font-semibold truncate whitespace-nowrap text-foreground/90">
-              BaseClaw
+              SpriteClaw
             </span>
           </div>
         )}
@@ -336,6 +338,12 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="p-2 mt-auto">
+        {!sidebarCollapsed && spriteEnabled && (
+          <div className="mb-2 rounded-2xl border border-black/10 bg-white/60 px-3 py-3 text-[12px] leading-5 text-foreground/70 shadow-sm dark:border-white/10 dark:bg-white/5">
+            <p className="font-semibold uppercase tracking-[0.18em] text-foreground/45">Sprite</p>
+            <p className="mt-1">The raccoon companion tracks the rhythm of every run.</p>
+          </div>
+        )}
         <NavLink
             to="/settings"
             data-testid="sidebar-nav-settings"

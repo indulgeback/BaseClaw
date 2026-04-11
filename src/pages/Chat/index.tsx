@@ -21,6 +21,10 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useStickToBottomInstant } from '@/hooks/use-stick-to-bottom-instant';
 import { useMinLoading } from '@/hooks/use-min-loading';
+import { SpriteStage } from '@/components/sprite/SpriteStage';
+import { useSettingsStore } from '@/stores/settings';
+import { useSpriteStore } from '@/stores/sprite';
+import { invokeIpc } from '@/lib/api-client';
 
 export function Chat() {
   const { t } = useTranslation('chat');
@@ -46,10 +50,39 @@ export function Chat() {
 
   const cleanupEmptySession = useChatStore((s) => s.cleanupEmptySession);
   const [childTranscripts, setChildTranscripts] = useState<Record<string, RawMessage[]>>({});
+  const [composerPresence, setComposerPresence] = useState({ inputFocused: false, hasDraft: false });
+  const [windowFocused, setWindowFocused] = useState(() => typeof document !== 'undefined' ? document.hasFocus() : true);
+  const [documentVisible, setDocumentVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState !== 'hidden');
+  const spriteEnabled = useSettingsStore((s) => s.spriteEnabled);
+  const spriteCharacterId = useSettingsStore((s) => s.spriteCharacterId);
+  const currentSpriteState = useSpriteStore((s) => s.currentState);
+  const setSpriteCharacterId = useSpriteStore((s) => s.setCharacterId);
+  const setSpriteSignals = useSpriteStore((s) => s.setSignals);
+  const flashSpriteState = useSpriteStore((s) => s.flashState);
+  const getSpritePayload = useSpriteStore((s) => s.getPayload);
 
   const [streamingTimestamp, setStreamingTimestamp] = useState<number>(0);
   const minLoading = useMinLoading(loading && messages.length > 0);
   const { contentRef, scrollRef } = useStickToBottomInstant(currentSessionKey);
+
+  useEffect(() => {
+    setSpriteCharacterId(spriteCharacterId);
+  }, [setSpriteCharacterId, spriteCharacterId]);
+
+  useEffect(() => {
+    const handleFocus = () => setWindowFocused(true);
+    const handleBlur = () => setWindowFocused(false);
+    const handleVisibility = () => setDocumentVisible(document.visibilityState !== 'hidden');
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // Load data when gateway is running.
   // When the store already holds messages for this session (i.e. the user
@@ -145,6 +178,52 @@ export function Chat() {
   const hasAnyStreamContent = hasStreamText || hasStreamThinking || hasStreamTools || hasStreamImages || hasStreamToolStatus;
 
   const isEmpty = messages.length === 0 && !sending;
+
+  useEffect(() => {
+    setSpriteSignals({
+      isWelcome: isEmpty,
+      inputFocused: composerPresence.inputFocused,
+      hasDraft: composerPresence.hasDraft,
+      sending,
+      pendingFinal,
+      hasStreaming: hasAnyStreamContent,
+      windowFocused,
+      documentVisible,
+    });
+  }, [
+    composerPresence.hasDraft,
+    composerPresence.inputFocused,
+    documentVisible,
+    hasAnyStreamContent,
+    isEmpty,
+    pendingFinal,
+    sending,
+    setSpriteSignals,
+    windowFocused,
+  ]);
+
+  useEffect(() => {
+    if (!error) return;
+    flashSpriteState('error');
+  }, [error, flashSpriteState]);
+
+  useEffect(() => {
+    if (!spriteEnabled) {
+      void invokeIpc('sprite:overlayHide').catch(() => {});
+      return;
+    }
+    void invokeIpc('sprite:overlaySyncState', getSpritePayload()).catch(() => {});
+  }, [currentSpriteState, getSpritePayload, spriteEnabled, spriteCharacterId]);
+
+  useEffect(() => {
+    if (!sending) return;
+    return () => {
+      if (!useChatStore.getState().error) {
+        flashSpriteState('success');
+      }
+    };
+  }, [flashSpriteState, sending]);
+
   const subagentCompletionInfos = messages.map((message) => parseSubagentCompletionInfo(message));
   const nextUserMessageIndexes = new Array<number>(messages.length).fill(-1);
   let nextUserMessageIndex = -1;
@@ -235,7 +314,17 @@ export function Chat() {
 
       {/* Messages Area */}
       <div className="min-h-0 flex-1 overflow-hidden px-4 py-4">
-        <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-4 lg:flex-row lg:items-stretch">
+        <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-4 xl:flex-row xl:items-stretch">
+          {spriteEnabled && (
+            <div className="xl:hidden">
+              <SpriteStage
+                state={currentSpriteState}
+                characterId={spriteCharacterId}
+                compact
+                className="min-h-[280px]"
+              />
+            </div>
+          )}
           <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">
             <div ref={contentRef} className="max-w-4xl space-y-4">
               {isEmpty ? (
@@ -321,6 +410,17 @@ export function Chat() {
               )}
             </div>
           </div>
+          {spriteEnabled && (
+            <div className="hidden min-h-0 xl:block xl:w-[320px] xl:shrink-0">
+              <div className="sticky top-0">
+                <SpriteStage
+                  state={currentSpriteState}
+                  characterId={spriteCharacterId}
+                  className="min-h-[520px]"
+                />
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
@@ -350,6 +450,7 @@ export function Chat() {
         disabled={!isGatewayRunning}
         sending={sending}
         isEmpty={isEmpty}
+        onPresenceChange={setComposerPresence}
       />
 
       {/* Transparent loading overlay */}
@@ -375,16 +476,22 @@ function WelcomeScreen() {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center text-center h-[60vh]">
-      <h1 className="text-4xl md:text-5xl font-serif text-foreground/80 mb-8 font-normal tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}>
-        {t('welcome.subtitle')}
+    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-foreground/55 dark:border-white/10 dark:bg-white/5">
+        SpriteClaw Companion
+      </div>
+      <h1 className="mb-4 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+        A softer desk for serious runs.
       </h1>
+      <p className="mb-8 max-w-2xl text-pretty text-[15px] leading-7 text-foreground/68 md:text-[17px]">
+        {t('welcome.subtitle')}
+      </p>
 
-      <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-lg w-full">
+      <div className="flex w-full max-w-xl flex-wrap items-center justify-center gap-2.5">
         {quickActions.map(({ key, label }) => (
           <button 
             key={key}
-            className="px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-[13px] font-medium text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5 transition-colors bg-black/[0.02]"
+            className="rounded-full border border-black/10 bg-white/55 px-4 py-2 text-[13px] font-medium text-foreground/72 transition-colors hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
             {label}
           </button>

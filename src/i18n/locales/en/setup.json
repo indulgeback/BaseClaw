@@ -1,7 +1,7 @@
 {
     "steps": {
         "welcome": {
-            "title": "Welcome to BaseClaw",
+            "title": "Welcome to SpriteClaw",
             "description": "Your AI assistant is ready to be configured"
         },
         "runtime": {
@@ -22,12 +22,12 @@
         },
         "complete": {
             "title": "All Set!",
-            "description": "BaseClaw is ready to use"
+            "description": "SpriteClaw is ready to use"
         }
     },
     "welcome": {
-        "title": "Welcome to BaseClaw",
-        "description": "BaseClaw is a graphical interface for OpenClaw, making it easy to use AI assistants across your favorite messaging platforms.",
+        "title": "Welcome to SpriteClaw",
+        "description": "SpriteClaw is a graphical interface for OpenClaw, making it easy to use AI assistants across your favorite messaging platforms.",
         "features": {
             "noCommand": "Zero command-line required",
             "modernUI": "Modern, beautiful interface",
@@ -113,7 +113,7 @@
     },
     "complete": {
         "title": "Setup Complete!",
-        "subtitle": "BaseClaw is configured and ready to use. You can now start chatting with your AI assistant.",
+        "subtitle": "SpriteClaw is configured and ready to use. You can now start chatting with your AI assistant.",
         "provider": "AI Provider",
         "components": "Components",
         "gateway": "Gateway",

@@ -77,6 +77,11 @@ export function Settings() {
     setDevModeUnlocked,
     telemetryEnabled,
     setTelemetryEnabled,
+    spriteEnabled,
+    setSpriteEnabled,
+    spriteOverlayEnabled,
+    setSpriteOverlayEnabled,
+    spriteCharacterId,
   } = useSettingsStore();
 
   const { status: gatewayStatus, restart: restartGateway } = useGatewayStore();
@@ -97,6 +102,7 @@ export function Settings() {
   const [telemetryEntries, setTelemetryEntries] = useState<UiTelemetryEntry[]>([]);
 
   const isWindows = window.electron.platform === 'win32';
+  const overlaySupported = window.electron.platform === 'darwin' || window.electron.platform === 'win32';
   const showCliTools = true;
   const [showLogs, setShowLogs] = useState(false);
   const [logContent, setLogContent] = useState('');
@@ -227,6 +233,15 @@ export function Settings() {
       toast.success(t('developer.tokenCopied'));
     } catch (error) {
       toast.error(`Failed to copy token: ${String(error)}`);
+    }
+  };
+
+  const handleShowSpriteOverlay = async () => {
+    try {
+      await invokeIpc('sprite:overlayShow');
+      toast.success(t('sprite.showOverlay'));
+    } catch (error) {
+      toast.error(`Failed to show sprite overlay: ${String(error)}`);
     }
   };
 
@@ -472,7 +487,8 @@ export function Settings() {
   };
 
   return (
-    <div data-testid="settings-page" className="flex flex-col -m-6 dark:bg-background h-[calc(100vh-2.5rem)] overflow-hidden">
+    <div data-testid="settings-page" className="relative -m-6 flex h-[calc(100vh-2.5rem)] flex-col overflow-hidden dark:bg-background">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(125,211,252,0.12),transparent_26%),linear-gradient(180deg,rgba(255,248,235,0.72),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.12),transparent_30%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_24%),linear-gradient(180deg,rgba(33,25,23,0.52),transparent_36%)]" />
       <div className="w-full max-w-5xl mx-auto flex flex-col h-full p-10 pt-16">
 
         {/* Header */}
@@ -551,6 +567,60 @@ export function Settings() {
                   checked={launchAtStartup}
                   onCheckedChange={setLaunchAtStartup}
                 />
+              </div>
+
+              <div className="rounded-[28px] border border-black/10 bg-white/55 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <Label className="text-[15px] font-medium text-foreground/90">{t('sprite.title')}</Label>
+                      <p className="mt-1 text-[13px] text-muted-foreground">
+                        {t('sprite.description')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/55 dark:border-white/10 dark:bg-white/10">
+                        {spriteCharacterId}
+                      </span>
+                      <Switch
+                        checked={spriteEnabled}
+                        onCheckedChange={setSpriteEnabled}
+                        data-testid="settings-sprite-enabled-switch"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Label className="text-[14px] font-medium text-foreground/85">{t('sprite.overlay')}</Label>
+                      <p className="mt-1 text-[12px] text-muted-foreground">
+                        {t('sprite.overlayDesc')}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={spriteOverlayEnabled}
+                      onCheckedChange={setSpriteOverlayEnabled}
+                      data-testid="settings-sprite-overlay-switch"
+                      disabled={!overlaySupported || !spriteEnabled}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 rounded-full border-black/10 bg-white/70 px-5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15"
+                      onClick={handleShowSpriteOverlay}
+                      disabled={!overlaySupported || !spriteEnabled}
+                      data-testid="settings-sprite-show-button"
+                    >
+                      {t('sprite.showOverlay')}
+                    </Button>
+                    <span className="text-[12px] text-muted-foreground">
+                      {!overlaySupported ? t('sprite.overlayPlatformHint') : t('sprite.characterHint')}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1091,14 +1161,14 @@ export function Settings() {
                 <Button
                   variant="link"
                   className="h-auto p-0 text-[14px] text-blue-500 hover:text-blue-600 font-medium"
-                  onClick={() => window.electron.openExternal('https://claw-x.com')}
+                  onClick={() => window.electron.openExternal('https://github.com/indulgeback/BaseClaw')}
                 >
                   {t('about.docs')}
                 </Button>
                 <Button
                   variant="link"
                   className="h-auto p-0 text-[14px] text-blue-500 hover:text-blue-600 font-medium"
-                  onClick={() => window.electron.openExternal('https://github.com/ValueCell-ai/ClawX')}
+                  onClick={() => window.electron.openExternal('https://github.com/indulgeback/BaseClaw')}
                 >
                   {t('about.github')}
                 </Button>

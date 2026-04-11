@@ -1,6 +1,6 @@
 {
   "title": "設定",
-  "subtitle": "BaseClaw の体験をカスタマイズ",
+  "subtitle": "SpriteClaw の体験をカスタマイズ",
   "appearance": {
     "title": "通用",
     "description": "外観とスタイルをカスタマイズ",
@@ -10,7 +10,16 @@
     "system": "システム",
     "language": "言語",
     "launchAtStartup": "システム起動時に自動起動",
-    "launchAtStartupDesc": "ログイン時に BaseClaw を自動的に起動します"
+    "launchAtStartupDesc": "ログイン時に SpriteClaw を自動的に起動します"
+  },
+  "sprite": {
+    "title": "Sprite コンパニオン",
+    "description": "アライグマのスプライトをチャット体験とフローティング相棒の両方に行き渡らせます。",
+    "overlay": "フローティング Sprite",
+    "overlayDesc": "対応プラットフォームで透明なデスクトップ相棒ウィンドウを表示します。",
+    "showOverlay": "Sprite を表示",
+    "characterHint": "V1 ではアライグマ 1 体のみを同梱し、将来の切り替えに備えた構造を用意しています。",
+    "overlayPlatformHint": "フローティング overlay は現在 macOS と Windows のみ対応です。"
   },
   "aiProviders": {
     "title": "AI プロバイダー",
@@ -37,7 +46,7 @@
     "notRequired": "不要",
     "empty": {
       "title": "プロバイダーが構成されていません",
-      "desc": "BaseClaw の使用を開始するには AI プロバイダーを追加してください",
+      "desc": "SpriteClaw の使用を開始するには AI プロバイダーを追加してください",
       "cta": "最初のプロバイダーを追加"
     },
     "dialog": {
@@ -60,7 +69,7 @@
       "protocol": "プロトコル",
       "advancedConfig": "詳細設定",
       "userAgent": "User-Agent",
-      "userAgentPlaceholder": "BaseClaw/1.0",
+      "userAgentPlaceholder": "SpriteClaw/1.0",
       "fallbackModels": "フォールバックモデル",
       "fallbackProviders": "別プロバイダーへのフォールバック",
       "fallbackModelIds": "同一プロバイダーのフォールバックモデル ID",
@@ -133,7 +142,7 @@
     "appLogs": "アプリケーションログ",
     "openFolder": "フォルダーを開く",
     "autoStart": "ゲートウェイ自動起動",
-    "autoStartDesc": "BaseClaw 起動時にゲートウェイを自動起動",
+    "autoStartDesc": "SpriteClaw 起動時にゲートウェイを自動起動",
     "proxyTitle": "プロキシ",
     "proxyDesc": "Electron と Gateway の通信をローカルプロキシ経由にします。",
     "proxyServer": "プロキシサーバー",
@@ -154,7 +163,7 @@
   },
   "updates": {
     "title": "アップデート",
-    "description": "BaseClaw を最新に保つ",
+    "description": "SpriteClaw を最新に保つ",
     "autoCheck": "自動更新チェック",
     "autoCheckDesc": "起動時に更新を確認",
     "autoDownload": "自動アップデート",
@@ -268,7 +277,7 @@
   },
   "about": {
     "title": "バージョン情報",
-    "appName": "BaseClaw",
+    "appName": "SpriteClaw",
     "tagline": "グラフィカル AI アシスタント",
     "basedOn": "OpenClaw ベース",
     "version": "バージョン {{version}}",

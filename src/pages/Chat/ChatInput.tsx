@@ -38,6 +38,7 @@ interface ChatInputProps {
   disabled?: boolean;
   sending?: boolean;
   isEmpty?: boolean;
+  onPresenceChange?: (presence: { inputFocused: boolean; hasDraft: boolean }) => void;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ function readFileAsBase64(file: globalThis.File): Promise<string> {
 
 // ── Component ────────────────────────────────────────────────────
 
-export function ChatInput({ onSend, onStop, disabled = false, sending = false, isEmpty = false }: ChatInputProps) {
+export function ChatInput({ onSend, onStop, disabled = false, sending = false, isEmpty = false, onPresenceChange }: ChatInputProps) {
   const { t } = useTranslation('chat');
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
@@ -93,6 +94,7 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const gatewayStatus = useGatewayStore((s) => s.status);
   const agents = useAgentsStore((s) => s.agents);
   const currentAgentId = useChatStore((s) => s.currentAgentId);
@@ -150,6 +152,13 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
       document.removeEventListener('mousedown', handlePointerDown);
     };
   }, [pickerOpen]);
+
+  useEffect(() => {
+    onPresenceChange?.({
+      inputFocused: inputFocused || pickerOpen,
+      hasDraft: input.trim().length > 0 || attachments.length > 0,
+    });
+  }, [attachments.length, input, inputFocused, onPresenceChange, pickerOpen]);
 
   // ── File staging via native dialog ─────────────────────────────
 
@@ -488,6 +497,8 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
                 onCompositionEnd={() => {
                   isComposingRef.current = false;
                 }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 onPaste={handlePaste}
                 placeholder={disabled ? t('composer.gatewayDisconnectedPlaceholder') : ''}
                 disabled={disabled}

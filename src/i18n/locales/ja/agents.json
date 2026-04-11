@@ -22,7 +22,7 @@
     },
     "deleteDialog": {
         "title": "Agent を削除",
-        "message": "BaseClaw から「{{name}}」を削除しますか？この操作により Agent と、その BaseClaw 管理下のワークスペース、実行時ファイル、セッションファイルがディスクから完全に削除されます。"
+        "message": "SpriteClaw から「{{name}}」を削除しますか？この操作により Agent と、その SpriteClaw 管理下のワークスペース、実行時ファイル、セッションファイルがディスクから完全に削除されます。"
     },
     "settingsDialog": {
         "title": "{{name}} Settings",
