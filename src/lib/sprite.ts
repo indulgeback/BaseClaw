@@ -1,66 +1,32 @@
-import type { SpriteAssetManifest, SpriteProfile, SpriteSignals } from '@/types/sprite';
+import type { SpriteClip, SpritePlaybackSnapshot, SpriteSignals } from '@/types/sprite';
 import type { SpriteCharacterId, SpriteState, SpriteStatePayload } from '@/types/sprite';
+import { createSpritePlaybackSnapshot, planPath } from './sprite-queue';
+import {
+  DEFAULT_SPRITE_CHARACTER_ID,
+  DEFAULT_SPRITE_SIGNALS,
+  getSpriteAsset,
+  getSpriteCopy,
+  getSpriteProfile,
+  SPRITE_PROFILES,
+} from './sprite-registry';
 
-export const DEFAULT_SPRITE_CHARACTER_ID: SpriteCharacterId = 'raccoon';
-
-const makeAsset = (state: SpriteState, motion: SpriteAssetManifest['motion']): SpriteAssetManifest => ({
-  state,
-  kind: 'placeholder',
-  loop: state !== 'idle',
-  motion,
-});
-
-export const SPRITE_PROFILES: Record<SpriteCharacterId, SpriteProfile> = {
-  raccoon: {
-    id: 'raccoon',
-    name: 'Raccoon Sprite',
-    shortName: 'Raccoon',
-    description: 'A nimble guide that keeps SpriteClaw lively, warm, and alert.',
-    accent: 'hsl(28 76% 58%)',
-    assets: {
-      idle: makeAsset('idle', 'breathe'),
-      listen: makeAsset('listen', 'bob'),
-      working: makeAsset('working', 'float'),
-      sleep: makeAsset('sleep', 'rest'),
-    },
-  },
+export {
+  DEFAULT_SPRITE_CHARACTER_ID,
+  DEFAULT_SPRITE_SIGNALS,
+  getSpriteAsset,
+  getSpriteCopy,
+  getSpriteProfile,
+  SPRITE_PROFILES,
 };
 
-export const DEFAULT_SPRITE_SIGNALS: SpriteSignals = {
-  inputFocused: false,
-  hasDraft: false,
-  sending: false,
-  pendingFinal: false,
-  hasStreaming: false,
-  windowFocused: true,
-  documentVisible: true,
-};
+export type SpriteClipSequenceItem = SpriteClip;
 
-const SPRITE_COPY: Record<SpriteState, { title: string; subtitle: string }> = {
-  idle: {
-    title: 'Sprite calm',
-    subtitle: 'Everything is steady. Drop a task whenever you are ready.',
-  },
-  listen: {
-    title: 'Sprite listening',
-    subtitle: 'Drafting, attaching, and lining up the next move.',
-  },
-  working: {
-    title: 'Sprite working',
-    subtitle: 'Processing the next move and keeping the run in motion.',
-  },
-  sleep: {
-    title: 'Sprite sleeping',
-    subtitle: 'Quiet mode on until you come back.',
-  },
-};
-
-export function getSpriteProfile(characterId: SpriteCharacterId): SpriteProfile {
-  return SPRITE_PROFILES[characterId] ?? SPRITE_PROFILES[DEFAULT_SPRITE_CHARACTER_ID];
-}
-
-export function getSpriteCopy(state: SpriteState): { title: string; subtitle: string } {
-  return SPRITE_COPY[state];
+export function buildSpriteSequence(
+  characterId: SpriteCharacterId,
+  settledState: SpriteState,
+  requestedState: SpriteState,
+): SpriteClipSequenceItem[] {
+  return planPath(characterId, settledState, requestedState);
 }
 
 export function deriveSpriteState(signals: SpriteSignals): SpriteState {
@@ -70,13 +36,29 @@ export function deriveSpriteState(signals: SpriteSignals): SpriteState {
   return 'idle';
 }
 
-export function buildSpritePayload(characterId: SpriteCharacterId, state: SpriteState): SpriteStatePayload {
-  const copy = getSpriteCopy(state);
+export function buildSpritePayload(snapshot: SpritePlaybackSnapshot): SpriteStatePayload {
+  const copy = getSpriteCopy(snapshot.currentState);
   return {
-    characterId,
-    state,
+    characterId: snapshot.characterId,
+    state: snapshot.currentState,
+    settledState: snapshot.settledState,
+    requestedState: snapshot.requestedState,
+    transitionMode: snapshot.transitionMode,
+    activeClip: snapshot.activeClip,
+    playbackQueue: snapshot.playbackQueue,
+    queueVersion: snapshot.queueVersion,
     title: copy.title,
     subtitle: copy.subtitle,
     timestamp: Date.now(),
   };
+}
+
+export function createInitialSpritePayload(
+  characterId: SpriteCharacterId,
+  settledState: SpriteState = 'idle',
+  requestedState: SpriteState = settledState,
+): SpriteStatePayload {
+  return buildSpritePayload(
+    createSpritePlaybackSnapshot(characterId, settledState, requestedState),
+  );
 }

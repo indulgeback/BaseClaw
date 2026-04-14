@@ -54,6 +54,7 @@ export interface AppSettings {
   devModeUnlocked: boolean;
   spriteEnabled: boolean;
   spriteOverlayEnabled: boolean;
+  spriteOverlayLocked: boolean;
   spriteCharacterId: SpriteCharacterId;
   spriteOverlayBounds: SpriteOverlayBounds | null;
 
@@ -109,6 +110,7 @@ function createDefaultSettings(): AppSettings {
     devModeUnlocked: false,
     spriteEnabled: true,
     spriteOverlayEnabled: true,
+    spriteOverlayLocked: false,
     spriteCharacterId: 'raccoon',
     spriteOverlayBounds: null,
 

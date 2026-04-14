@@ -40,11 +40,15 @@ import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
 import { hostApiFetch } from '@/lib/host-api';
 import { cn } from '@/lib/utils';
+import type { SpriteOverlaySettings } from '@/types/sprite';
+
 type ControlUiInfo = {
   url: string;
   token: string;
   port: number;
 };
+
+const settingsRowClassName = 'flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between';
 
 export function Settings() {
   const { t } = useTranslation('settings');
@@ -81,6 +85,8 @@ export function Settings() {
     setSpriteEnabled,
     spriteOverlayEnabled,
     setSpriteOverlayEnabled,
+    spriteOverlayLocked,
+    setSpriteOverlayLocked,
     spriteCharacterId,
   } = useSettingsStore();
 
@@ -236,15 +242,6 @@ export function Settings() {
     }
   };
 
-  const handleShowSpriteOverlay = async () => {
-    try {
-      await invokeIpc('sprite:overlayShow');
-      toast.success(t('sprite.showOverlay'));
-    } catch (error) {
-      toast.error(`Failed to show sprite overlay: ${String(error)}`);
-    }
-  };
-
   useEffect(() => {
     if (!showCliTools) return;
     let cancelled = false;
@@ -273,6 +270,24 @@ export function Settings() {
 
     return () => { cancelled = true; };
   }, [devModeUnlocked, showCliTools]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void invokeIpc<SpriteOverlaySettings | undefined>('sprite:overlayGetState')
+      .then((state) => {
+        if (cancelled || !state) return;
+        useSettingsStore.setState({
+          spriteOverlayEnabled: state.enabled,
+          spriteOverlayLocked: state.locked,
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleCopyCliCommand = async () => {
     if (!openclawCliCommand) return;
@@ -569,58 +584,82 @@ export function Settings() {
                 />
               </div>
 
-              <div className="rounded-[28px] border border-black/10 bg-white/55 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <Label className="text-[15px] font-medium text-foreground/90">{t('sprite.title')}</Label>
-                      <p className="mt-1 text-[13px] text-muted-foreground">
-                        {t('sprite.description')}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/55 dark:border-white/10 dark:bg-white/10">
-                        {spriteCharacterId}
-                      </span>
-                      <Switch
-                        checked={spriteEnabled}
-                        onCheckedChange={setSpriteEnabled}
-                        data-testid="settings-sprite-enabled-switch"
-                      />
-                    </div>
-                  </div>
+            </div>
+          </div>
 
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <Label className="text-[14px] font-medium text-foreground/85">{t('sprite.overlay')}</Label>
-                      <p className="mt-1 text-[12px] text-muted-foreground">
-                        {t('sprite.overlayDesc')}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={spriteOverlayEnabled}
-                      onCheckedChange={setSpriteOverlayEnabled}
-                      data-testid="settings-sprite-overlay-switch"
-                      disabled={!overlaySupported || !spriteEnabled}
-                    />
-                  </div>
+          <Separator className="bg-black/5 dark:bg-white/5" />
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10 rounded-full border-black/10 bg-white/70 px-5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15"
-                      onClick={handleShowSpriteOverlay}
-                      disabled={!overlaySupported || !spriteEnabled}
-                      data-testid="settings-sprite-show-button"
-                    >
-                      {t('sprite.showOverlay')}
-                    </Button>
-                    <span className="text-[12px] text-muted-foreground">
-                      {!overlaySupported ? t('sprite.overlayPlatformHint') : t('sprite.characterHint')}
-                    </span>
-                  </div>
+          {/* Sprite */}
+          <div>
+            <h2 className="text-3xl font-serif text-foreground mb-6 font-normal tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}>
+              {t('sprite.title')}
+            </h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-[14px] leading-6 text-muted-foreground">
+                  {t('sprite.description')}
+                </p>
+              </div>
+
+              <div className={settingsRowClassName}>
+                <div>
+                  <Label className="text-[15px] font-medium text-foreground/80">{t('sprite.title')}</Label>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    {t('sprite.characterHint')}
+                  </p>
                 </div>
+                <div className="flex items-center gap-3 self-start sm:self-center">
+                  <span className="rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/55 dark:border-white/10 dark:bg-white/10">
+                    {spriteCharacterId}
+                  </span>
+                  <Switch
+                    checked={spriteEnabled}
+                    onCheckedChange={setSpriteEnabled}
+                    data-testid="settings-sprite-enabled-switch"
+                  />
+                </div>
+              </div>
+
+              <div className={settingsRowClassName}>
+                <div>
+                  <Label className="text-[15px] font-medium text-foreground/80">{t('sprite.overlay')}</Label>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    {t('sprite.overlayDesc')}
+                  </p>
+                </div>
+                <Switch
+                  checked={spriteOverlayEnabled}
+                  onCheckedChange={setSpriteOverlayEnabled}
+                  data-testid="settings-sprite-overlay-switch"
+                  disabled={!overlaySupported || !spriteEnabled}
+                />
+              </div>
+
+              <div className={settingsRowClassName}>
+                <div>
+                  <Label className="text-[15px] font-medium text-foreground/80">{t('sprite.locked')}</Label>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    {t('sprite.lockedDesc')}
+                  </p>
+                </div>
+                <Switch
+                  checked={spriteOverlayLocked}
+                  onCheckedChange={setSpriteOverlayLocked}
+                  data-testid="settings-sprite-locked-switch"
+                  disabled={!overlaySupported || !spriteEnabled}
+                />
+              </div>
+
+              <div>
+                <p className="text-[13px] text-muted-foreground">
+                  {!overlaySupported
+                    ? t('sprite.overlayPlatformHint')
+                    : !spriteOverlayEnabled
+                      ? t('sprite.reopenHint')
+                      : spriteOverlayLocked
+                        ? t('sprite.unlockHint')
+                        : t('sprite.overlaySettingsHint')}
+                </p>
               </div>
             </div>
           </div>

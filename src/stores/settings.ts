@@ -41,6 +41,7 @@ interface SettingsState {
   devModeUnlocked: boolean;
   spriteEnabled: boolean;
   spriteOverlayEnabled: boolean;
+  spriteOverlayLocked: boolean;
   spriteCharacterId: SpriteCharacterId;
   spriteOverlayBounds: SpriteOverlayBounds | null;
 
@@ -69,6 +70,7 @@ interface SettingsState {
   setDevModeUnlocked: (value: boolean) => void;
   setSpriteEnabled: (value: boolean) => void;
   setSpriteOverlayEnabled: (value: boolean) => void;
+  setSpriteOverlayLocked: (value: boolean) => void;
   setSpriteCharacterId: (value: SpriteCharacterId) => void;
   setSpriteOverlayBounds: (value: SpriteOverlayBounds | null) => void;
   markSetupComplete: () => void;
@@ -96,6 +98,7 @@ const defaultSettings = {
   devModeUnlocked: false,
   spriteEnabled: true,
   spriteOverlayEnabled: true,
+  spriteOverlayLocked: false,
   spriteCharacterId: 'raccoon' as SpriteCharacterId,
   spriteOverlayBounds: null as SpriteOverlayBounds | null,
   setupComplete: false,
@@ -202,6 +205,14 @@ export const useSettingsStore = create<SettingsState>()(
           body: JSON.stringify({ value: spriteOverlayEnabled }),
         }).catch(() => { });
         void invokeIpc('sprite:overlayApplyPreference', spriteOverlayEnabled).catch(() => { });
+      },
+      setSpriteOverlayLocked: (spriteOverlayLocked) => {
+        set({ spriteOverlayLocked });
+        void hostApiFetch('/api/settings/spriteOverlayLocked', {
+          method: 'PUT',
+          body: JSON.stringify({ value: spriteOverlayLocked }),
+        }).catch(() => { });
+        void invokeIpc('sprite:overlaySetLocked', spriteOverlayLocked).catch(() => { });
       },
       setSpriteCharacterId: (spriteCharacterId) => {
         set({ spriteCharacterId });

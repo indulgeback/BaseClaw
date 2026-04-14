@@ -16,9 +16,13 @@
     "title": "Sprite コンパニオン",
     "description": "アライグマのスプライトをチャット体験とフローティング相棒の両方に行き渡らせます。",
     "overlay": "フローティング Sprite",
-    "overlayDesc": "対応プラットフォームで透明なデスクトップ相棒ウィンドウを表示します。",
-    "showOverlay": "Sprite を表示",
+    "overlayDesc": "対応プラットフォームで透明なデスクトップ相棒ウィンドウを表示し、閉じた後もここで再度オンにします。",
+    "locked": "overlay をロック",
+    "lockedDesc": "ロックするとクリック、ドラッグ、右クリックメニューが無効になり、解除はこの設定画面からのみ行えます。",
     "characterHint": "V1 ではアライグマ 1 体のみを同梱し、将来の切り替えに備えた構造を用意しています。",
+    "overlaySettingsHint": "overlay の表示と非表示は、上のスイッチだけで切り替えます。",
+    "unlockHint": "overlay は現在ロックされています。再び操作するにはここでロックを解除してください。",
+    "reopenHint": "overlay は閉じられています。再表示するにはここでフローティング Sprite を再度オンにしてください。",
     "overlayPlatformHint": "フローティング overlay は現在 macOS と Windows のみ対応です。"
   },
   "aiProviders": {

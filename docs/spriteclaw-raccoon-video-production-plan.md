@@ -2,7 +2,7 @@
 
 ## 目标
 
-本方案用于指导 SpriteClaw 当前小浣熊角色的视频生产，目标是生成一套可直接服务于当前 8 状态系统的状态视频素材，并保证后续在应用内切换时尽量自然、易抠像、易维护。
+本方案用于指导 SpriteClaw 当前小浣熊角色的视频生产，目标是生成一套可直接服务于当前四态状态系统的状态视频素材，并保证后续在应用内切换时尽量自然、易抠像、易维护。
 
 当前仓库状态已收敛为：
 
@@ -122,13 +122,16 @@
 - 无地面阴影污染背景
 - 无镜头移动
 
-### 第一批必须先产出的基础素材
+### 第一批建议先产出的基础素材
 
 - `N0_hold`
-- `N0_idle_loop`
-- `N0_turn_micro`
+- `idle_loop`
 
-这 3 条通过后，才进入状态批量生成阶段。
+说明：
+
+- `N0_hold` 是建议先做的参考驻点，用来验证人物一致性
+- 它不是最终必须交付到程序内的状态视频
+- 当前最终交付仍以 `idle loop + listen/working/sleep 的 enter/loop/exit` 为主
 
 ## 当前 Kling 提示词写法约束
 
@@ -232,7 +235,7 @@
 sprite_raccoon_<clip_name>_master_v01.mov
 ```
 
-示例：
+最终主素材示例：
 
 - `sprite_raccoon_idle_loop_master_v01.mov`
 - `sprite_raccoon_idle_to_listen_enter_master_v01.mov`
@@ -244,6 +247,10 @@ sprite_raccoon_<clip_name>_master_v01.mov
 - `sprite_raccoon_idle_to_sleep_enter_master_v01.mov`
 - `sprite_raccoon_sleep_loop_master_v01.mov`
 - `sprite_raccoon_sleep_to_idle_exit_master_v01.mov`
+
+可选参考素材：
+
+- `sprite_raccoon_n0_hold_master_v01.mov`
 
 如果后续导出透明 WebM：
 

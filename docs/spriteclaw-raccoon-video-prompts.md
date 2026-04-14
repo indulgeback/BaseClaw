@@ -17,7 +17,7 @@ Stable anatomy, stable facial features, no morphing.
 No camera movement, no scene change, no white background, no props, no furniture, no extra characters, no extra limbs, no duplicate tail, no face drift, no body morph, no species change, no clothing, no accessories.
 ```
 
-## 中性锚点提示词
+## 可选参考提示词
 
 ### `N0_hold`
 

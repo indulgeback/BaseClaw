@@ -2258,8 +2258,23 @@ function registerWindowHandlers(mainWindow: BrowserWindow, spriteOverlayManager?
     return await spriteOverlayManager?.getState();
   });
 
+  ipcMain.handle('sprite:overlaySetLocked', async (_event, locked: boolean) => {
+    await spriteOverlayManager?.setLocked(Boolean(locked));
+    return { success: true };
+  });
+
   ipcMain.handle('sprite:focusMainWindow', () => {
     spriteOverlayManager?.focusMainWindow();
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayDragStart', (_, screenX: number, screenY: number) => {
+    spriteOverlayManager?.startDrag(screenX, screenY);
+    return { success: true };
+  });
+
+  ipcMain.handle('sprite:overlayDragEnd', () => {
+    spriteOverlayManager?.endDrag();
     return { success: true };
   });
 }

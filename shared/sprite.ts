@@ -1,15 +1,20 @@
+/// <reference types="node" />
+
 export const SPRITE_CHARACTER_IDS = ['raccoon'] as const;
 export type SpriteCharacterId = (typeof SPRITE_CHARACTER_IDS)[number];
 
-export const SPRITE_STATES = [
-  'idle',
-  'listen',
-  'working',
-  'sleep',
-] as const;
+export const SPRITE_STATES = ['idle', 'listen', 'working', 'sleep'] as const;
 export type SpriteState = (typeof SPRITE_STATES)[number];
 
 export const SPRITE_IDLE_BRIDGE_MS = 260;
+export type SpriteTransitionMode = 'steady' | 'bridging';
+export type SpriteClipPhase = 'enter' | 'loop' | 'exit';
+
+export interface SpriteClipSnapshot {
+  src: string;
+  state: SpriteState;
+  phase: SpriteClipPhase;
+}
 
 export interface SpriteOverlayBounds {
   x: number;
@@ -20,6 +25,7 @@ export interface SpriteOverlayBounds {
 
 export interface SpriteOverlaySettings {
   enabled: boolean;
+  locked: boolean;
   visible: boolean;
   supported: boolean;
   bounds: SpriteOverlayBounds | null;
@@ -28,6 +34,12 @@ export interface SpriteOverlaySettings {
 export interface SpriteStatePayload {
   characterId: SpriteCharacterId;
   state: SpriteState;
+  settledState: SpriteState;
+  requestedState: SpriteState;
+  transitionMode: SpriteTransitionMode;
+  activeClip: SpriteClipSnapshot | null;
+  playbackQueue: SpriteClipSnapshot[];
+  queueVersion: number;
   title: string;
   subtitle: string;
   timestamp: number;

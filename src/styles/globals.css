@@ -57,6 +57,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    margin: 0;
     background-image:
       radial-gradient(circle at top left, rgba(255, 207, 143, 0.22), transparent 28%),
       radial-gradient(circle at top right, rgba(186, 230, 253, 0.18), transparent 24%),
@@ -69,6 +70,21 @@
       radial-gradient(circle at top left, rgba(251, 146, 60, 0.12), transparent 28%),
       radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 20%),
       linear-gradient(180deg, rgba(37, 26, 23, 0.96), rgba(20, 17, 17, 0.98));
+  }
+
+  body.sprite-transparent-surface {
+    background-image: none !important;
+    background-color: transparent !important;
+    overflow: hidden !important;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  body.sprite-transparent-surface #root {
+    background: transparent !important;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden !important;
   }
 }
 

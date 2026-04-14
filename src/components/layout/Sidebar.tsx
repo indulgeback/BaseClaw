@@ -115,7 +115,6 @@ function getAgentIdFromSessionKey(sessionKey: string): string {
 export function Sidebar() {
   const sidebarCollapsed = useSettingsStore((state) => state.sidebarCollapsed);
   const setSidebarCollapsed = useSettingsStore((state) => state.setSidebarCollapsed);
-  const spriteEnabled = useSettingsStore((state) => state.spriteEnabled);
 
   const sessions = useChatStore((s) => s.sessions);
   const currentSessionKey = useChatStore((s) => s.currentSessionKey);
@@ -338,12 +337,6 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="p-2 mt-auto">
-        {!sidebarCollapsed && spriteEnabled && (
-          <div className="mb-2 rounded-2xl border border-black/10 bg-white/60 px-3 py-3 text-[12px] leading-5 text-foreground/70 shadow-sm dark:border-white/10 dark:bg-white/5">
-            <p className="font-semibold uppercase tracking-[0.18em] text-foreground/45">Sprite</p>
-            <p className="mt-1">The raccoon companion tracks the rhythm of every run.</p>
-          </div>
-        )}
         <NavLink
             to="/settings"
             data-testid="sidebar-nav-settings"

@@ -92,6 +92,18 @@ sleep
 
 - 任何非 `idle` 状态之间切换，都会先退回 `idle`
 - 再从 `idle` 进入目标状态
+- 播放层不直接切换状态，而是执行显式片段队列
+- `enter / exit` 片段一旦开始，必须完整播完
+- `loop` 片段也按“单轮有限片段”处理，只能在这一轮播完后切出
+- 短时间内连续目标变化时，只保留最新目标状态，不回放过期目标
+
+当前播放快照约定：
+
+- `requestedState`: 最新请求到达的目标状态
+- `settledState`: 最近一次真正落稳的状态
+- `activeClip`: 当前正在播放的有限片段
+- `playbackQueue`: `activeClip` 之后的未来片段队列
+- `queueVersion`: 队列重排或推进后的递增版本号
 
 ---
 
@@ -161,6 +173,7 @@ raccoon
 - `SpriteCharacterId`
 - `SpriteState`
 - `SpriteStatePayload`
+- `activeClip + playbackQueue + queueVersion` 播放快照语义
 
 当前约定：
 
@@ -169,6 +182,7 @@ raccoon
 - E2E 模式下不自动弹出桌宠，避免影响测试窗口选择
 - 桌宠点击后聚焦主窗口
 - 桌宠关闭为“本次会话隐藏”，可通过 Settings 或 Tray 重新打开
+- overlay 收到新的播放快照后，只更新未来队列，不应跳过当前已开播片段
 
 ---
 

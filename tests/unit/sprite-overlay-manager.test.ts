@@ -23,6 +23,7 @@ const {
     loadURL = vi.fn(async () => {});
     show = vi.fn(() => { this.visible = true; });
     hide = vi.fn(() => { this.visible = false; });
+    setIgnoreMouseEvents = vi.fn();
     isVisible = vi.fn(() => this.visible);
     isDestroyed = vi.fn(() => this.destroyed);
     getBounds = vi.fn(() => this.bounds);
@@ -69,6 +70,11 @@ const {
 
 vi.mock('electron', () => ({
   BrowserWindow: browserWindowCtor,
+  Menu: {
+    buildFromTemplate: vi.fn(() => ({
+      popup: vi.fn(),
+    })),
+  },
   app: {},
   screen: {
     getPrimaryDisplay: () => ({
@@ -96,6 +102,7 @@ describe('sprite overlay manager', () => {
   it('creates and shows the overlay on the first sync when enabled', async () => {
     getSettingMock.mockImplementation(async (key: string) => {
       if (key === 'spriteOverlayEnabled') return true;
+      if (key === 'spriteOverlayLocked') return false;
       if (key === 'spriteOverlayBounds') return null;
       return null;
     });
@@ -106,6 +113,12 @@ describe('sprite overlay manager', () => {
     await manager.syncState({
       characterId: 'raccoon',
       state: 'idle',
+      settledState: 'idle',
+      requestedState: 'idle',
+      transitionMode: 'steady',
+      activeClip: null,
+      playbackQueue: [],
+      queueVersion: 0,
       title: 'Sprite calm',
       subtitle: 'Everything is steady.',
       timestamp: Date.now(),
@@ -122,6 +135,7 @@ describe('sprite overlay manager', () => {
   it('hides the overlay and focuses the main window when requested', async () => {
     getSettingMock.mockImplementation(async (key: string) => {
       if (key === 'spriteOverlayEnabled') return true;
+      if (key === 'spriteOverlayLocked') return false;
       if (key === 'spriteOverlayBounds') return null;
       return null;
     });
@@ -136,5 +150,41 @@ describe('sprite overlay manager', () => {
     expect(browserWindowInstances[0]?.hide).toHaveBeenCalled();
     expect(mainWindowMock.show).toHaveBeenCalled();
     expect(mainWindowMock.focus).toHaveBeenCalled();
+  });
+
+  it('locks interaction and persists the lock preference', async () => {
+    getSettingMock.mockImplementation(async (key: string) => {
+      if (key === 'spriteOverlayEnabled') return true;
+      if (key === 'spriteOverlayLocked') return false;
+      if (key === 'spriteOverlayBounds') return null;
+      return null;
+    });
+
+    const { SpriteOverlayManager } = await import('@electron/main/sprite-overlay');
+    const manager = new SpriteOverlayManager(() => mainWindowMock as never);
+
+    await manager.show();
+    await manager.setLocked(true);
+
+    expect(setSettingMock).toHaveBeenCalledWith('spriteOverlayLocked', true);
+    expect(browserWindowInstances[0]?.setIgnoreMouseEvents).toHaveBeenLastCalledWith(true);
+  });
+
+  it('closes the overlay from the menu by persisting the disabled preference', async () => {
+    getSettingMock.mockImplementation(async (key: string) => {
+      if (key === 'spriteOverlayEnabled') return true;
+      if (key === 'spriteOverlayLocked') return false;
+      if (key === 'spriteOverlayBounds') return null;
+      return null;
+    });
+
+    const { SpriteOverlayManager } = await import('@electron/main/sprite-overlay');
+    const manager = new SpriteOverlayManager(() => mainWindowMock as never);
+
+    await manager.show();
+    await manager.closeFromMenu();
+
+    expect(setSettingMock).toHaveBeenCalledWith('spriteOverlayEnabled', false);
+    expect(browserWindowInstances[0]?.hide).toHaveBeenCalled();
   });
 });

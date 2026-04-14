@@ -1,16 +1,43 @@
-import type { SpriteCharacterId, SpriteOverlayBounds, SpriteOverlaySettings, SpriteState, SpriteStatePayload } from '../../shared/sprite';
+import type {
+  SpriteCharacterId,
+  SpriteClipPhase,
+  SpriteClipSnapshot,
+  SpriteOverlayBounds,
+  SpriteOverlaySettings,
+  SpriteState,
+  SpriteStatePayload,
+  SpriteTransitionMode,
+} from '../../shared/sprite';
 
-export type { SpriteCharacterId, SpriteOverlayBounds, SpriteOverlaySettings, SpriteState, SpriteStatePayload };
-
-export type SpriteAssetKind = 'placeholder' | 'video';
-export type SpriteAssetMotion = 'breathe' | 'bob' | 'spark' | 'float' | 'rest';
+export type {
+  SpriteCharacterId,
+  SpriteClipPhase,
+  SpriteClipSnapshot,
+  SpriteOverlayBounds,
+  SpriteOverlaySettings,
+  SpriteState,
+  SpriteStatePayload,
+  SpriteTransitionMode,
+};
 
 export interface SpriteAssetManifest {
   state: SpriteState;
-  kind: SpriteAssetKind;
-  loop: boolean;
-  motion: SpriteAssetMotion;
-  source?: string;
+  loop: string;
+  enter?: string;
+  exit?: string;
+}
+
+export interface SpriteClip extends SpriteClipSnapshot {}
+
+export interface SpritePlaybackSnapshot {
+  characterId: SpriteCharacterId;
+  currentState: SpriteState;
+  settledState: SpriteState;
+  requestedState: SpriteState;
+  transitionMode: SpriteTransitionMode;
+  activeClip: SpriteClip | null;
+  playbackQueue: SpriteClip[];
+  queueVersion: number;
 }
 
 export interface SpriteProfile {

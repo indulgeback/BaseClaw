@@ -1,79 +1,136 @@
 import { create } from 'zustand';
-import type { SpriteCharacterId, SpriteSignals, SpriteState } from '@/types/sprite';
-import { DEFAULT_SPRITE_CHARACTER_ID, DEFAULT_SPRITE_SIGNALS, buildSpritePayload, deriveSpriteState } from '@/lib/sprite';
+import type {
+  SpriteCharacterId,
+  SpriteClip,
+  SpritePlaybackSnapshot,
+  SpriteSignals,
+  SpriteState,
+  SpriteTransitionMode,
+} from '@/types/sprite';
+import {
+  DEFAULT_SPRITE_CHARACTER_ID,
+  DEFAULT_SPRITE_SIGNALS,
+  buildSpritePayload,
+  deriveSpriteState,
+} from '@/lib/sprite';
+import {
+  createSpritePlaybackSnapshot,
+  reconcilePlaybackSnapshot,
+} from '@/lib/sprite-queue';
 import type { SpriteStatePayload } from '@/types/sprite';
-import { SPRITE_IDLE_BRIDGE_MS } from '../../shared/sprite';
-
-let bridgeTimer: ReturnType<typeof setTimeout> | null = null;
-
-function clearBridgeTimer(): void {
-  if (bridgeTimer) {
-    clearTimeout(bridgeTimer);
-    bridgeTimer = null;
-  }
-}
 
 interface SpriteStore {
   characterId: SpriteCharacterId;
   signals: SpriteSignals;
   currentState: SpriteState;
-  desiredState: SpriteState;
-  transitionMode: 'steady' | 'bridging';
+  settledState: SpriteState;
+  requestedState: SpriteState;
+  transitionMode: SpriteTransitionMode;
+  activeClip: SpriteClip | null;
+  playbackQueue: SpriteClip[];
+  queueVersion: number;
   setCharacterId: (characterId: SpriteCharacterId) => void;
   setSignals: (partial: Partial<SpriteSignals>) => void;
+  setPlaybackSnapshot: (snapshot: SpritePlaybackSnapshot) => void;
   getPayload: () => SpriteStatePayload;
 }
+
+const INITIAL_STATE = deriveSpriteState(DEFAULT_SPRITE_SIGNALS);
+const INITIAL_SNAPSHOT = createSpritePlaybackSnapshot(
+  DEFAULT_SPRITE_CHARACTER_ID,
+  INITIAL_STATE,
+  INITIAL_STATE,
+);
 
 export const useSpriteStore = create<SpriteStore>((set, get) => ({
   characterId: DEFAULT_SPRITE_CHARACTER_ID,
   signals: DEFAULT_SPRITE_SIGNALS,
-  currentState: deriveSpriteState(DEFAULT_SPRITE_SIGNALS),
-  desiredState: deriveSpriteState(DEFAULT_SPRITE_SIGNALS),
-  transitionMode: 'steady',
+  currentState: INITIAL_SNAPSHOT.currentState,
+  settledState: INITIAL_SNAPSHOT.settledState,
+  requestedState: INITIAL_SNAPSHOT.requestedState,
+  transitionMode: INITIAL_SNAPSHOT.transitionMode,
+  activeClip: INITIAL_SNAPSHOT.activeClip,
+  playbackQueue: INITIAL_SNAPSHOT.playbackQueue,
+  queueVersion: INITIAL_SNAPSHOT.queueVersion,
   setCharacterId: (characterId) => {
-    set({ characterId });
+    const current = get();
+    const nextSnapshot = createSpritePlaybackSnapshot(
+      characterId,
+      current.settledState,
+      current.requestedState,
+      current.queueVersion + 1,
+    );
+    set({
+      characterId,
+      currentState: nextSnapshot.currentState,
+      settledState: nextSnapshot.settledState,
+      requestedState: nextSnapshot.requestedState,
+      transitionMode: nextSnapshot.transitionMode,
+      activeClip: nextSnapshot.activeClip,
+      playbackQueue: nextSnapshot.playbackQueue,
+      queueVersion: nextSnapshot.queueVersion,
+    });
   },
   setSignals: (partial) => {
-    const nextSignals = { ...get().signals, ...partial };
-    const desiredState = deriveSpriteState(nextSignals);
-    const { currentState, transitionMode } = get();
+    const current = get();
+    const nextSignals = { ...current.signals, ...partial };
+    const requestedState = deriveSpriteState(nextSignals);
+    const nextSnapshot = reconcilePlaybackSnapshot(
+      {
+        characterId: current.characterId,
+        currentState: current.currentState,
+        settledState: current.settledState,
+        requestedState: current.requestedState,
+        transitionMode: current.transitionMode,
+        activeClip: current.activeClip,
+        playbackQueue: current.playbackQueue,
+        queueVersion: current.queueVersion,
+      },
+      requestedState,
+    );
 
-    set({ signals: nextSignals, desiredState });
-
-    if (desiredState === currentState && transitionMode === 'steady') {
-      return;
-    }
-
-    if (desiredState === 'idle') {
-      clearBridgeTimer();
-      set({ currentState: 'idle', transitionMode: 'steady' });
-      return;
-    }
-
-    if (currentState === 'idle' && transitionMode === 'steady') {
-      clearBridgeTimer();
-      set({ currentState: desiredState, transitionMode: 'steady' });
-      return;
-    }
-
-    clearBridgeTimer();
-    set({ currentState: 'idle', transitionMode: 'bridging' });
-    bridgeTimer = setTimeout(() => {
-      const latest = get();
-      if (latest.desiredState === 'idle') {
-        set({ currentState: 'idle', transitionMode: 'steady' });
-        clearBridgeTimer();
-        return;
-      }
-      set({
-        currentState: latest.desiredState,
-        transitionMode: 'steady',
-      });
-      clearBridgeTimer();
-    }, SPRITE_IDLE_BRIDGE_MS);
+    set({
+      signals: nextSignals,
+      currentState: nextSnapshot.currentState,
+      settledState: nextSnapshot.settledState,
+      requestedState: nextSnapshot.requestedState,
+      transitionMode: nextSnapshot.transitionMode,
+      activeClip: nextSnapshot.activeClip,
+      playbackQueue: nextSnapshot.playbackQueue,
+      queueVersion: nextSnapshot.queueVersion,
+    });
+  },
+  setPlaybackSnapshot: (snapshot) => {
+    set({
+      currentState: snapshot.currentState,
+      settledState: snapshot.settledState,
+      requestedState: snapshot.requestedState,
+      transitionMode: snapshot.transitionMode,
+      activeClip: snapshot.activeClip,
+      playbackQueue: snapshot.playbackQueue,
+      queueVersion: snapshot.queueVersion,
+    });
   },
   getPayload: () => {
-    const state = get().currentState;
-    return buildSpritePayload(get().characterId, state);
+    const {
+      activeClip,
+      characterId,
+      currentState,
+      playbackQueue,
+      queueVersion,
+      requestedState,
+      settledState,
+      transitionMode,
+    } = get();
+    return buildSpritePayload({
+      characterId,
+      currentState,
+      settledState,
+      requestedState,
+      transitionMode,
+      activeClip,
+      playbackQueue,
+      queueVersion,
+    });
   },
 }));

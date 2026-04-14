@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useSpriteStore } from '@/stores/sprite';
+import { createSpritePlaybackSnapshot } from '@/lib/sprite-queue';
 
 describe('sprite store transition routing', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    const initialSnapshot = createSpritePlaybackSnapshot('raccoon', 'idle', 'idle');
     useSpriteStore.setState({
       characterId: 'raccoon',
       signals: {
@@ -15,44 +16,80 @@ describe('sprite store transition routing', () => {
         windowFocused: true,
         documentVisible: true,
       },
-      currentState: 'idle',
-      desiredState: 'idle',
-      transitionMode: 'steady',
+      currentState: initialSnapshot.currentState,
+      settledState: initialSnapshot.settledState,
+      requestedState: initialSnapshot.requestedState,
+      transitionMode: initialSnapshot.transitionMode,
+      activeClip: initialSnapshot.activeClip,
+      playbackQueue: initialSnapshot.playbackQueue,
+      queueVersion: initialSnapshot.queueVersion,
     });
   });
 
-  it('moves from idle to listen directly', () => {
+  it('updates requested state to listen without directly mutating current display state', () => {
     useSpriteStore.getState().setSignals({ inputFocused: true });
-    expect(useSpriteStore.getState().currentState).toBe('listen');
+    expect(useSpriteStore.getState().currentState).toBe('idle');
+    expect(useSpriteStore.getState().requestedState).toBe('listen');
+    expect(useSpriteStore.getState().transitionMode).toBe('bridging');
+    expect(useSpriteStore.getState().playbackQueue.map((clip) => `${clip.state}:${clip.phase}`)).toEqual([
+      'listen:enter',
+      'listen:loop',
+    ]);
   });
 
-  it('routes listen to working through idle first', () => {
-    useSpriteStore.getState().setSignals({ inputFocused: true });
-    expect(useSpriteStore.getState().currentState).toBe('listen');
+  it('marks a non-idle to non-idle change as bridging', () => {
+    useSpriteStore.setState({
+      currentState: 'listen',
+      settledState: 'listen',
+      requestedState: 'listen',
+      transitionMode: 'steady',
+      activeClip: { src: 'listen-loop', state: 'listen', phase: 'loop' },
+      playbackQueue: [{ src: 'listen-loop', state: 'listen', phase: 'loop' }],
+      queueVersion: 1,
+    });
 
     useSpriteStore.getState().setSignals({
       inputFocused: false,
       sending: true,
     });
 
-    expect(useSpriteStore.getState().currentState).toBe('idle');
-    expect(useSpriteStore.getState().desiredState).toBe('working');
-
-    vi.runAllTimers();
-    expect(useSpriteStore.getState().currentState).toBe('working');
+    expect(useSpriteStore.getState().requestedState).toBe('working');
+    expect(useSpriteStore.getState().currentState).toBe('listen');
+    expect(useSpriteStore.getState().transitionMode).toBe('bridging');
+    expect(useSpriteStore.getState().playbackQueue.map((clip) => `${clip.state}:${clip.phase}`)).toEqual([
+      'listen:exit',
+      'idle:loop',
+      'working:enter',
+      'working:loop',
+    ]);
   });
 
-  it('routes sleep to listen through idle first', () => {
-    useSpriteStore.getState().setSignals({ windowFocused: false });
-    expect(useSpriteStore.getState().currentState).toBe('sleep');
+  it('queues sleep exit when focus returns from a settled sleep loop', () => {
+    useSpriteStore.setState({
+      currentState: 'sleep',
+      settledState: 'sleep',
+      requestedState: 'sleep',
+      transitionMode: 'steady',
+      activeClip: { src: 'sleep-loop', state: 'sleep', phase: 'loop' },
+      playbackQueue: [{ src: 'sleep-loop', state: 'sleep', phase: 'loop' }],
+      queueVersion: 2,
+    });
 
     useSpriteStore.getState().setSignals({
       windowFocused: true,
-      inputFocused: true,
+      inputFocused: false,
+      hasDraft: false,
+      sending: false,
+      pendingFinal: false,
+      hasStreaming: false,
+      documentVisible: true,
     });
 
-    expect(useSpriteStore.getState().currentState).toBe('idle');
-    vi.runAllTimers();
-    expect(useSpriteStore.getState().currentState).toBe('listen');
+    expect(useSpriteStore.getState().requestedState).toBe('idle');
+    expect(useSpriteStore.getState().transitionMode).toBe('bridging');
+    expect(useSpriteStore.getState().playbackQueue.map((clip) => `${clip.state}:${clip.phase}`)).toEqual([
+      'sleep:exit',
+      'idle:loop',
+    ]);
   });
 });

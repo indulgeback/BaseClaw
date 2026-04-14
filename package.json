@@ -56,6 +56,7 @@
         "prep:win-binaries": "pnpm run uv:download:win && pnpm run node:download:win",
         "icons": "zx scripts/generate-icons.mjs",
         "rename:brand": "node scripts/rename-brand.mjs",
+        "sprite:convert-webm": "node scripts/convert-sprite-webm-alpha.mjs",
         "package": "vite build && zx scripts/bundle-openclaw.mjs && zx scripts/bundle-openclaw-plugins.mjs && zx scripts/bundle-preinstalled-skills.mjs",
         "package:mac": "pnpm run package && electron-builder --mac --publish never",
         "package:mac:local": "SKIP_PREINSTALLED_SKILLS=1 pnpm run package && electron-builder --mac --publish never",

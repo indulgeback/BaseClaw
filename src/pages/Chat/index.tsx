@@ -50,13 +50,26 @@ export function Chat() {
 
   const cleanupEmptySession = useChatStore((s) => s.cleanupEmptySession);
   const [childTranscripts, setChildTranscripts] = useState<Record<string, RawMessage[]>>({});
-  const [composerPresence, setComposerPresence] = useState({ inputFocused: false, hasDraft: false });
-  const [windowFocused, setWindowFocused] = useState(() => typeof document !== 'undefined' ? document.hasFocus() : true);
-  const [documentVisible, setDocumentVisible] = useState(() => typeof document === 'undefined' ? true : document.visibilityState !== 'hidden');
+  const [composerPresence, setComposerPresence] = useState({
+    inputFocused: false,
+    hasDraft: false,
+  });
+  const [windowFocused, setWindowFocused] = useState(() =>
+    typeof document !== 'undefined' ? document.hasFocus() : true
+  );
+  const [documentVisible, setDocumentVisible] = useState(() =>
+    typeof document === 'undefined' ? true : document.visibilityState !== 'hidden'
+  );
   const spriteEnabled = useSettingsStore((s) => s.spriteEnabled);
   const spriteCharacterId = useSettingsStore((s) => s.spriteCharacterId);
   const currentSpriteState = useSpriteStore((s) => s.currentState);
+  const settledSpriteState = useSpriteStore((s) => s.settledState);
+  const requestedSpriteState = useSpriteStore((s) => s.requestedState);
+  const activeSpriteClip = useSpriteStore((s) => s.activeClip);
+  const spritePlaybackQueue = useSpriteStore((s) => s.playbackQueue);
+  const spriteQueueVersion = useSpriteStore((s) => s.queueVersion);
   const setSpriteCharacterId = useSpriteStore((s) => s.setCharacterId);
+  const setSpritePlaybackSnapshot = useSpriteStore((s) => s.setPlaybackSnapshot);
   const setSpriteSignals = useSpriteStore((s) => s.setSignals);
   const getSpritePayload = useSpriteStore((s) => s.getPayload);
 
@@ -112,7 +125,7 @@ export function Chat() {
       missing.map(async (completion) => {
         try {
           const result = await hostApiFetch<{ success: boolean; messages?: RawMessage[] }>(
-            `/api/sessions/transcript?agentId=${encodeURIComponent(completion.agentId)}&sessionId=${encodeURIComponent(completion.sessionId)}`,
+            `/api/sessions/transcript?agentId=${encodeURIComponent(completion.agentId)}&sessionId=${encodeURIComponent(completion.sessionId)}`
           );
           if (!result.success) {
             console.warn('Failed to load child transcript:', {
@@ -131,7 +144,7 @@ export function Chat() {
           });
           return null;
         }
-      }),
+      })
     ).then((results) => {
       if (cancelled) return;
       setChildTranscripts((current) => {
@@ -161,10 +174,15 @@ export function Chat() {
 
   // Gateway not running block has been completely removed so the UI always renders.
 
-  const streamMsg = streamingMessage && typeof streamingMessage === 'object'
-    ? streamingMessage as unknown as { role?: string; content?: unknown; timestamp?: number }
-    : null;
-  const streamText = streamMsg ? extractText(streamMsg) : (typeof streamingMessage === 'string' ? streamingMessage : '');
+  const streamMsg =
+    streamingMessage && typeof streamingMessage === 'object'
+      ? (streamingMessage as unknown as { role?: string; content?: unknown; timestamp?: number })
+      : null;
+  const streamText = streamMsg
+    ? extractText(streamMsg)
+    : typeof streamingMessage === 'string'
+      ? streamingMessage
+      : '';
   const hasStreamText = streamText.trim().length > 0;
   const streamThinking = streamMsg ? extractThinking(streamMsg) : null;
   const hasStreamThinking = showThinking && !!streamThinking && streamThinking.trim().length > 0;
@@ -173,8 +191,15 @@ export function Chat() {
   const streamImages = streamMsg ? extractImages(streamMsg) : [];
   const hasStreamImages = streamImages.length > 0;
   const hasStreamToolStatus = streamingTools.length > 0;
-  const shouldRenderStreaming = sending && (hasStreamText || hasStreamThinking || hasStreamTools || hasStreamImages || hasStreamToolStatus);
-  const hasAnyStreamContent = hasStreamText || hasStreamThinking || hasStreamTools || hasStreamImages || hasStreamToolStatus;
+  const shouldRenderStreaming =
+    sending &&
+    (hasStreamText ||
+      hasStreamThinking ||
+      hasStreamTools ||
+      hasStreamImages ||
+      hasStreamToolStatus);
+  const hasAnyStreamContent =
+    hasStreamText || hasStreamThinking || hasStreamTools || hasStreamImages || hasStreamToolStatus;
 
   const isEmpty = messages.length === 0 && !sending;
 
@@ -206,7 +231,17 @@ export function Chat() {
       return;
     }
     void invokeIpc('sprite:overlaySyncState', getSpritePayload()).catch(() => {});
-  }, [currentSpriteState, getSpritePayload, spriteEnabled, spriteCharacterId]);
+  }, [
+    activeSpriteClip,
+    currentSpriteState,
+    getSpritePayload,
+    requestedSpriteState,
+    settledSpriteState,
+    spritePlaybackQueue,
+    spriteQueueVersion,
+    spriteEnabled,
+    spriteCharacterId,
+  ]);
 
   const subagentCompletionInfos = messages.map((message) => parseSubagentCompletionInfo(message));
   const nextUserMessageIndexes = new Array<number>(messages.length).fill(-1);
@@ -224,12 +259,15 @@ export function Chat() {
     const nextUserIndex = nextUserMessageIndexes[idx];
     const segmentEnd = nextUserIndex === -1 ? messages.length : nextUserIndex;
     const segmentMessages = messages.slice(idx + 1, segmentEnd);
-    const replyIndexOffset = segmentMessages.findIndex((candidate) => candidate.role === 'assistant');
+    const replyIndexOffset = segmentMessages.findIndex(
+      (candidate) => candidate.role === 'assistant'
+    );
     const replyIndex = replyIndexOffset === -1 ? null : idx + 1 + replyIndexOffset;
     const completionInfos = subagentCompletionInfos
       .slice(idx + 1, segmentEnd)
       .filter((value): value is NonNullable<typeof value> => value != null);
-    const isLatestOpenRun = nextUserIndex === -1 && (sending || pendingFinal || hasAnyStreamContent);
+    const isLatestOpenRun =
+      nextUserIndex === -1 && (sending || pendingFinal || hasAnyStreamContent);
     let steps = deriveTaskSteps({
       messages: segmentMessages,
       streamingMessage: isLatestOpenRun ? streamingMessage : null,
@@ -275,22 +313,30 @@ export function Chat() {
     if (steps.length === 0) return [];
 
     const segmentAgentId = currentAgentId;
-    const segmentAgentLabel = agents.find((agent) => agent.id === segmentAgentId)?.name || segmentAgentId;
+    const segmentAgentLabel =
+      agents.find((agent) => agent.id === segmentAgentId)?.name || segmentAgentId;
     const segmentSessionLabel = sessionLabels[currentSessionKey] || currentSessionKey;
 
-    return [{
-      triggerIndex: idx,
-      replyIndex,
-      active: isLatestOpenRun,
-      agentLabel: segmentAgentLabel,
-      sessionLabel: segmentSessionLabel,
-      segmentEnd: nextUserIndex === -1 ? messages.length - 1 : nextUserIndex - 1,
-      steps,
-    }];
+    return [
+      {
+        triggerIndex: idx,
+        replyIndex,
+        active: isLatestOpenRun,
+        agentLabel: segmentAgentLabel,
+        sessionLabel: segmentSessionLabel,
+        segmentEnd: nextUserIndex === -1 ? messages.length - 1 : nextUserIndex - 1,
+        steps,
+      },
+    ];
   });
 
   return (
-    <div className={cn("relative flex min-h-0 flex-col -m-6 transition-colors duration-500 dark:bg-background")} style={{ height: 'calc(100vh - 2.5rem)' }}>
+    <div
+      className={cn(
+        'relative flex min-h-0 flex-col -m-6 transition-colors duration-500 dark:bg-background'
+      )}
+      style={{ height: 'calc(100vh - 2.5rem)' }}
+    >
       {/* Toolbar */}
       <div className="flex shrink-0 items-center justify-end px-4 py-2">
         <ChatToolbar />
@@ -299,16 +345,6 @@ export function Chat() {
       {/* Messages Area */}
       <div className="min-h-0 flex-1 overflow-hidden px-4 py-4">
         <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-4 xl:flex-row xl:items-stretch">
-          {spriteEnabled && (
-            <div className="xl:hidden">
-              <SpriteStage
-                state={currentSpriteState}
-                characterId={spriteCharacterId}
-                compact
-                className="min-h-[280px]"
-              />
-            </div>
-          )}
           <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">
             <div ref={contentRef} className="max-w-4xl space-y-4">
               {isEmpty ? (
@@ -316,65 +352,73 @@ export function Chat() {
               ) : (
                 <>
                   {messages.map((msg, idx) => {
-                    const suppressToolCards = userRunCards.some((card) =>
-                      idx > card.triggerIndex && idx <= card.segmentEnd,
+                    const suppressToolCards = userRunCards.some(
+                      (card) => idx > card.triggerIndex && idx <= card.segmentEnd
                     );
                     return (
-                    <div
-                      key={msg.id || `msg-${idx}`}
-                      className="space-y-3"
-                      id={`chat-message-${idx}`}
-                      data-testid={`chat-message-${idx}`}
-                    >
-                      <ChatMessage
-                        message={msg}
-                        showThinking={showThinking}
-                        suppressToolCards={suppressToolCards}
-                        suppressProcessAttachments={suppressToolCards}
-                      />
-                      {userRunCards
-                        .filter((card) => card.triggerIndex === idx)
-                        .map((card) => (
-                          <ExecutionGraphCard
-                            key={`graph-${idx}`}
-                            agentLabel={card.agentLabel}
-                            sessionLabel={card.sessionLabel}
-                            steps={card.steps}
-                            active={card.active}
-                            onJumpToTrigger={() => {
-                              document.getElementById(`chat-message-${card.triggerIndex}`)?.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                              });
-                            }}
-                            onJumpToReply={() => {
-                              if (card.replyIndex == null) return;
-                              document.getElementById(`chat-message-${card.replyIndex}`)?.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                              });
-                            }}
-                          />
-                        ))}
-                    </div>
+                      <div
+                        key={msg.id || `msg-${idx}`}
+                        className="space-y-3"
+                        id={`chat-message-${idx}`}
+                        data-testid={`chat-message-${idx}`}
+                      >
+                        <ChatMessage
+                          message={msg}
+                          showThinking={showThinking}
+                          suppressToolCards={suppressToolCards}
+                          suppressProcessAttachments={suppressToolCards}
+                        />
+                        {userRunCards
+                          .filter((card) => card.triggerIndex === idx)
+                          .map((card) => (
+                            <ExecutionGraphCard
+                              key={`graph-${idx}`}
+                              agentLabel={card.agentLabel}
+                              sessionLabel={card.sessionLabel}
+                              steps={card.steps}
+                              active={card.active}
+                              onJumpToTrigger={() => {
+                                document
+                                  .getElementById(`chat-message-${card.triggerIndex}`)
+                                  ?.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                  });
+                              }}
+                              onJumpToReply={() => {
+                                if (card.replyIndex == null) return;
+                                document
+                                  .getElementById(`chat-message-${card.replyIndex}`)
+                                  ?.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                  });
+                              }}
+                            />
+                          ))}
+                      </div>
                     );
                   })}
 
                   {/* Streaming message */}
                   {shouldRenderStreaming && (
                     <ChatMessage
-                      message={(streamMsg
-                        ? {
-                            ...(streamMsg as Record<string, unknown>),
-                            role: (typeof streamMsg.role === 'string' ? streamMsg.role : 'assistant') as RawMessage['role'],
-                            content: streamMsg.content ?? streamText,
-                            timestamp: streamMsg.timestamp ?? streamingTimestamp,
-                          }
-                        : {
-                            role: 'assistant',
-                            content: streamText,
-                            timestamp: streamingTimestamp,
-                          }) as RawMessage}
+                      message={
+                        (streamMsg
+                          ? {
+                              ...(streamMsg as Record<string, unknown>),
+                              role: (typeof streamMsg.role === 'string'
+                                ? streamMsg.role
+                                : 'assistant') as RawMessage['role'],
+                              content: streamMsg.content ?? streamText,
+                              timestamp: streamMsg.timestamp ?? streamingTimestamp,
+                            }
+                          : {
+                              role: 'assistant',
+                              content: streamText,
+                              timestamp: streamingTimestamp,
+                            }) as RawMessage
+                      }
                       showThinking={showThinking}
                       isStreaming
                       streamingTools={streamingTools}
@@ -387,25 +431,28 @@ export function Chat() {
                   )}
 
                   {/* Typing indicator when sending but no stream content yet */}
-                  {sending && !pendingFinal && !hasAnyStreamContent && (
-                    <TypingIndicator />
-                  )}
+                  {sending && !pendingFinal && !hasAnyStreamContent && <TypingIndicator />}
                 </>
               )}
             </div>
           </div>
           {spriteEnabled && (
-            <div className="hidden min-h-0 xl:block xl:w-[320px] xl:shrink-0">
-              <div className="sticky top-0">
+            <div className="hidden min-h-0 items-start justify-center bg-transparent xl:flex xl:w-[300px] xl:shrink-0">
+              <div className="sticky top-6">
                 <SpriteStage
                   state={currentSpriteState}
+                  settledState={settledSpriteState}
                   characterId={spriteCharacterId}
-                  className="min-h-[520px]"
+                  requestedState={requestedSpriteState}
+                  activeClip={activeSpriteClip}
+                  playbackQueue={spritePlaybackQueue}
+                  queueVersion={spriteQueueVersion}
+                  className="h-[300px] w-[300px]"
+                  onPlaybackChange={setSpritePlaybackSnapshot}
                 />
               </div>
             </div>
           )}
-
         </div>
       </div>
 
@@ -473,7 +520,7 @@ function WelcomeScreen() {
 
       <div className="flex w-full max-w-xl flex-wrap items-center justify-center gap-2.5">
         {quickActions.map(({ key, label }) => (
-          <button 
+          <button
             key={key}
             className="rounded-full border border-black/10 bg-white/55 px-4 py-2 text-[13px] font-medium text-foreground/72 transition-colors hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
           >
@@ -495,9 +542,18 @@ function TypingIndicator() {
       </div>
       <div className="bg-black/5 dark:bg-white/5 text-foreground rounded-2xl px-4 py-3">
         <div className="flex gap-1">
-          <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <span
+            className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+            style={{ animationDelay: '0ms' }}
+          />
+          <span
+            className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+            style={{ animationDelay: '150ms' }}
+          />
+          <span
+            className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+            style={{ animationDelay: '300ms' }}
+          />
         </div>
       </div>
     </div>

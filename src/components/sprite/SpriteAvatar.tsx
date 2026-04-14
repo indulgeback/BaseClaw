@@ -23,8 +23,8 @@ export function SpriteAvatar({
   state: SpriteState;
   compact?: boolean;
 }) {
-  const sizeClasses = compact ? 'h-40 w-40' : 'h-56 w-56';
-  const faceSize = compact ? 'h-28 w-28' : 'h-36 w-36';
+  const sizeClasses = compact ? 'h-52 w-52' : 'h-56 w-56';
+  const faceSize = compact ? 'h-36 w-36' : 'h-36 w-36';
   const eyeClass = state === 'sleep' ? 'h-0.5 w-3 rounded-full bg-slate-800/80' : 'h-3 w-3 rounded-full bg-slate-900';
   const bobY = state === 'sleep' ? [0, 2, 0] : [0, -6, 0];
   const bobDuration = state === 'working' ? 2.1 : state === 'listen' ? 2.4 : 3.2;

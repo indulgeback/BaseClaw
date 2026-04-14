@@ -16,9 +16,13 @@
     "title": "Sprite Companion",
     "description": "Keep the raccoon guide visible across the chat experience and the floating desk companion.",
     "overlay": "Floating Sprite",
-    "overlayDesc": "Show the transparent desktop companion window on supported platforms.",
-    "showOverlay": "Show Sprite",
+    "overlayDesc": "Show the transparent desktop companion window on supported platforms, and re-enable it here after closing it.",
+    "locked": "Lock Overlay",
+    "lockedDesc": "Locking disables clicks, dragging, and the context menu until you come back here to unlock it.",
     "characterHint": "V1 ships with one raccoon character. The character system is ready for future swaps.",
+    "overlaySettingsHint": "Showing and hiding the overlay is now controlled only by the switch above.",
+    "unlockHint": "The overlay is locked. Turn off the lock here before interacting with it again.",
+    "reopenHint": "The overlay is closed. Re-enable the floating sprite here before showing it again.",
     "overlayPlatformHint": "Desktop overlay is currently available on macOS and Windows."
   },
   "aiProviders": {

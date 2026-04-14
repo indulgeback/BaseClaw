@@ -56,7 +56,10 @@ const electronAPI = {
         'sprite:overlayToggle',
         'sprite:overlayApplyPreference',
         'sprite:overlayGetState',
+        'sprite:overlaySetLocked',
         'sprite:focusMainWindow',
+        'sprite:overlayDragStart',
+        'sprite:overlayDragEnd',
         // Settings
         'settings:get',
         'settings:set',

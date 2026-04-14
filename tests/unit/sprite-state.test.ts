@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSpritePayload, deriveSpriteState, DEFAULT_SPRITE_SIGNALS } from '@/lib/sprite';
+import { createSpritePlaybackSnapshot } from '@/lib/sprite-queue';
 
 describe('sprite state derivation', () => {
   it('maps idle when no higher-priority signal is present', () => {
@@ -37,9 +38,13 @@ describe('sprite state derivation', () => {
   });
 
   it('builds the raccoon payload for overlay sync', () => {
-    const payload = buildSpritePayload('raccoon', 'idle');
+    const payload = buildSpritePayload(
+      createSpritePlaybackSnapshot('raccoon', 'idle', 'idle'),
+    );
     expect(payload.characterId).toBe('raccoon');
     expect(payload.state).toBe('idle');
+    expect(payload.requestedState).toBe('idle');
+    expect(payload.settledState).toBe('idle');
     expect(payload.title).toBeTruthy();
     expect(payload.subtitle).toBeTruthy();
   });
