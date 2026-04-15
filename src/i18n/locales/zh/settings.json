@@ -13,13 +13,12 @@
     "launchAtStartupDesc": "登录系统后自动启动 SpriteClaw"
   },
   "sprite": {
-    "title": "Sprite 陪伴层",
-    "description": "让小浣熊精灵贯穿聊天体验与悬浮桌宠窗口。",
+    "title": "悬浮精灵",
+    "description": "管理桌面悬浮层小浣熊的显示与交互方式。",
     "overlay": "悬浮精灵",
     "overlayDesc": "在支持的平台上显示透明桌面陪伴窗口，关闭后也需要在这里重新打开。",
     "locked": "锁定悬浮层",
     "lockedDesc": "锁定后不再响应点击、拖拽和右键菜单，如需解锁只能回到这里操作。",
-    "characterHint": "V1 先提供一个小浣熊角色，角色系统已为未来切换做好预留。",
     "overlaySettingsHint": "悬浮层显示与隐藏现在统一由上方开关控制。",
     "unlockHint": "当前已锁定，如需恢复交互请先关闭上方“锁定悬浮层”。",
     "reopenHint": "悬浮层已关闭，如需重新显示请先重新打开“悬浮精灵”。",

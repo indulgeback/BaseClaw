@@ -21,7 +21,6 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useStickToBottomInstant } from '@/hooks/use-stick-to-bottom-instant';
 import { useMinLoading } from '@/hooks/use-min-loading';
-import { SpriteStage } from '@/components/sprite/SpriteStage';
 import { useSettingsStore } from '@/stores/settings';
 import { useSpriteStore } from '@/stores/sprite';
 import { invokeIpc } from '@/lib/api-client';
@@ -60,7 +59,6 @@ export function Chat() {
   const [documentVisible, setDocumentVisible] = useState(() =>
     typeof document === 'undefined' ? true : document.visibilityState !== 'hidden'
   );
-  const spriteEnabled = useSettingsStore((s) => s.spriteEnabled);
   const spriteCharacterId = useSettingsStore((s) => s.spriteCharacterId);
   const currentSpriteState = useSpriteStore((s) => s.currentState);
   const settledSpriteState = useSpriteStore((s) => s.settledState);
@@ -69,7 +67,6 @@ export function Chat() {
   const spritePlaybackQueue = useSpriteStore((s) => s.playbackQueue);
   const spriteQueueVersion = useSpriteStore((s) => s.queueVersion);
   const setSpriteCharacterId = useSpriteStore((s) => s.setCharacterId);
-  const setSpritePlaybackSnapshot = useSpriteStore((s) => s.setPlaybackSnapshot);
   const setSpriteSignals = useSpriteStore((s) => s.setSignals);
   const getSpritePayload = useSpriteStore((s) => s.getPayload);
 
@@ -226,10 +223,6 @@ export function Chat() {
   ]);
 
   useEffect(() => {
-    if (!spriteEnabled) {
-      void invokeIpc('sprite:overlayHide').catch(() => {});
-      return;
-    }
     void invokeIpc('sprite:overlaySyncState', getSpritePayload()).catch(() => {});
   }, [
     activeSpriteClip,
@@ -239,7 +232,6 @@ export function Chat() {
     settledSpriteState,
     spritePlaybackQueue,
     spriteQueueVersion,
-    spriteEnabled,
     spriteCharacterId,
   ]);
 
@@ -436,23 +428,6 @@ export function Chat() {
               )}
             </div>
           </div>
-          {spriteEnabled && (
-            <div className="hidden min-h-0 items-start justify-center bg-transparent xl:flex xl:w-[300px] xl:shrink-0">
-              <div className="sticky top-6">
-                <SpriteStage
-                  state={currentSpriteState}
-                  settledState={settledSpriteState}
-                  characterId={spriteCharacterId}
-                  requestedState={requestedSpriteState}
-                  activeClip={activeSpriteClip}
-                  playbackQueue={spritePlaybackQueue}
-                  queueVersion={spriteQueueVersion}
-                  className="h-[300px] w-[300px]"
-                  onPlaybackChange={setSpritePlaybackSnapshot}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
