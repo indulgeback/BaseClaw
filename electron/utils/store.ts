@@ -52,7 +52,6 @@ export interface AppSettings {
   // UI State
   sidebarCollapsed: boolean;
   devModeUnlocked: boolean;
-  spriteEnabled: boolean;
   spriteOverlayEnabled: boolean;
   spriteOverlayLocked: boolean;
   spriteCharacterId: SpriteCharacterId;
@@ -108,7 +107,6 @@ function createDefaultSettings(): AppSettings {
     // UI State
     sidebarCollapsed: false,
     devModeUnlocked: false,
-    spriteEnabled: true,
     spriteOverlayEnabled: true,
     spriteOverlayLocked: false,
     spriteCharacterId: 'raccoon',

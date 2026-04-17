@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 38 61% 96%;
-    --foreground: 24 28% 14%;
-    --card: 34 58% 99%;
-    --card-foreground: 24 28% 14%;
-    --popover: 34 58% 99%;
-    --popover-foreground: 24 28% 14%;
-    --primary: 28 84% 56%;
-    --primary-foreground: 48 100% 98%;
-    --secondary: 41 38% 92%;
-    --secondary-foreground: 24 28% 18%;
-    --muted: 38 34% 92%;
-    --muted-foreground: 20 12% 42%;
-    --accent: 80 42% 90%;
-    --accent-foreground: 24 28% 16%;
-    --destructive: 0 76% 58%;
+    --background: 0 0% 99%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 14%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 12%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 210 40% 98%;
-    --border: 30 31% 86%;
-    --input: 30 31% 86%;
-    --ring: 28 84% 56%;
+    --border: 0 0% 87%;
+    --input: 0 0% 87%;
+    --ring: 0 0% 12%;
     --radius: 1rem;
   }
 
   .dark {
-    --background: 20 18% 9%;
-    --foreground: 38 38% 96%;
-    --card: 22 16% 12%;
-    --card-foreground: 38 38% 96%;
-    --popover: 22 16% 12%;
-    --popover-foreground: 38 38% 96%;
-    --primary: 27 86% 60%;
-    --primary-foreground: 26 40% 10%;
-    --secondary: 20 14% 18%;
-    --secondary-foreground: 38 38% 96%;
-    --muted: 18 13% 18%;
-    --muted-foreground: 32 12% 70%;
-    --accent: 90 26% 22%;
-    --accent-foreground: 38 38% 96%;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 96%;
     --destructive: 0 62% 44%;
-    --destructive-foreground: 38 38% 96%;
-    --border: 22 14% 22%;
-    --input: 22 14% 18%;
-    --ring: 27 86% 60%;
+    --destructive-foreground: 0 0% 96%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 92%;
   }
 }
 
@@ -59,17 +59,17 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     margin: 0;
     background-image:
-      radial-gradient(circle at top left, rgba(255, 207, 143, 0.22), transparent 28%),
-      radial-gradient(circle at top right, rgba(186, 230, 253, 0.18), transparent 24%),
-      linear-gradient(180deg, rgba(255, 251, 235, 0.82), rgba(255, 247, 237, 0.65) 42%, rgba(255, 255, 255, 0.4));
+      radial-gradient(circle at top left, rgba(0, 0, 0, 0.035), transparent 28%),
+      radial-gradient(circle at top right, rgba(0, 0, 0, 0.02), transparent 22%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 247, 0.98));
     background-attachment: fixed;
   }
 
   .dark body {
     background-image:
-      radial-gradient(circle at top left, rgba(251, 146, 60, 0.12), transparent 28%),
-      radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 20%),
-      linear-gradient(180deg, rgba(37, 26, 23, 0.96), rgba(20, 17, 17, 0.98));
+      radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 26%),
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.03), transparent 22%),
+      linear-gradient(180deg, rgba(12, 12, 12, 0.98), rgba(17, 17, 17, 0.98));
   }
 
   body.sprite-transparent-surface {
@@ -106,6 +106,54 @@
   @apply bg-muted-foreground/30;
 }
 
+.sidebar-scrollbar {
+  scrollbar-color: rgba(0, 0, 0, 0.26) transparent;
+  scrollbar-width: thin;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.34));
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.48));
+  background-clip: padding-box;
+}
+
+.dark .sidebar-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  background-clip: padding-box;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12));
+  background-clip: padding-box;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.22));
+  background-clip: padding-box;
+}
+
 /* macOS traffic light spacing */
 .drag-region {
   -webkit-app-region: drag;
@@ -123,6 +171,26 @@
 /* Focus ring */
 .focus-ring {
   @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}
+
+.app-surface {
+  @apply rounded-3xl border border-black/[0.08] bg-card text-card-foreground shadow-[0_18px_40px_rgba(0,0,0,0.06)] dark:border-white/[0.08] dark:bg-card dark:shadow-[0_18px_40px_rgba(0,0,0,0.24)];
+}
+
+.app-subtle-surface {
+  @apply rounded-2xl border border-black/[0.06] bg-muted/70 text-foreground shadow-sm dark:border-white/[0.08] dark:bg-muted/80;
+}
+
+.app-field {
+  @apply rounded-xl border border-input bg-background text-foreground shadow-sm transition-all placeholder:text-foreground/35 focus-visible:border-foreground/20 focus-visible:ring-2 focus-visible:ring-ring/20;
+}
+
+.app-subtle-button {
+  @apply border border-black/10 bg-transparent text-foreground/80 shadow-none hover:bg-accent hover:text-accent-foreground dark:border-white/10;
+}
+
+.app-link {
+  @apply text-foreground/70 underline-offset-4 transition-colors hover:text-foreground hover:underline;
 }
 
 /* Prose styling for markdown */

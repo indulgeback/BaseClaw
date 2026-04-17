@@ -1,7 +1,7 @@
 {
     "steps": {
         "welcome": {
-            "title": "欢迎使用 SpriteClaw",
+            "title": "欢迎使用 PokeClaw",
             "description": "您的 AI 助手已准备好进行配置"
         },
         "runtime": {
@@ -22,12 +22,12 @@
         },
         "complete": {
             "title": "准备就绪！",
-            "description": "SpriteClaw 已准备好使用"
+            "description": "PokeClaw 已准备好使用"
         }
     },
     "welcome": {
-        "title": "欢迎使用 SpriteClaw",
-        "description": "SpriteClaw 是 OpenClaw 的图形界面，让您可以在喜爱的消息平台上轻松使用 AI 助手。",
+        "title": "欢迎使用 PokeClaw",
+        "description": "PokeClaw 是 OpenClaw 的图形界面，让您可以在喜爱的消息平台上轻松使用 AI 助手。",
         "features": {
             "noCommand": "无需命令行",
             "modernUI": "现代美观的界面",
@@ -71,7 +71,6 @@
         "codePlanMode": "Code Plan",
         "useCodePlanPreset": "使用 Ark Code Plan 预设",
         "codePlanPresetDesc": "Code Plan 使用 https://ark.cn-beijing.volces.com/api/coding/v3 与模型 ark-code-latest。请勿把 /api/v3 用于 Code Plan 流量。",
-        "codePlanDoc": "Code Plan 文档",
         "protocol": "协议",
         "protocols": {
             "openaiCompletions": "OpenAI Completions",
@@ -113,7 +112,7 @@
     },
     "complete": {
         "title": "设置完成！",
-        "subtitle": "SpriteClaw 已配置并准备就绪。您现在可以开始与您的 AI 助手聊天了。",
+        "subtitle": "PokeClaw 已配置并准备就绪。您现在可以开始与您的 AI 助手聊天了。",
         "provider": "AI 提供商",
         "components": "组件",
         "gateway": "网关",

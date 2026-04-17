@@ -57,10 +57,11 @@ function NavItem({ to, icon, label, badge, collapsed, onClick, testId }: NavItem
       data-testid={testId}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors',
-          'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
+          'group relative flex min-h-10 items-center gap-2.5 rounded-[14px] px-3 py-2 text-[14px] font-medium transition-all duration-200',
+          'text-foreground/70 hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
+          'dark:text-foreground/70 dark:hover:bg-accent dark:hover:shadow-none',
           isActive
-            ? 'bg-black/5 dark:bg-white/10 text-foreground'
+            ? 'bg-card text-foreground shadow-[0_10px_28px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] dark:bg-card dark:shadow-none dark:ring-white/[0.06]'
             : '',
           collapsed && 'justify-center px-0'
         )
@@ -68,14 +69,28 @@ function NavItem({ to, icon, label, badge, collapsed, onClick, testId }: NavItem
     >
       {({ isActive }) => (
         <>
-          <div className={cn("flex shrink-0 items-center justify-center", isActive ? "text-foreground" : "text-muted-foreground")}>
+          <span
+            className={cn(
+              'absolute left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-foreground transition-opacity',
+              isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
+              collapsed && 'left-1'
+            )}
+          />
+          <div
+            className={cn(
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] transition-all duration-200',
+              isActive
+                ? 'bg-foreground/10 text-foreground'
+                : 'text-muted-foreground group-hover:bg-accent group-hover:text-foreground',
+            )}
+          >
             {icon}
           </div>
           {!collapsed && (
             <>
-              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{label}</span>
+              <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap tracking-[-0.01em]">{label}</span>
               {badge && (
-                <Badge variant="secondary" className="ml-auto shrink-0">
+                <Badge variant="secondary" className="ml-auto shrink-0 rounded-full bg-accent text-[10px]">
                   {badge}
                 </Badge>
               )}
@@ -220,25 +235,42 @@ export function Sidebar() {
     <aside
       data-testid="sidebar"
       className={cn(
-        'flex min-h-0 shrink-0 flex-col overflow-hidden border-r bg-[#eae8e1]/60 dark:bg-background transition-all duration-300',
-        'backdrop-blur-xl border-black/5 dark:border-white/10',
-        sidebarCollapsed ? 'w-16' : 'w-64'
+        'relative isolate flex min-h-0 shrink-0 flex-col overflow-hidden border-r transition-[width] duration-300 ease-out',
+        'border-border bg-background text-foreground shadow-[inset_-1px_0_0_rgba(255,255,255,0.4)]',
+        'dark:border-border dark:bg-background dark:shadow-none',
+        sidebarCollapsed ? 'w-[68px]' : 'w-[268px]'
       )}
     >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_22%_0%,rgba(255,255,255,0.88),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.94),rgba(247,247,247,0.98))] dark:bg-[radial-gradient(circle_at_18%_0%,rgba(255,255,255,0.04),transparent_30%),linear-gradient(180deg,rgba(18,18,18,0.98),rgba(11,11,11,0.98))]"
+      />
       {/* Top Header Toggle */}
-      <div className={cn("flex items-center p-2 h-12", sidebarCollapsed ? "justify-center" : "justify-between")}>
+      <div className={cn("flex h-16 items-center px-3", sidebarCollapsed ? "justify-center" : "justify-between")}>
         {!sidebarCollapsed && (
-          <div className="flex items-center gap-2 px-2 overflow-hidden">
-            <img src={logoSvg} alt="SpriteClaw" className="h-5 w-auto shrink-0" />
-            <span className="text-sm font-semibold truncate whitespace-nowrap text-foreground/90">
-              SpriteClaw
-            </span>
+          <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-card shadow-[0_10px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] dark:shadow-none dark:ring-white/[0.08]">
+              <img src={logoSvg} alt="PokeClaw" className="h-5 w-auto shrink-0" />
+            </div>
+            <div className="min-w-0">
+              <span className="block truncate whitespace-nowrap text-[15px] font-semibold tracking-[-0.02em] text-foreground">
+                PokeClaw
+              </span>
+              <span className="block truncate text-[11px] font-medium uppercase tracking-[0.18em] text-foreground/45">
+                Desktop
+              </span>
+            </div>
           </div>
         )}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10"
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className={cn(
+            'h-9 w-9 shrink-0 rounded-[12px] text-muted-foreground transition-all duration-200',
+            'hover:bg-accent hover:text-foreground hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)]',
+            'dark:hover:bg-accent dark:hover:shadow-none',
+          )}
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         >
           {sidebarCollapsed ? (
@@ -250,7 +282,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-col px-2 gap-0.5">
+      <nav className="flex flex-col gap-1 px-3">
         <button
           data-testid="sidebar-new-chat"
           onClick={() => {
@@ -259,15 +291,16 @@ export function Sidebar() {
             navigate('/');
           }}
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors mb-2',
-            'bg-black/5 dark:bg-accent shadow-none border border-transparent text-foreground',
+            'group mb-2 flex min-h-11 w-full items-center gap-2.5 rounded-[16px] px-3 py-2 text-[14px] font-semibold transition-all duration-200',
+            'border border-black/10 bg-primary text-primary-foreground shadow-[0_14px_34px_rgba(0,0,0,0.14)] hover:-translate-y-0.5 hover:bg-primary/92',
+            'dark:border-white/[0.08] dark:bg-primary dark:text-primary-foreground dark:shadow-none dark:hover:bg-primary/92',
             sidebarCollapsed && 'justify-center px-0',
           )}
         >
-          <div className="flex shrink-0 items-center justify-center text-foreground/80">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] bg-white/12 text-primary-foreground dark:bg-white/[0.08] dark:text-primary-foreground">
             <Plus className="h-[18px] w-[18px]" strokeWidth={2} />
           </div>
-          {!sidebarCollapsed && <span className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap">{t('sidebar.newChat')}</span>}
+          {!sidebarCollapsed && <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left tracking-[-0.01em]">{t('sidebar.newChat')}</span>}
         </button>
 
         {navItems.map((item) => (
@@ -281,11 +314,11 @@ export function Sidebar() {
 
       {/* Session list — below Settings, only when expanded */}
       {!sidebarCollapsed && sessions.length > 0 && (
-        <div className="mt-4 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-2 space-y-0.5">
+        <div className="sidebar-scrollbar mt-4 flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 pb-3">
           {sessionBuckets.map((bucket) => (
             bucket.sessions.length > 0 ? (
               <div key={bucket.key} className="pt-2">
-                <div className="px-2.5 pb-1 text-[11px] font-medium text-muted-foreground/60 tracking-tight">
+                <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground/38">
                   {bucket.label}
                 </div>
                 {bucket.sessions.map((s) => {
@@ -296,15 +329,15 @@ export function Sidebar() {
                       <button
                         onClick={() => { switchSession(s.key); navigate('/'); }}
                         className={cn(
-                          'w-full text-left rounded-lg px-2.5 py-1.5 text-[13px] transition-colors pr-7',
-                          'hover:bg-black/5 dark:hover:bg-white/5',
+                          'w-full rounded-[14px] px-3 py-2 pr-8 text-left text-[13px] transition-all duration-200',
+                          'hover:bg-accent hover:shadow-[0_8px_20px_rgba(0,0,0,0.05)] dark:hover:bg-accent dark:hover:shadow-none',
                           isOnChat && currentSessionKey === s.key
-                            ? 'bg-black/5 dark:bg-white/10 text-foreground font-medium'
-                            : 'text-foreground/75',
+                            ? 'bg-card font-medium text-foreground shadow-[0_8px_20px_rgba(0,0,0,0.07)] dark:bg-card dark:shadow-none'
+                            : 'text-foreground/70',
                         )}
                       >
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="shrink-0 rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] font-medium text-foreground/70 dark:bg-white/[0.08]">
+                          <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-foreground/55">
                             {agentName}
                           </span>
                           <span className="truncate">{getSessionLabel(s.key, s.displayName, s.label)}</span>
@@ -320,7 +353,7 @@ export function Sidebar() {
                           });
                         }}
                         className={cn(
-                          'absolute right-1 flex items-center justify-center rounded p-0.5 transition-opacity',
+                          'absolute right-1.5 flex items-center justify-center rounded-lg p-1 transition-opacity',
                           'opacity-0 group-hover:opacity-100',
                           'text-muted-foreground hover:text-destructive hover:bg-destructive/10',
                         )}
@@ -337,25 +370,37 @@ export function Sidebar() {
       )}
 
       {/* Footer */}
-      <div className="p-2 mt-auto">
+      <div className="mt-auto border-t border-black/[0.06] p-3 dark:border-white/[0.07]">
         <NavLink
             to="/settings"
             data-testid="sidebar-nav-settings"
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors',
-                'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
-                isActive && 'bg-black/5 dark:bg-white/10 text-foreground',
+                'group relative flex min-h-10 items-center gap-2.5 rounded-[14px] px-3 py-2 text-[14px] font-medium transition-all duration-200',
+                'text-foreground/70 hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
+                'dark:text-foreground/70 dark:hover:bg-accent dark:hover:shadow-none',
+                isActive && 'bg-card text-foreground shadow-[0_10px_28px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] dark:bg-card dark:shadow-none dark:ring-white/[0.06]',
                 sidebarCollapsed ? 'justify-center px-0' : ''
               )
             }
           >
           {({ isActive }) => (
             <>
-              <div className={cn("flex shrink-0 items-center justify-center", isActive ? "text-foreground" : "text-muted-foreground")}>
+              <span
+                className={cn(
+              'absolute left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-foreground transition-opacity',
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
+                )}
+              />
+              <div className={cn(
+                'flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] transition-all duration-200',
+                isActive
+                  ? 'bg-foreground/10 text-foreground'
+                  : 'text-muted-foreground group-hover:bg-accent group-hover:text-foreground'
+              )}>
                 <SettingsIcon className="h-[18px] w-[18px]" strokeWidth={2} />
               </div>
-              {!sidebarCollapsed && <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{t('sidebar.settings')}</span>}
+              {!sidebarCollapsed && <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap tracking-[-0.01em]">{t('sidebar.settings')}</span>}
             </>
           )}
         </NavLink>
@@ -364,13 +409,14 @@ export function Sidebar() {
           data-testid="sidebar-open-dev-console"
           variant="ghost"
           className={cn(
-            'flex items-center gap-2.5 rounded-lg px-2.5 py-2 h-auto text-[14px] font-medium transition-colors w-full mt-1',
-            'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
+            'group mt-1 flex h-auto w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-[14px] font-medium transition-all duration-200',
+            'text-foreground/62 hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
+            'dark:hover:bg-accent dark:hover:shadow-none',
             sidebarCollapsed ? 'justify-center px-0' : 'justify-start'
           )}
           onClick={openDevConsole}
         >
-          <div className="flex shrink-0 items-center justify-center text-muted-foreground">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground transition-colors group-hover:text-foreground">
             <Terminal className="h-[18px] w-[18px]" strokeWidth={2} />
           </div>
           {!sidebarCollapsed && (

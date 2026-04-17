@@ -99,6 +99,7 @@ test.describe('SpriteClaw overlay sprite', () => {
     const overlaySwitch = page.getByTestId('settings-sprite-overlay-switch');
     const lockSwitch = page.getByTestId('settings-sprite-locked-switch');
 
+    await expect(page.getByTestId('settings-sprite-enabled-switch')).toHaveCount(0);
     await expect(overlaySwitch).toBeVisible();
     await expect(lockSwitch).toBeVisible();
 

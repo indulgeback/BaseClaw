@@ -1,7 +1,7 @@
 {
     "steps": {
         "welcome": {
-            "title": "SpriteClawへようこそ",
+            "title": "PokeClawへようこそ",
             "description": "AIアシスタントの設定準備が整いました"
         },
         "runtime": {
@@ -22,12 +22,12 @@
         },
         "complete": {
             "title": "完了！",
-            "description": "SpriteClawを使用する準備が整いました"
+            "description": "PokeClawを使用する準備が整いました"
         }
     },
     "welcome": {
-        "title": "SpriteClawへようこそ",
-        "description": "SpriteClawはOpenClawのグラフィカルインターフェースで、お気に入りのメッセージングプラットフォームでAIアシスタントを簡単に使用できます。",
+        "title": "PokeClawへようこそ",
+        "description": "PokeClawはOpenClawのグラフィカルインターフェースで、お気に入りのメッセージングプラットフォームでAIアシスタントを簡単に使用できます。",
         "features": {
             "noCommand": "コマンドライン不要",
             "modernUI": "モダンで美しいインターフェース",
@@ -71,7 +71,6 @@
         "codePlanMode": "Code Plan",
         "useCodePlanPreset": "Ark Code Plan プリセットを使用",
         "codePlanPresetDesc": "Code Plan は https://ark.cn-beijing.volces.com/api/coding/v3 と model ark-code-latest を使います。Code Plan 通信に /api/v3 を使わないでください。",
-        "codePlanDoc": "Code Plan ドキュメント",
         "protocol": "プロトコル",
         "protocols": {
             "openaiCompletions": "OpenAI Completions",
@@ -113,7 +112,7 @@
     },
     "complete": {
         "title": "セットアップ完了！",
-        "subtitle": "SpriteClawの構成が完了し、使用準備が整いました。AIアシスタントとのチャットを開始できます。",
+        "subtitle": "PokeClawの構成が完了し、使用準備が整いました。AIアシスタントとのチャットを開始できます。",
         "provider": "AI プロバイダー",
         "components": "コンポーネント",
         "gateway": "ゲートウェイ",

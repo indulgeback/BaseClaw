@@ -39,7 +39,6 @@ interface SettingsState {
   // UI State
   sidebarCollapsed: boolean;
   devModeUnlocked: boolean;
-  spriteEnabled: boolean;
   spriteOverlayEnabled: boolean;
   spriteOverlayLocked: boolean;
   spriteCharacterId: SpriteCharacterId;
@@ -68,7 +67,6 @@ interface SettingsState {
   setAutoDownloadUpdate: (value: boolean) => void;
   setSidebarCollapsed: (value: boolean) => void;
   setDevModeUnlocked: (value: boolean) => void;
-  setSpriteEnabled: (value: boolean) => void;
   setSpriteOverlayEnabled: (value: boolean) => void;
   setSpriteOverlayLocked: (value: boolean) => void;
   setSpriteCharacterId: (value: SpriteCharacterId) => void;
@@ -96,7 +94,6 @@ const defaultSettings = {
   autoDownloadUpdate: false,
   sidebarCollapsed: false,
   devModeUnlocked: false,
-  spriteEnabled: true,
   spriteOverlayEnabled: true,
   spriteOverlayLocked: false,
   spriteCharacterId: 'raccoon' as SpriteCharacterId,
@@ -189,13 +186,6 @@ export const useSettingsStore = create<SettingsState>()(
         void hostApiFetch('/api/settings/devModeUnlocked', {
           method: 'PUT',
           body: JSON.stringify({ value: devModeUnlocked }),
-        }).catch(() => { });
-      },
-      setSpriteEnabled: (spriteEnabled) => {
-        set({ spriteEnabled });
-        void hostApiFetch('/api/settings/spriteEnabled', {
-          method: 'PUT',
-          body: JSON.stringify({ value: spriteEnabled }),
         }).catch(() => { });
       },
       setSpriteOverlayEnabled: (spriteOverlayEnabled) => {

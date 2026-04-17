@@ -124,10 +124,10 @@ function App() {
   // Redirect to setup wizard if not complete
   useEffect(() => {
     if (
-      !setupComplete
-      && !skipSetupForE2E
-      && !location.pathname.startsWith('/setup')
-      && !location.pathname.startsWith('/sprite-overlay')
+      !setupComplete &&
+      !skipSetupForE2E &&
+      !location.pathname.startsWith('/setup') &&
+      !location.pathname.startsWith('/sprite-overlay')
     ) {
       navigate('/setup');
     }

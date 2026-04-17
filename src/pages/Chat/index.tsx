@@ -484,7 +484,7 @@ function WelcomeScreen() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
       <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-foreground/55 dark:border-white/10 dark:bg-white/5">
-        SpriteClaw Companion
+        PokeClaw Companion
       </div>
       <h1 className="mb-4 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
         A softer desk for serious runs.

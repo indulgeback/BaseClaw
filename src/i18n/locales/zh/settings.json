@@ -1,6 +1,6 @@
 {
   "title": "设置",
-  "subtitle": "配置您的 SpriteClaw 体验",
+  "subtitle": "配置您的 PokeClaw 体验",
   "appearance": {
     "title": "通用",
     "description": "自定义外观和风格",
@@ -10,7 +10,7 @@
     "system": "跟随系统",
     "language": "语言",
     "launchAtStartup": "开机自动启动",
-    "launchAtStartupDesc": "登录系统后自动启动 SpriteClaw"
+    "launchAtStartupDesc": "登录系统后自动启动 PokeClaw"
   },
   "sprite": {
     "title": "悬浮精灵",
@@ -49,7 +49,7 @@
     "notRequired": "非必填",
     "empty": {
       "title": "未配置提供商",
-      "desc": "添加 AI 提供商以开始使用 SpriteClaw",
+      "desc": "添加 AI 提供商以开始使用 PokeClaw",
       "cta": "添加您的第一个提供商"
     },
     "dialog": {
@@ -68,7 +68,6 @@
       "codePlanMode": "Code Plan",
       "useCodePlanPreset": "使用 Ark Code Plan 预设",
       "codePlanPresetDesc": "Code Plan 使用 https://ark.cn-beijing.volces.com/api/coding/v3 与模型 ark-code-latest。请勿把 /api/v3 用于 Code Plan 流量。",
-      "codePlanDoc": "Code Plan 文档",
       "protocol": "协议",
       "advancedConfig": "高级配置",
       "userAgent": "User-Agent",
@@ -83,7 +82,6 @@
       "change": "更换提供商",
       "add": "添加提供商",
       "save": "保存",
-      "customDoc": "查看文档",
       "validate": "验证"
     },
     "card": {
@@ -146,7 +144,7 @@
     "appLogs": "应用日志",
     "openFolder": "打开文件夹",
     "autoStart": "自动启动网关",
-    "autoStartDesc": "SpriteClaw 启动时自动启动网关",
+    "autoStartDesc": "PokeClaw 启动时自动启动网关",
     "proxyTitle": "代理",
     "proxyDesc": "让 Electron 和 Gateway 的网络请求都走本地代理客户端。",
     "proxyServer": "代理服务器",
@@ -167,34 +165,8 @@
   },
   "updates": {
     "title": "更新",
-    "description": "保持 SpriteClaw 最新",
-    "autoCheck": "自动检查更新",
-    "autoCheckDesc": "启动时检查更新",
-    "autoDownload": "自动更新",
-    "autoDownloadDesc": "自动下载并安装更新",
-    "status": {
-      "checking": "正在检查更新...",
-      "downloading": "正在下载更新...",
-      "available": "可用更新：v{{version}}",
-      "downloaded": "准备安装：v{{version}}",
-      "autoInstalling": "将在 {{seconds}} 秒后重启并安装更新...",
-      "failed": "检查更新失败",
-      "latest": "您已拥有最新版本",
-      "check": "检查更新以获取最新功能"
-    },
-    "action": {
-      "checking": "检查中...",
-      "downloading": "下载中...",
-      "download": "下载更新",
-      "install": "安装并重启",
-      "cancelAutoInstall": "取消",
-      "retry": "重试",
-      "check": "检查更新"
-    },
     "currentVersion": "当前版本",
-    "whatsNew": "更新内容：",
-    "errorDetails": "错误详情：",
-    "help": "开启自动更新后，更新将自动下载并安装。"
+    "loading": "加载中..."
   },
   "advanced": {
     "title": "高级",
@@ -221,7 +193,7 @@
     "devMode": "开发者模式",
     "devModeDesc": "显示开发者工具和快捷方式",
     "telemetry": "匿名使用数据",
-    "telemetryDesc": "允许提供匿名的基础使用数据，用于改进 SpriteClaw"
+    "telemetryDesc": "允许提供匿名的基础使用数据，用于改进 PokeClaw"
   },
   "developer": {
     "title": "开发者",
@@ -283,7 +255,7 @@
   },
   "about": {
     "title": "关于",
-    "appName": "SpriteClaw",
+    "appName": "PokeClaw",
     "tagline": "图形化 AI 助手",
     "basedOn": "基于 OpenClaw",
     "version": "版本 {{version}}",

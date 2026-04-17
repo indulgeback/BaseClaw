@@ -54,7 +54,7 @@ function WindowsTitleBar() {
     <div className="drag-region flex h-10 shrink-0 items-center justify-between border-b border-black/5 bg-background/80 px-3 backdrop-blur-xl dark:border-white/10">
       <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.26em] text-foreground/50">
         <span className="inline-block h-2 w-2 rounded-full bg-primary/80" />
-        SpriteClaw
+        PokeClaw
       </div>
 
       {/* Right: Window Controls */}

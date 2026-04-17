@@ -12,7 +12,7 @@ This directory contains the application icons for all supported platforms.
 | `icon.png` | All | 512x512 PNG fallback |
 | `16x16.png` - `512x512.png` | Linux | PNG set for Linux |
 | `tray-icon-template.svg` | Source | macOS tray icon template source |
-| `tray-icon-Template.png` | macOS | 22x22 status bar icon (note: "Template" suffix required) |
+| `tray-icon-Template.png` | macOS | 22x22 status bar icon with inner padding (note: "Template" suffix required) |
 
 ## Generating Icons
 
@@ -64,7 +64,8 @@ If you prefer to generate icons manually:
 
 ### macOS Tray Icon
 - **Format**: Single-color (black) on transparent background
-- **Size**: 22x22 pixels (system automatically handles @2x retina)
+- **Canvas**: 22x22 pixels (system automatically handles @2x retina)
+- **Glyph Size**: Target ~18px within the 22px canvas to preserve comfortable menu bar padding
 - **Naming**: Must end with "Template.png" for automatic template mode
 - **Design**: Simplified monochrome version of main icon (SpriteClaw logo)
 - **Source**: Use `tray-icon-template.svg` as the source

@@ -11,6 +11,8 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const ICONS_DIR = path.join(PROJECT_ROOT, 'resources', 'icons');
 const SVG_SOURCE = path.join(ICONS_DIR, 'icon.svg');
+const TRAY_CANVAS_SIZE = 22;
+const TRAY_GLYPH_SIZE = 18;
 
 echo`🎨 Generating ClawX icons using Node.js...`;
 
@@ -82,11 +84,22 @@ try {
   const TRAY_SVG_SOURCE = path.join(ICONS_DIR, 'tray-icon-template.svg');
   
   if (fs.existsSync(TRAY_SVG_SOURCE)) {
+    const trayPadding = TRAY_CANVAS_SIZE - TRAY_GLYPH_SIZE;
     await sharp(TRAY_SVG_SOURCE)
-      .resize(22, 22)
+      .resize(TRAY_GLYPH_SIZE, TRAY_GLYPH_SIZE, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .extend({
+        top: Math.floor(trayPadding / 2),
+        bottom: Math.ceil(trayPadding / 2),
+        left: Math.floor(trayPadding / 2),
+        right: Math.ceil(trayPadding / 2),
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
       .png()
       .toFile(path.join(ICONS_DIR, 'tray-icon-Template.png'));
-    echo`  ✅ Created tray-icon-Template.png (22x22)`;
+    echo`  ✅ Created tray-icon-Template.png (${TRAY_CANVAS_SIZE}x${TRAY_CANVAS_SIZE}, ${TRAY_GLYPH_SIZE}px glyph)`;
   } else {
     echo`  ⚠️  tray-icon-template.svg not found, skipping tray icon generation`;
   }

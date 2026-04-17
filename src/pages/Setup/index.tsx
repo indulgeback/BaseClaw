@@ -97,7 +97,6 @@ import {
   type ProviderAccount,
   type ProviderType,
   type ProviderTypeInfo,
-  getProviderDocsUrl,
   getProviderIconUrl,
   normalizeProviderApiKeyInput,
   resolveProviderApiKeyForSave,
@@ -327,7 +326,7 @@ function WelcomeContent() {
   return (
     <div data-testid="setup-welcome-step" className="text-center space-y-4">
       <div className="mb-4 flex justify-center">
-        <img src={clawxIcon} alt="SpriteClaw" className="h-16 w-16" />
+        <img src={clawxIcon} alt="PokeClaw" className="h-16 w-16" />
       </div>
       <h2 className="text-xl font-semibold">{t('welcome.title')}</h2>
       <p className="text-muted-foreground">
@@ -715,7 +714,7 @@ function ProviderContent({
   onApiKeyChange,
   onConfiguredChange,
 }: ProviderContentProps) {
-  const { t, i18n } = useTranslation(['setup', 'settings']);
+  const { t } = useTranslation(['setup', 'settings']);
   const devModeUnlocked = useSettingsStore((state) => state.devModeUnlocked);
   const [showKey, setShowKey] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -991,10 +990,6 @@ function ProviderContent({
   }, [providerMenuOpen]);
 
   const selectedProviderData = providers.find((p) => p.id === selectedProvider);
-  const providerDocsUrl = getProviderDocsUrl(selectedProviderData, i18n.language);
-  const effectiveProviderDocsUrl = selectedProvider === 'ark' && arkMode === 'codeplan'
-    ? (selectedProviderData?.codePlanDocsUrl || providerDocsUrl)
-    : providerDocsUrl;
   const selectedProviderIconUrl = selectedProviderData
     ? getProviderIconUrl(selectedProviderData.id)
     : undefined;
@@ -1175,20 +1170,7 @@ function ProviderContent({
     <div className="space-y-6">
       {/* Provider selector — dropdown */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <Label>{t('provider.label')}</Label>
-          {selectedProvider && effectiveProviderDocsUrl && (
-            <a
-              href={effectiveProviderDocsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[13px] text-blue-500 hover:text-blue-600 font-medium inline-flex items-center gap-1"
-            >
-              {t('settings:aiProviders.dialog.customDoc')}
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          )}
-        </div>
+        <Label>{t('provider.label')}</Label>
         <div className="relative" ref={providerMenuRef}>
           <button
             type="button"
@@ -1277,20 +1259,7 @@ function ProviderContent({
         >
           {codePlanPreset && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <Label>{t('provider.codePlanPreset')}</Label>
-                {selectedProviderData?.codePlanDocsUrl && (
-                  <a
-                    href={selectedProviderData.codePlanDocsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[13px] text-blue-500 hover:text-blue-600 font-medium inline-flex items-center gap-1"
-                  >
-                    {t('provider.codePlanDoc')}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
+              <Label>{t('provider.codePlanPreset')}</Label>
               <div className="flex gap-2 text-sm">
                 <button
                   type="button"
@@ -1487,14 +1456,14 @@ function ProviderContent({
           {/* Device OAuth Trigger */}
           {useOAuthFlow && (
             <div className="space-y-4 pt-2">
-              <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-4 text-center">
-                <p className="text-sm text-blue-200 mb-3 block">
+              <div className="app-subtle-surface p-4 text-center">
+                <p className="mb-3 block text-sm text-foreground/70">
                   This provider requires signing in via your browser.
                 </p>
                 <Button
                   onClick={handleStartOAuth}
                   disabled={oauthFlowing}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full"
                 >
                   {oauthFlowing ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Waiting...</>

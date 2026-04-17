@@ -22,12 +22,12 @@
         },
         "complete": {
             "title": "Готово!",
-            "description": "ClawX готов к использованию"
+            "description": "PokeClaw готов к использованию"
         }
     },
     "welcome": {
-        "title": "Добро пожаловать в ClawX",
-        "description": "ClawX — это графический интерфейс для OpenClaw, упрощающий использование AI-ассистентов через ваши любимые платформы обмена сообщениями.",
+        "title": "Добро пожаловать в PokeClaw",
+        "description": "PokeClaw — это графический интерфейс для OpenClaw, упрощающий использование AI-ассистентов через ваши любимые платформы обмена сообщениями.",
         "features": {
             "noCommand": "Без командной строки",
             "modernUI": "Современный красивый интерфейс",
@@ -71,7 +71,6 @@
         "codePlanMode": "Code Plan",
         "useCodePlanPreset": "Использовать пресет Ark Code Plan",
         "codePlanPresetDesc": "Code Plan использует https://ark.cn-beijing.volces.com/api/coding/v3 и модель ark-code-latest. Не используйте /api/v3 для трафика Code Plan.",
-        "codePlanDoc": "Документация Code Plan",
         "protocol": "Протокол",
         "protocols": {
             "openaiCompletions": "OpenAI Completions",
@@ -113,7 +112,7 @@
     },
     "complete": {
         "title": "Настройка завершена!",
-        "subtitle": "ClawX настроен и готов к использованию. Теперь вы можете начать общение с вашим AI-ассистентом.",
+        "subtitle": "PokeClaw настроен и готов к использованию. Теперь вы можете начать общение с вашим AI-ассистентом.",
         "provider": "AI-провайдер",
         "components": "Компоненты",
         "gateway": "Шлюз",
