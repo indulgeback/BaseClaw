@@ -2,29 +2,23 @@
 
 ## Branch
 
-`dev`
+`main`
 
 ## Purpose
 
-This branch is the BaseClaw shared layer. It sits between the upstream mirror branch and each variant branch.
-
-Use this branch for:
-
-- BaseClaw-wide branding
-- shared scripts and tooling
-- shared infrastructure for all variants
-- fixes that should benefit every downstream variant
-
-Do not use this branch for a single variant's custom UI, assets, or product behavior.
+This branch remains the upstream mirror branch for BaseClaw. It should only absorb upstream `ClawX/main` changes and should not carry BaseClaw or variant-specific customization.
 
 ## Source
 
-- Merged from local `main`
-- Local result on this branch: `cef1ba1`
+- Upstream remote: `https://github.com/ValueCell-ai/ClawX.git`
+- Upstream branch: `main`
+- Local result on this branch: `2fefbf3`
 
-## What Was Absorbed From Main
+## What Was Synced
 
-This sync brought the latest upstream `ClawX/main` updates into `dev`, including:
+This sync moved `main` forward from `fc9e37c` to `2fefbf3`.
+
+The upstream range included:
 
 - `v0.3.9` release changes
 - channel health diagnostics and gateway recovery updates
@@ -34,23 +28,15 @@ This sync brought the latest upstream `ClawX/main` updates into `dev`, including
 - Russian localization assets and screenshots
 - new E2E and unit tests
 
-The merge completed without manual conflict resolution.
+## Notes For Maintainers
 
-## What Dev Owners Should Review First
-
-- shared provider registry changes
-- channel and cron behavior changes
-- gateway diagnostics additions
-- new tests that may need to be preserved in downstream branches
+- Do not add branding changes on `main`.
+- Do not add variant files on `main`.
+- If a future sync conflicts here, treat it as a warning sign that custom changes leaked into the mirror branch.
 
 ## Next Step In The Branch Chain
 
-After updating `dev`, each variant branch should merge `dev` and then review:
-
-- branding files
-- custom assets
-- variant-specific UI
-- variant-only docs
+After updating `main`, merge `main` into `dev`.
 
 Reference:
 
