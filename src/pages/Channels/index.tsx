@@ -114,21 +114,22 @@ function removeDeletedTarget(groups: ChannelGroupItem[], target: DeleteTarget): 
   return groups.filter((group) => group.channelType !== target.channelType);
 }
 
+const DEFAULT_GATEWAY_HEALTH: GatewayHealthSummary = {
+  state: 'healthy',
+  reasons: [],
+  consecutiveHeartbeatMisses: 0,
+};
+
 export function Channels() {
   const { t } = useTranslation('channels');
   const gatewayStatus = useGatewayStore((state) => state.status);
   const lastGatewayStateRef = useRef(gatewayStatus.state);
-  const defaultGatewayHealth = useMemo<GatewayHealthSummary>(() => ({
-    state: 'healthy',
-    reasons: [],
-    consecutiveHeartbeatMisses: 0,
-  }), []);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [channelGroups, setChannelGroups] = useState<ChannelGroupItem[]>([]);
   const [agents, setAgents] = useState<AgentItem[]>([]);
-  const [gatewayHealth, setGatewayHealth] = useState<GatewayHealthSummary>(defaultGatewayHealth);
+  const [gatewayHealth, setGatewayHealth] = useState<GatewayHealthSummary>(DEFAULT_GATEWAY_HEALTH);
   const [diagnosticsSnapshot, setDiagnosticsSnapshot] = useState<GatewayDiagnosticSnapshot | null>(null);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
@@ -208,7 +209,7 @@ export function Channels() {
 
       setChannelGroups(channelsPayload.channels || []);
       setAgents(agentsRes.agents || []);
-      setGatewayHealth(channelsPayload.gatewayHealth || defaultGatewayHealth);
+      setGatewayHealth(channelsPayload.gatewayHealth || DEFAULT_GATEWAY_HEALTH);
       setDiagnosticsSnapshot(null);
       setShowDiagnostics(false);
       console.info(
@@ -406,20 +407,8 @@ export function Channels() {
     [diagnosticsSnapshot],
   );
 
-  const statusTone = useCallback((status: ChannelGroupItem['status']) => {
-    switch (status) {
-      case 'connected':
-        return 'bg-green-500/10 text-green-700 dark:text-green-300 border-green-500/20';
-      case 'connecting':
-        return 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20';
-      case 'degraded':
-        return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20';
-      case 'error':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      default:
-        return 'bg-black/5 dark:bg-white/5 text-muted-foreground border-black/10 dark:border-white/10';
-    }
-  }, []);
+
+
 
   const statusLabel = useCallback((status: ChannelGroupItem['status']) => {
     return t(`account.connectionStatus.${status}`);
@@ -627,11 +616,24 @@ export function Channels() {
                           <h3 className="text-[16px] font-semibold text-foreground truncate">
                             {CHANNEL_NAMES[group.channelType as ChannelType] || group.channelType}
                           </h3>
-                          <p className="text-[12px] text-muted-foreground">{group.channelType}</p>
+                          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                            <span>{group.channelType}</span>
+                            <span className="w-1 h-1 rounded-full bg-black/20 dark:bg-white/20" />
+                            <span className="flex items-center gap-1">
+                              <span
+                                className={cn(
+                                  'inline-block h-1.5 w-1.5 rounded-full shrink-0',
+                                  group.status === 'connected' && 'bg-green-500',
+                                  group.status === 'connecting' && 'bg-sky-500 animate-pulse',
+                                  group.status === 'degraded' && 'bg-yellow-500',
+                                  group.status === 'error' && 'bg-red-500',
+                                  group.status === 'disconnected' && 'bg-gray-400',
+                                )}
+                              />
+                              {statusLabel(group.status)}
+                            </span>
+                          </div>
                         </div>
-                        <Badge className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-medium', statusTone(group.status))}>
-                          {statusLabel(group.status)}
-                        </Badge>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -683,9 +685,6 @@ export function Channels() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <p className="text-[13px] font-medium text-foreground truncate">{displayName}</p>
-                                <Badge className={cn('rounded-full border px-2 py-0.5 text-[10px] font-medium', statusTone(account.status))}>
-                                  {statusLabel(account.status)}
-                                </Badge>
                               </div>
                               {account.lastError && (
                                 <div className="text-[12px] text-destructive mt-1">{account.lastError}</div>
