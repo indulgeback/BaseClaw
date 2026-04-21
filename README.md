@@ -168,11 +168,13 @@ pnpm dev
 When you launch SpriteClaw for the first time, the **Setup Wizard** will guide you through:
 
 1. **Language & Region** – Configure your preferred locale
-2. **AI Provider** – Add providers with API keys or OAuth (for providers that support browser/device login)
-3. **Skill Bundles** – Select pre-configured skills for common use cases
-4. **Verification** – Test your configuration before entering the main interface
+2. **Environment Check** – Verify the bundled runtime and gateway prerequisites
+3. **Essential Skills** – Install the default skill bundle used by the app
+4. **Finish** – Enter the main interface once setup completes
 
 The wizard preselects your system language when it is supported, and falls back to English otherwise.
+
+AI providers and channels can be configured later from **Settings** after the app opens.
 
 > Note for Moonshot (Kimi): SpriteClaw keeps Kimi web search enabled by default.  
 > When Moonshot is configured, SpriteClaw also syncs Kimi web search to the China endpoint (`https://api.moonshot.cn/v1`) in OpenClaw config.
