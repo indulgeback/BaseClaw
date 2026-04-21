@@ -7,6 +7,27 @@ test.describe('ClawX Electron smoke flows', () => {
     await expect(page.getByTestId('setup-skip-button')).toBeVisible();
   });
 
+  test('uses the PokeClaw shell brand for app and window titles', async ({ electronApp, page }) => {
+    await expect(page.getByTestId('setup-page')).toBeVisible();
+
+    const shellBrand = await electronApp.evaluate(({ BrowserWindow, Menu, app }) => {
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      return {
+        appName: app.getName(),
+        menuLabel: process.platform === 'darwin'
+          ? Menu.getApplicationMenu()?.items[0]?.label ?? null
+          : null,
+        windowTitle: mainWindow?.getTitle() ?? null,
+      };
+    });
+
+    expect(shellBrand.appName).toBe('PokeClaw');
+    expect(shellBrand.windowTitle).toBe('PokeClaw');
+    if (process.platform === 'darwin') {
+      expect(shellBrand.menuLabel).toBe('PokeClaw');
+    }
+  });
+
   test('can skip setup and navigate to the models page', async ({ page }) => {
     await expect(page.getByTestId('setup-page')).toBeVisible();
     await page.getByTestId('setup-skip-button').click();

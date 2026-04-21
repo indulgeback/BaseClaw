@@ -4,6 +4,7 @@
  */
 import { Tray, Menu, BrowserWindow, app, nativeImage } from 'electron';
 import { join } from 'path';
+import { APP_BRAND_NAME, TRAY_TOOLTIP } from './branding';
 import type { SpriteOverlayManager } from './sprite-overlay';
 
 let tray: Tray | null = null;
@@ -58,7 +59,7 @@ export function createTray(mainWindow: BrowserWindow, spriteOverlayManager?: Spr
   tray = new Tray(icon);
   
   // Set tooltip
-  tray.setToolTip('SpriteClaw - Sprite Assistant');
+  tray.setToolTip(TRAY_TOOLTIP);
   
   const showWindow = () => {
     if (mainWindow.isDestroyed()) return;
@@ -69,7 +70,7 @@ export function createTray(mainWindow: BrowserWindow, spriteOverlayManager?: Spr
   // Create context menu
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show SpriteClaw',
+      label: `Show ${APP_BRAND_NAME}`,
       click: showWindow,
     },
     ...(spriteOverlayManager ? [
@@ -127,17 +128,7 @@ export function createTray(mainWindow: BrowserWindow, spriteOverlayManager?: Spr
       type: 'separator',
     },
     {
-      label: 'Check for Updates...',
-      click: () => {
-        if (mainWindow.isDestroyed()) return;
-        mainWindow.webContents.send('update:check');
-      },
-    },
-    {
-      type: 'separator',
-    },
-    {
-      label: 'Quit SpriteClaw',
+      label: `Quit ${APP_BRAND_NAME}`,
       click: () => {
         app.quit();
       },
@@ -172,7 +163,7 @@ export function createTray(mainWindow: BrowserWindow, spriteOverlayManager?: Spr
  */
 export function updateTrayStatus(status: string): void {
   if (tray) {
-    tray.setToolTip(`SpriteClaw - ${status}`);
+    tray.setToolTip(`${APP_BRAND_NAME} - ${status}`);
   }
 }
 

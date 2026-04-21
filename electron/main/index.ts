@@ -7,6 +7,7 @@ import type { Server } from 'node:http';
 import { join } from 'path';
 import { GatewayManager } from '../gateway/manager';
 import { registerIpcHandlers } from './ipc-handlers';
+import { APP_BRAND_NAME } from './branding';
 import { createTray } from './tray';
 import { createMenu } from './menu';
 
@@ -52,6 +53,9 @@ const requestedUserDataDir = process.env.CLAWX_USER_DATA_DIR?.trim();
 if (isE2EMode && requestedUserDataDir) {
   app.setPath('userData', requestedUserDataDir);
 }
+
+// Keep Electron's internal app name aligned with the branded shell UI.
+app.setName(APP_BRAND_NAME);
 
 // Disable GPU hardware acceleration globally for maximum stability across
 // all GPU configurations (no GPU, integrated, discrete).

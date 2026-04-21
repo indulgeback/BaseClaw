@@ -3,19 +3,21 @@
  * Creates the native application menu for macOS/Windows/Linux
  */
 import { Menu, app, shell, BrowserWindow } from 'electron';
+import { APP_BRAND_NAME } from './branding';
 
 /**
  * Create application menu
  */
 export function createMenu(): void {
   const isMac = process.platform === 'darwin';
+  const appMenuLabel = app.name || APP_BRAND_NAME;
   
   const template: Electron.MenuItemConstructorOptions[] = [
     // App menu (macOS only)
     ...(isMac
       ? [
           {
-            label: app.name,
+            label: appMenuLabel,
             submenu: [
               { role: 'about' as const },
               { type: 'separator' as const },

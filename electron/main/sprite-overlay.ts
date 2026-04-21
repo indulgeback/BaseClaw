@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { logger } from '../utils/logger';
 import { getSetting, setSetting } from '../utils/store';
+import { SPRITE_OVERLAY_WINDOW_TITLE } from './branding';
 import type {
   SpriteOverlayBounds,
   SpriteOverlaySettings,
@@ -144,7 +145,7 @@ export class SpriteOverlayManager {
       alwaysOnTop: true,
       hasShadow: false,
       roundedCorners: false,
-      title: 'SpriteClaw Sprite',
+      title: SPRITE_OVERLAY_WINDOW_TITLE,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         nodeIntegration: false,
