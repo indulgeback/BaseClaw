@@ -198,6 +198,7 @@ export function Agents() {
               {t('refresh')}
             </Button>
             <Button
+              data-testid="agents-add-agent"
               onClick={() => setShowAddDialog(true)}
               className="h-9 text-[13px] font-medium rounded-full px-4 shadow-none"
             >
@@ -316,6 +317,7 @@ function AgentCard({
 
   return (
     <div
+      data-testid={`agent-card-${agent.id}`}
       className={cn(
         'group flex items-start gap-4 p-4 rounded-2xl transition-all text-left border relative overflow-hidden bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/5',
         agent.isDefault && 'bg-black/[0.04] dark:bg-white/[0.06]'
@@ -341,6 +343,7 @@ function AgentCard({
           <div className="flex items-center gap-1 shrink-0">
             {!agent.isDefault && (
               <Button
+                data-testid={`agent-delete-${agent.id}`}
                 variant="ghost"
                 size="icon"
                 className="opacity-0 group-hover:opacity-100 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
@@ -351,6 +354,7 @@ function AgentCard({
               </Button>
             )}
             <Button
+              data-testid={`agent-settings-${agent.id}`}
               variant="ghost"
               size="icon"
               className={cn(
@@ -432,7 +436,7 @@ function AddAgentDialog({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="app-surface w-full max-w-md overflow-hidden border-0">
+      <Card data-testid="add-agent-dialog-content" className="app-surface w-full max-w-md overflow-hidden border-0">
         <CardHeader className="pb-2">
           <CardTitle className="text-2xl font-serif font-normal tracking-tight">
             {t('createDialog.title')}
@@ -467,6 +471,7 @@ function AddAgentDialog({
             <Button
               variant="outline"
               onClick={onClose}
+              data-testid="add-agent-dialog-cancel"
               className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
             >
               {t('common:actions.cancel')}
@@ -551,7 +556,10 @@ function AgentSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card
+        data-testid="agent-settings-modal-content"
+        className="app-surface w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border-0"
+      >
         <CardHeader className="flex flex-row items-start justify-between pb-2 shrink-0">
           <div>
             <CardTitle className="text-2xl font-serif font-normal tracking-tight">
@@ -587,7 +595,7 @@ function AgentSettingsModal({
                     variant="outline"
                     onClick={() => void handleSaveName()}
                     disabled={savingName || !name.trim() || name.trim() === agent.name}
-                    className="h-[44px] text-[13px] font-medium rounded-xl px-4 border-black/10 dark:border-white/10 bg-[#eeece3] dark:bg-muted hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+                    className="app-subtle-button h-[44px] rounded-xl px-4 text-[13px] font-medium"
                   >
                     {savingName ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -607,6 +615,7 @@ function AgentSettingsModal({
                 <p className="font-mono text-[13px] text-foreground">{agent.id}</p>
               </div>
               <button
+                data-testid="agent-model-open"
                 type="button"
                 onClick={() => setShowModelModal(true)}
                 className="space-y-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-transparent p-4 text-left hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
@@ -826,7 +835,10 @@ function AgentModelModal({
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-xl rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card
+        data-testid="agent-model-modal-content"
+        className="app-surface w-full max-w-xl overflow-hidden border-0"
+      >
         <CardHeader className="flex flex-row items-start justify-between pb-2">
           <div>
             <CardTitle className="text-2xl font-serif font-normal tracking-tight">

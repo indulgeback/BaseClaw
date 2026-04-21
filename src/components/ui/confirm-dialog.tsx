@@ -1,8 +1,9 @@
 /**
- * ConfirmDialog - In-DOM confirmation dialog (replaces window.confirm)
- * Keeps focus within the renderer to avoid Windows focus loss after native dialogs.
+ * ConfirmDialog - renderer-local confirmation dialog (replaces window.confirm)
+ * Rendered via a portal so it stays above page-level stacking contexts.
  */
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -71,17 +72,19 @@ export function ConfirmDialog({
     }
   };
 
-  return (
+  const dialog = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      data-testid="confirm-dialog-overlay"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       onKeyDown={handleKeyDown}
     >
       <div
+        data-testid="confirm-dialog-content"
         className={cn(
-          'mx-4 max-w-md rounded-lg border bg-card p-6 shadow-lg',
+          'app-surface mx-4 max-w-md border-0 p-6',
           'focus:outline-none'
         )}
         tabIndex={-1}
@@ -110,4 +113,10 @@ export function ConfirmDialog({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return dialog;
+  }
+
+  return createPortal(dialog, document.body);
 }
