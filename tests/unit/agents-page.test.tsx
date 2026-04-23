@@ -1,6 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { Agents } from '../../src/pages/Agents/index';
 
 const hostApiFetchMock = vi.fn();
@@ -74,7 +75,8 @@ vi.mock('@/lib/host-events', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,
+    i18n: { language: 'en', resolvedLanguage: 'en' },
   }),
 }));
 
@@ -85,6 +87,22 @@ vi.mock('sonner', () => ({
     warning: vi.fn(),
   },
 }));
+
+function renderAgents() {
+  return render(
+    <MemoryRouter>
+      <Agents />
+    </MemoryRouter>,
+  );
+}
+
+function agentsView() {
+  return (
+    <MemoryRouter>
+      <Agents />
+    </MemoryRouter>
+  );
+}
 
 describe('Agents page status refresh', () => {
   beforeEach(() => {
@@ -115,7 +133,7 @@ describe('Agents page status refresh', () => {
       return vi.fn();
     });
 
-    render(<Agents />);
+    renderAgents();
 
     await waitFor(() => {
       expect(fetchAgentsMock).toHaveBeenCalledTimes(1);
@@ -136,7 +154,7 @@ describe('Agents page status refresh', () => {
   it('refetches channel accounts when the gateway transitions to running after mount', async () => {
     gatewayState.status = { state: 'starting', port: 18789 };
 
-    const { rerender } = render(<Agents />);
+    const { rerender } = renderAgents();
 
     await waitFor(() => {
       expect(fetchAgentsMock).toHaveBeenCalledTimes(1);
@@ -145,7 +163,7 @@ describe('Agents page status refresh', () => {
 
     gatewayState.status = { state: 'running', port: 18789 };
     await act(async () => {
-      rerender(<Agents />);
+      rerender(agentsView());
     });
 
     await waitFor(() => {
@@ -157,16 +175,16 @@ describe('Agents page status refresh', () => {
   it('uses "Use default model" as form fill only and disables it when already default', async () => {
     agentsState.agents = [
       {
-        id: 'main',
-        name: 'Main',
+        id: 'anthropologist',
+        name: 'Anthropologist',
         isDefault: true,
         modelDisplay: 'claude-opus-4.6',
         modelRef: 'openrouter/anthropic/claude-opus-4.6',
         overrideModelRef: null,
         inheritedModel: true,
-        workspace: '~/.openclaw/workspace',
-        agentDir: '~/.openclaw/agents/main/agent',
-        mainSessionKey: 'agent:main:desk',
+        workspace: '~/.openclaw/agency-agents/anthropologist',
+        agentDir: '~/.openclaw/agents/anthropologist/agent',
+        mainSessionKey: 'agent:anthropologist:desk',
         channelTypes: [],
       },
     ];
@@ -189,7 +207,7 @@ describe('Agents page status refresh', () => {
     ];
     providersState.defaultAccountId = 'openrouter-default';
 
-    render(<Agents />);
+    renderAgents();
 
     await waitFor(() => {
       expect(fetchAgentsMock).toHaveBeenCalledTimes(1);
@@ -218,30 +236,30 @@ describe('Agents page status refresh', () => {
   it('keeps the last agent snapshot visible while a refresh is in flight', async () => {
     agentsState.agents = [
       {
-        id: 'main',
-        name: 'Main',
+        id: 'anthropologist',
+        name: 'Anthropologist',
         isDefault: true,
         modelDisplay: 'gpt-5',
         modelRef: 'openai/gpt-5',
         overrideModelRef: null,
         inheritedModel: true,
-        workspace: '~/.openclaw/workspace',
-        agentDir: '~/.openclaw/agents/main/agent',
-        mainSessionKey: 'agent:main:main',
+        workspace: '~/.openclaw/agency-agents/anthropologist',
+        agentDir: '~/.openclaw/agents/anthropologist/agent',
+        mainSessionKey: 'agent:anthropologist:main',
         channelTypes: [],
       },
     ];
 
-    const { rerender } = render(<Agents />);
+    const { rerender } = renderAgents();
 
-    expect(await screen.findByText('Main')).toBeInTheDocument();
+    expect(await screen.findByText('Anthropologist')).toBeInTheDocument();
 
     agentsState.loading = true;
     await act(async () => {
-      rerender(<Agents />);
+      rerender(agentsView());
     });
 
-    expect(screen.getByText('Main')).toBeInTheDocument();
+    expect(screen.getByText('Anthropologist')).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
@@ -251,7 +269,7 @@ describe('Agents page status refresh', () => {
     refreshProviderSnapshotMock.mockImplementation(() => new Promise(() => {}));
     hostApiFetchMock.mockImplementation(() => new Promise(() => {}));
 
-    const { container } = render(<Agents />);
+    const { container } = renderAgents();
 
     expect(container.querySelector('svg.animate-spin')).toBeTruthy();
     expect(screen.queryByText('title')).not.toBeInTheDocument();

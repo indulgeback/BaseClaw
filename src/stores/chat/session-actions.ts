@@ -1,4 +1,5 @@
 import { invokeIpc } from '@/lib/api-client';
+import { useAgentsStore } from '@/stores/agents';
 import { getCanonicalPrefixFromSessions, getMessageText, toMs } from './helpers';
 import { DEFAULT_CANONICAL_PREFIX, DEFAULT_SESSION_KEY, type ChatSession, type RawMessage } from './types';
 import type { ChatGet, ChatSet, SessionHistoryActions } from './store-api';
@@ -9,6 +10,42 @@ function getAgentIdFromSessionKey(sessionKey: string): string {
   if (!sessionKey.startsWith('agent:')) return 'main';
   const [, agentId] = sessionKey.split(':');
   return agentId || 'main';
+}
+
+function normalizeAgentId(value: string | undefined | null): string {
+  return (value ?? '').trim().toLowerCase() || 'main';
+}
+
+function getCanonicalPrefixFromSessionKey(sessionKey: string): string | null {
+  if (!sessionKey.startsWith('agent:')) return null;
+  const parts = sessionKey.split(':');
+  if (parts.length < 2) return null;
+  return `${parts[0]}:${parts[1]}`;
+}
+
+function resolveCanonicalPrefixForAgent(agentId: string | undefined | null): string | null {
+  if (!agentId) return null;
+  const normalizedAgentId = normalizeAgentId(agentId);
+  const summary = useAgentsStore.getState().agents.find((agent) => agent.id === normalizedAgentId);
+  if (summary?.mainSessionKey) {
+    return getCanonicalPrefixFromSessionKey(summary.mainSessionKey);
+  }
+  return `agent:${normalizedAgentId}`;
+}
+
+function hasOnlyLocalIntroMessages(messages: RawMessage[]): boolean {
+  return messages.length > 0 && messages.every((message) => message._localKind === 'agent-intro');
+}
+
+function isDisposableEmptySession(
+  sessionKey: string,
+  messages: RawMessage[],
+  sessionLabels: Record<string, string>,
+  sessionLastActivity: Record<string, number>,
+): boolean {
+  if (sessionKey.endsWith(':main') || sessionLabels[sessionKey]) return false;
+  if (hasOnlyLocalIntroMessages(messages)) return true;
+  return messages.length === 0 && !sessionLastActivity[sessionKey];
 }
 
 function parseSessionUpdatedAtMs(value: unknown): number | undefined {
@@ -167,10 +204,12 @@ export function createSessionActions(
       // Relying solely on messages.length is unreliable because switchSession clears
       // the current messages before loadHistory runs, creating a race condition that
       // could cause sessions with real history to be incorrectly removed from the sidebar.
-      const leavingEmpty = !currentSessionKey.endsWith(':main')
-        && messages.length === 0
-        && !sessionLastActivity[currentSessionKey]
-        && !sessionLabels[currentSessionKey];
+      const leavingEmpty = isDisposableEmptySession(
+        currentSessionKey,
+        messages,
+        sessionLabels,
+        sessionLastActivity,
+      );
       set((s) => ({
         currentSessionKey: key,
         currentAgentId: getAgentIdFromSessionKey(key),
@@ -257,18 +296,22 @@ export function createSessionActions(
 
     // ── New session ──
 
-    newSession: () => {
+    newSession: (agentId?: string | null) => {
       // Generate a new unique session key and switch to it.
       // NOTE: We intentionally do NOT call sessions.reset on the old session.
       // sessions.reset archives (renames) the session JSONL file, making old
       // conversation history inaccessible when the user switches back to it.
       const { currentSessionKey, messages, sessionLastActivity, sessionLabels } = get();
       // Only treat sessions with no history records and no activity timestamp as empty
-      const leavingEmpty = !currentSessionKey.endsWith(':main')
-        && messages.length === 0
-        && !sessionLastActivity[currentSessionKey]
-        && !sessionLabels[currentSessionKey];
-      const prefix = getCanonicalPrefixFromSessions(get().sessions) ?? DEFAULT_CANONICAL_PREFIX;
+      const leavingEmpty = isDisposableEmptySession(
+        currentSessionKey,
+        messages,
+        sessionLabels,
+        sessionLastActivity,
+      );
+      const prefix = resolveCanonicalPrefixForAgent(agentId)
+        ?? getCanonicalPrefixFromSessions(get().sessions)
+        ?? DEFAULT_CANONICAL_PREFIX;
       const newKey = `${prefix}:session-${Date.now()}`;
       const newSessionEntry: ChatSession = { key: newKey, displayName: newKey };
       set((s) => ({
@@ -306,10 +349,12 @@ export function createSessionActions(
       // in the sidebar.
       // Also check sessionLastActivity and sessionLabels comprehensively to prevent
       // falsely treating sessions with history as empty due to switchSession clearing messages early.
-      const isEmptyNonMain = !currentSessionKey.endsWith(':main')
-        && messages.length === 0
-        && !sessionLastActivity[currentSessionKey]
-        && !sessionLabels[currentSessionKey];
+      const isEmptyNonMain = isDisposableEmptySession(
+        currentSessionKey,
+        messages,
+        sessionLabels,
+        sessionLastActivity,
+      );
       if (!isEmptyNonMain) return;
       set((s) => ({
         sessions: s.sessions.filter((sess) => sess.key !== currentSessionKey),

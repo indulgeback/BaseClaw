@@ -18,6 +18,8 @@ export interface RawMessage {
   toolName?: string;
   details?: unknown;
   isError?: boolean;
+  /** Local-only: UI helper messages that are not persisted to Gateway history */
+  _localKind?: 'agent-intro';
   /** Local-only: file metadata for user-uploaded attachments (not sent to/from Gateway) */
   _attachedFiles?: AttachedFileMeta[];
 }
@@ -91,7 +93,7 @@ export interface ChatState {
   // Actions
   loadSessions: () => Promise<void>;
   switchSession: (key: string) => void;
-  newSession: () => void;
+  newSession: (agentId?: string | null) => void;
   deleteSession: (key: string) => Promise<void>;
   cleanupEmptySession: () => void;
   loadHistory: (quiet?: boolean) => Promise<void>;

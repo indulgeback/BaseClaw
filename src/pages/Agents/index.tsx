@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Bot, Check, Plus, RefreshCw, Settings2, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,15 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAgentsStore } from '@/stores/agents';
 import { useGatewayStore } from '@/stores/gateway';
 import { useProviderStore } from '@/stores/providers';
+import { useChatStore, type RawMessage } from '@/stores/chat';
 import { hostApiFetch } from '@/lib/host-api';
 import { subscribeHostEvent } from '@/lib/host-events';
 import { CHANNEL_ICONS, CHANNEL_NAMES, type ChannelType } from '@/types/channel';
 import type { AgentSummary } from '@/types/agent';
 import type { ProviderAccount, ProviderVendorInfo, ProviderWithKeyInfo } from '@/lib/providers';
+import { AGENCY_AGENT_CATEGORIES, getAgencyAgentCategory, getAgencyAgentDescription } from '@/lib/agency-agents';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import telegramIcon from '@/assets/channels/telegram.svg';
@@ -51,6 +55,64 @@ interface RuntimeProviderOption {
   label: string;
   modelIdPlaceholder?: string;
   configuredModelId?: string;
+}
+
+function getLocalizedAgentPresentation(
+  agent: AgentSummary,
+  t: TFunction<'agents'>,
+  language: string,
+) {
+  const category = getAgencyAgentCategory(agent.id);
+  const localizedDescription = t(`agencyAgentDescriptions.${agent.id}`, { defaultValue: '' });
+  const localizedName = t(`agencyAgentNames.${agent.id}`, { defaultValue: '' });
+  const placeholderPattern = /fill this in during your first conversation/i;
+  const rawDescription = agent.description && !placeholderPattern.test(agent.description)
+    ? agent.description
+    : '';
+  const sourceDescription = rawDescription || getAgencyAgentDescription(agent.id);
+  const isEnglish = language.toLowerCase().startsWith('en');
+  const categoryLabel = category ? t(`agencyCategories.${category.id}.label`) : t('agency.uncategorized');
+  const description = localizedDescription
+    || (!isEnglish && category ? t(`agencyCategories.${category.id}.description`) : sourceDescription)
+    || (agent.isDefault ? t('agency.defaultDescription') : t('agency.customDescription'));
+
+  return {
+    category,
+    categoryLabel,
+    description,
+    displayName: localizedName || agent.name,
+  };
+}
+
+function buildAgentIntroMessage(
+  agent: AgentSummary,
+  t: TFunction<'agents'>,
+  language: string,
+): RawMessage {
+  const presentation = getLocalizedAgentPresentation(agent, t, language);
+  const specificIntro = t(`agencyAgentIntros.${agent.id}`, {
+    defaultValue: '',
+    name: presentation.displayName,
+    agentId: agent.id,
+    category: presentation.categoryLabel,
+    description: presentation.description,
+  });
+  const content = typeof specificIntro === 'string' && specificIntro.trim()
+    ? specificIntro.trim()
+    : t('agencyIntro.message', {
+      name: presentation.displayName,
+      agentId: agent.id,
+      category: presentation.categoryLabel,
+      description: presentation.description,
+    });
+
+  return {
+    role: 'assistant',
+    content,
+    timestamp: Date.now() / 1000,
+    id: `local-agent-intro-${agent.id}-${Date.now()}`,
+    _localKind: 'agent-intro',
+  };
 }
 
 function resolveRuntimeProviderKey(account: ProviderAccount): string {
@@ -93,7 +155,8 @@ function hasConfiguredProviderCredentials(
 }
 
 export function Agents() {
-  const { t } = useTranslation('agents');
+  const { t, i18n } = useTranslation('agents');
+  const navigate = useNavigate();
   const gatewayStatus = useGatewayStore((state) => state.status);
   const refreshProviderSnapshot = useProviderStore((state) => state.refreshProviderSnapshot);
   const lastGatewayStateRef = useRef(gatewayStatus.state);
@@ -111,6 +174,7 @@ export function Agents() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
   const [agentToDelete, setAgentToDelete] = useState<AgentSummary | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
 
   const fetchChannelAccounts = useCallback(async () => {
     try {
@@ -162,9 +226,37 @@ export function Agents() {
 
   const visibleAgents = agents;
   const visibleChannelGroups = channelGroups;
+  const agencyAgents = useMemo(
+    () => visibleAgents.filter((agent) => getAgencyAgentCategory(agent.id)),
+    [visibleAgents],
+  );
+  const selectedCategory = selectedCategoryId === 'all'
+    ? null
+    : AGENCY_AGENT_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? null;
+  const displayedAgencyAgents = useMemo(
+    () => selectedCategory
+      ? agencyAgents.filter((agent) => getAgencyAgentCategory(agent.id)?.id === selectedCategory.id)
+      : agencyAgents,
+    [agencyAgents, selectedCategory],
+  );
   const isUsingStableValue = loading && hasCompletedInitialLoad;
   const handleRefresh = () => {
     void Promise.all([fetchAgents(), fetchChannelAccounts()]);
+  };
+
+  const handleUseAgent = (agent: AgentSummary) => {
+    const chatStore = useChatStore.getState();
+    chatStore.newSession(agent.id);
+    const introMessage = buildAgentIntroMessage(agent, t, i18n.resolvedLanguage || i18n.language || '');
+    const { currentSessionKey } = useChatStore.getState();
+    useChatStore.setState((state) => ({
+      messages: [introMessage],
+      sessionLastActivity: {
+        ...state.sessionLastActivity,
+        [currentSessionKey]: Date.now(),
+      },
+    }));
+    navigate('/');
   };
 
   if (loading && !hasCompletedInitialLoad) {
@@ -178,17 +270,17 @@ export function Agents() {
   return (
     <div data-testid="agents-page" className="flex flex-col -m-6 dark:bg-background h-[calc(100vh-2.5rem)] overflow-hidden">
       <div className="w-full max-w-5xl mx-auto flex flex-col h-full p-10 pt-16">
-        <div className="flex flex-col md:flex-row md:items-start justify-between mb-12 shrink-0 gap-4">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 shrink-0 gap-4">
+          <div className="min-w-0">
             <h1
               className="text-5xl md:text-6xl font-serif text-foreground mb-3 font-normal tracking-tight"
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
             >
               {t('title')}
             </h1>
-            <p className="text-[17px] text-foreground/70 font-medium">{t('subtitle')}</p>
+            <p className="max-w-2xl text-[17px] text-foreground/70 font-medium">{t('subtitle')}</p>
           </div>
-          <div className="flex items-center gap-3 md:mt-2">
+          <div className="flex shrink-0 items-center gap-3 md:mt-2">
             <Button
               variant="outline"
               onClick={handleRefresh}
@@ -207,33 +299,65 @@ export function Agents() {
           </div>
         </div>
 
+        {gatewayStatus.state !== 'running' && (
+          <div className="mb-8 p-4 rounded-xl border border-yellow-500/50 bg-yellow-500/10 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            <span className="text-yellow-700 dark:text-yellow-400 text-sm font-medium">
+              {t('gatewayWarning')}
+            </span>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-8 p-4 rounded-xl border border-destructive/50 bg-destructive/10 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span className="text-destructive text-sm font-medium">
+              {error}
+            </span>
+          </div>
+        )}
+
+        <div className="mb-4 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryId('all')}
+              className={cn(
+                  'h-9 rounded-full px-4 text-[13px] font-semibold transition-colors',
+                  selectedCategoryId === 'all'
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-black/5 text-foreground/70 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10'
+                )}
+            >
+              {t('agency.all')}
+            </button>
+            {AGENCY_AGENT_CATEGORIES.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategoryId(category.id)}
+                  className={cn(
+                      'h-9 rounded-full px-4 text-[13px] font-semibold transition-colors',
+                      selectedCategoryId === category.id
+                        ? 'bg-black text-white dark:bg-white dark:text-black'
+                        : 'bg-black/5 text-foreground/70 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10'
+                    )}
+                >
+                  {t(`agencyCategories.${category.id}.label`)}
+                </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto pr-2 pb-10 min-h-0 -mr-2">
-          {gatewayStatus.state !== 'running' && (
-            <div className="mb-8 p-4 rounded-xl border border-yellow-500/50 bg-yellow-500/10 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-yellow-700 dark:text-yellow-400 text-sm font-medium">
-                {t('gatewayWarning')}
-              </span>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-8 p-4 rounded-xl border border-destructive/50 bg-destructive/10 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              <span className="text-destructive text-sm font-medium">
-                {error}
-              </span>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {visibleAgents.map((agent) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {displayedAgencyAgents.map((agent) => (
               <AgentCard
                 key={agent.id}
                 agent={agent}
-                channelGroups={visibleChannelGroups}
                 onOpenSettings={() => setActiveAgentId(agent.id)}
                 onDelete={() => setAgentToDelete(agent)}
+                onUse={() => handleUseAgent(agent)}
               />
             ))}
           </div>
@@ -288,62 +412,59 @@ export function Agents() {
 
 function AgentCard({
   agent,
-  channelGroups,
   onOpenSettings,
   onDelete,
+  onUse,
 }: {
   agent: AgentSummary;
-  channelGroups: ChannelGroupItem[];
   onOpenSettings: () => void;
   onDelete: () => void;
+  onUse: () => void;
 }) {
-  const { t } = useTranslation('agents');
-  const boundChannelAccounts = channelGroups.flatMap((group) =>
-    group.accounts
-      .filter((account) => account.agentId === agent.id)
-      .map((account) => {
-        const channelName = CHANNEL_NAMES[group.channelType as ChannelType] || group.channelType;
-        const accountLabel =
-          account.accountId === 'default'
-            ? t('settingsDialog.mainAccount')
-            : account.name || account.accountId;
-        return `${channelName} · ${accountLabel}`;
-      }),
+  const { t, i18n } = useTranslation('agents');
+  const { description, displayName } = getLocalizedAgentPresentation(
+    agent,
+    t,
+    i18n.resolvedLanguage || i18n.language || '',
   );
-  const channelsText = boundChannelAccounts.length > 0
-    ? boundChannelAccounts.join(', ')
-    : t('none');
 
   return (
     <div
       className={cn(
-        'group flex items-start gap-4 p-4 rounded-2xl transition-all text-left border relative overflow-hidden bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/5',
-        agent.isDefault && 'bg-black/[0.04] dark:bg-white/[0.06]'
+        'group min-h-[230px] rounded-[28px] bg-white dark:bg-card border border-black/15 dark:border-white/15 p-6 text-left relative overflow-hidden',
+        agent.isDefault && 'ring-1 ring-black/15 dark:ring-white/15'
       )}
     >
-      <div className="h-[46px] w-[46px] shrink-0 flex items-center justify-center text-primary bg-primary/10 rounded-full shadow-sm mb-3">
-        <Bot className="h-[22px] w-[22px]" />
-      </div>
-      <div className="flex flex-col flex-1 min-w-0 py-0.5 mt-1">
-        <div className="flex items-center justify-between gap-3 mb-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-[16px] font-semibold text-foreground truncate">{agent.name}</h2>
-            {agent.isDefault && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 font-mono text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border-0 shadow-none text-foreground/70"
-              >
-                <Check className="h-3 w-3" />
-                {t('defaultBadge')}
-              </Badge>
-            )}
+      <div className="flex h-full flex-col">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-12 w-12 shrink-0 flex items-center justify-center text-foreground bg-black/5 dark:bg-white/[0.08] rounded-full shadow-sm">
+              <Bot className="h-[22px] w-[22px]" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="text-[15px] font-semibold text-foreground truncate">{displayName}</h2>
+                {agent.isDefault && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.08] border-0 shadow-none text-foreground/70"
+                  >
+                    <Check className="h-3 w-3" />
+                    {t('defaultBadge')}
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-1 font-mono text-[12px] text-foreground/45 truncate">
+                {agent.id}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {!agent.isDefault && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 group-hover:opacity-100 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                 onClick={onDelete}
                 title={t('deleteAgent')}
               >
@@ -353,10 +474,7 @@ function AgentCard({
             <Button
               variant="ghost"
               size="icon"
-              className={cn(
-                'h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all',
-                !agent.isDefault && 'opacity-0 group-hover:opacity-100',
-              )}
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-all"
               onClick={onOpenSettings}
               title={t('settings')}
             >
@@ -364,22 +482,28 @@ function AgentCard({
             </Button>
           </div>
         </div>
-        <p className="text-[13.5px] text-muted-foreground line-clamp-2 leading-[1.5]">
-          {t('modelLine', {
-            model: agent.modelDisplay,
-            suffix: agent.inheritedModel ? ` (${t('inherited')})` : '',
-          })}
-        </p>
-        <p className="text-[13.5px] text-muted-foreground line-clamp-2 leading-[1.5]">
-          {t('channelsLine', { channels: channelsText })}
-        </p>
+
+        <div className="mt-6 flex-1">
+          <p className="text-[14px] leading-[1.6] text-foreground/65 line-clamp-3">
+            {description}
+          </p>
+        </div>
+
+        <div className="mt-auto flex justify-end pt-4">
+          <Button
+            onClick={onUse}
+            className="h-8 rounded-full px-5 text-[13px] font-medium bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 shadow-none border-0"
+          >
+            {t('agency.use')}
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
-const inputClasses = 'h-[44px] rounded-xl font-mono text-[13px] bg-[#eeece3] dark:bg-muted border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground placeholder:text-foreground/40';
-const selectClasses = 'h-[44px] w-full rounded-xl font-mono text-[13px] bg-[#eeece3] dark:bg-muted border border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground px-3';
+const inputClasses = 'h-[44px] rounded-xl font-mono text-[13px] bg-white dark:bg-muted border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground placeholder:text-foreground/40';
+const selectClasses = 'h-[44px] w-full rounded-xl font-mono text-[13px] bg-white dark:bg-muted border border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground px-3';
 const labelClasses = 'text-[14px] text-foreground/80 font-bold';
 
 function ChannelLogo({ type }: { type: ChannelType }) {
@@ -432,7 +556,7 @@ function AddAgentDialog({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl bg-white dark:bg-card overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-2xl font-serif font-normal tracking-tight">
             {t('createDialog.title')}
@@ -551,7 +675,7 @@ function AgentSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-0 shadow-2xl bg-white dark:bg-card overflow-hidden">
         <CardHeader className="flex flex-row items-start justify-between pb-2 shrink-0">
           <div>
             <CardTitle className="text-2xl font-serif font-normal tracking-tight">
@@ -587,7 +711,7 @@ function AgentSettingsModal({
                     variant="outline"
                     onClick={() => void handleSaveName()}
                     disabled={savingName || !name.trim() || name.trim() === agent.name}
-                    className="h-[44px] text-[13px] font-medium rounded-xl px-4 border-black/10 dark:border-white/10 bg-[#eeece3] dark:bg-muted hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+                    className="h-[44px] text-[13px] font-medium rounded-xl px-4 border-black/10 dark:border-white/10 bg-white dark:bg-muted hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
                   >
                     {savingName ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -826,7 +950,7 @@ function AgentModelModal({
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-xl rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card className="w-full max-w-xl rounded-3xl border-0 shadow-2xl bg-white dark:bg-card overflow-hidden">
         <CardHeader className="flex flex-row items-start justify-between pb-2">
           <div>
             <CardTitle className="text-2xl font-serif font-normal tracking-tight">

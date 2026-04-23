@@ -169,7 +169,7 @@ export function Sidebar() {
     }
   };
 
-  const { t } = useTranslation(['common', 'chat']);
+  const { t } = useTranslation(['common', 'chat', 'agents']);
   const [sessionToDelete, setSessionToDelete] = useState<{ key: string; label: string } | null>(null);
   const [nowMs, setNowMs] = useState(INITIAL_NOW_MS);
 
@@ -184,10 +184,16 @@ export function Sidebar() {
     void fetchAgents();
   }, [fetchAgents]);
 
-  const agentNameById = useMemo(
+  const fallbackAgentNameById = useMemo(
     () => Object.fromEntries((agents ?? []).map((agent) => [agent.id, agent.name])),
     [agents],
   );
+  const getAgentDisplayName = (agentId: string) => {
+    if (agentId === 'main') return t('agents:agency.mainAgent');
+    return t(`agents:agencyAgentNames.${agentId}`, {
+      defaultValue: fallbackAgentNameById[agentId] || agentId,
+    });
+  };
   const sessionBuckets: Array<{ key: SessionBucketKey; label: string; sessions: typeof sessions }> = [
     { key: 'today', label: t('chat:historyBuckets.today'), sessions: [] },
     { key: 'yesterday', label: t('chat:historyBuckets.yesterday'), sessions: [] },
@@ -220,7 +226,7 @@ export function Sidebar() {
     <aside
       data-testid="sidebar"
       className={cn(
-        'flex min-h-0 shrink-0 flex-col overflow-hidden border-r bg-[#eae8e1]/60 dark:bg-background transition-all duration-300',
+        'flex min-h-0 shrink-0 flex-col overflow-hidden border-r bg-white dark:bg-background transition-all duration-300',
         sidebarCollapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -258,15 +264,25 @@ export function Sidebar() {
             navigate('/');
           }}
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors mb-2',
-            'bg-black/5 dark:bg-accent shadow-none border border-transparent text-foreground',
+            'relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-all duration-200 mb-2 overflow-hidden',
+            'bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 shadow-none border border-transparent hover:scale-[1.02] active:scale-95',
             sidebarCollapsed && 'justify-center px-0',
           )}
         >
-          <div className="flex shrink-0 items-center justify-center text-foreground/80">
+          <div className="flex shrink-0 items-center justify-center text-current">
             <Plus className="h-[18px] w-[18px]" strokeWidth={2} />
           </div>
-          {!sidebarCollapsed && <span className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap">{t('sidebar.newChat')}</span>}
+          {!sidebarCollapsed && <span className="relative z-10 flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap">{t('sidebar.newChat')}</span>}
+          {!sidebarCollapsed && (
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+              <span className="absolute left-[54%] top-[42%] h-1 w-1 rounded-full bg-white/45 dark:bg-black/20" />
+              <span className="absolute left-[66%] top-[28%] h-0.5 w-0.5 rounded-full bg-white/55 dark:bg-black/25" />
+              <span className="absolute left-[77%] top-[62%] h-1 w-1 rounded-full bg-white/40 dark:bg-black/20" />
+              <span className="absolute right-5 top-3 h-0.5 w-0.5 rounded-full bg-white/70 dark:bg-black/35" />
+              <span className="absolute right-7 bottom-3 h-1 w-1 rounded-full bg-white/45 dark:bg-black/20" />
+              <span className="absolute right-10 top-1/2 h-px w-7 -translate-y-1/2 rotate-[-18deg] rounded-full bg-gradient-to-r from-transparent via-white/55 to-white/15 dark:via-black/35 dark:to-black/10" />
+            </span>
+          )}
         </button>
 
         {navItems.map((item) => (
@@ -289,7 +305,7 @@ export function Sidebar() {
                 </div>
                 {bucket.sessions.map((s) => {
                   const agentId = getAgentIdFromSessionKey(s.key);
-                  const agentName = agentNameById[agentId] || agentId;
+                  const agentName = getAgentDisplayName(agentId);
                   return (
                     <div key={s.key} className="group relative flex items-center">
                       <button

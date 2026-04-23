@@ -1,6 +1,8 @@
 export interface AgentSummary {
   id: string;
   name: string;
+  description?: string;
+  intro?: string;
   isDefault: boolean;
   modelDisplay: string;
   modelRef?: string | null;

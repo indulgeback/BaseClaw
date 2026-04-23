@@ -697,6 +697,21 @@ function clearSessionEntryFromMap<T extends Record<string, unknown>>(entries: T,
   return Object.fromEntries(Object.entries(entries).filter(([key]) => key !== sessionKey)) as T;
 }
 
+function hasOnlyLocalIntroMessages(messages: RawMessage[]): boolean {
+  return messages.length > 0 && messages.every((message) => message._localKind === 'agent-intro');
+}
+
+function isDisposableEmptySession(
+  sessionKey: string,
+  messages: RawMessage[],
+  sessionLabels: Record<string, string>,
+  sessionLastActivity: Record<string, number>,
+): boolean {
+  if (sessionKey.endsWith(':main') || sessionLabels[sessionKey]) return false;
+  if (hasOnlyLocalIntroMessages(messages)) return true;
+  return messages.length === 0 && !sessionLastActivity[sessionKey];
+}
+
 function buildSessionSwitchPatch(
   state: Pick<
     ChatState,
@@ -708,10 +723,12 @@ function buildSessionSwitchPatch(
   // Relying solely on messages.length is unreliable because switchSession clears
   // the current messages before loadHistory runs, creating a race condition that
   // could cause sessions with real history to be incorrectly removed from the sidebar.
-  const leavingEmpty = !state.currentSessionKey.endsWith(':main')
-    && state.messages.length === 0
-    && !state.sessionLastActivity[state.currentSessionKey]
-    && !state.sessionLabels[state.currentSessionKey];
+  const leavingEmpty = isDisposableEmptySession(
+    state.currentSessionKey,
+    state.messages,
+    state.sessionLabels,
+    state.sessionLastActivity,
+  );
 
   const nextSessions = leavingEmpty
     ? state.sessions.filter((session) => session.key !== state.currentSessionKey)
@@ -744,6 +761,15 @@ function getCanonicalPrefixFromSessionKey(sessionKey: string): string | null {
   const parts = sessionKey.split(':');
   if (parts.length < 2) return null;
   return `${parts[0]}:${parts[1]}`;
+}
+
+function resolveCanonicalPrefixForAgent(agentId: string | undefined | null): string | null {
+  if (!agentId) return null;
+  const mainSessionKey = resolveMainSessionKeyForAgent(agentId);
+  if (mainSessionKey) {
+    return getCanonicalPrefixFromSessionKey(mainSessionKey);
+  }
+  return `agent:${normalizeAgentId(agentId)}`;
 }
 
 function isToolOnlyMessage(message: RawMessage | undefined): boolean {
@@ -1265,18 +1291,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   // ── New session ──
 
-  newSession: () => {
+  newSession: (agentId?: string | null) => {
     // Generate a new unique session key and switch to it.
     // NOTE: We intentionally do NOT call sessions.reset on the old session.
     // sessions.reset archives (renames) the session JSONL file, making old
     // conversation history inaccessible when the user switches back to it.
     const { currentSessionKey, messages, sessions, sessionLastActivity, sessionLabels } = get();
     // Only treat sessions with no history records and no activity timestamp as empty
-    const leavingEmpty = !currentSessionKey.endsWith(':main')
-      && messages.length === 0
-      && !sessionLastActivity[currentSessionKey]
-      && !sessionLabels[currentSessionKey];
-    const prefix = getCanonicalPrefixFromSessionKey(currentSessionKey)
+    const leavingEmpty = isDisposableEmptySession(
+      currentSessionKey,
+      messages,
+      sessionLabels,
+      sessionLastActivity,
+    );
+    const prefix = resolveCanonicalPrefixForAgent(agentId)
+      ?? getCanonicalPrefixFromSessionKey(currentSessionKey)
       ?? getCanonicalPrefixFromSessions(sessions)
       ?? DEFAULT_CANONICAL_PREFIX;
     const newKey = `${prefix}:session-${Date.now()}`;
@@ -1316,10 +1345,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // in the sidebar.
     // Also check sessionLastActivity and sessionLabels comprehensively to prevent
     // falsely treating sessions with history as empty due to switchSession clearing messages early.
-    const isEmptyNonMain = !currentSessionKey.endsWith(':main')
-      && messages.length === 0
-      && !sessionLastActivity[currentSessionKey]
-      && !sessionLabels[currentSessionKey];
+    const isEmptyNonMain = isDisposableEmptySession(
+      currentSessionKey,
+      messages,
+      sessionLabels,
+      sessionLastActivity,
+    );
     if (!isEmptyNonMain) return;
     set((s) => ({
       sessions: s.sessions.filter((sess) => sess.key !== currentSessionKey),
@@ -1409,10 +1440,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Restore file attachments for user/assistant messages (from cache + text patterns)
       const enrichedMessages = enrichWithCachedImages(filteredMessages);
 
+      // Preserve local-only agent intro messages while history hydration catches up.
+      const localIntroMessages = get().messages.filter((message) => message._localKind === 'agent-intro');
       // Preserve the optimistic user message during an active send.
       // The Gateway may not include the user's message in chat.history
       // until the run completes, causing it to flash out of the UI.
-      let finalMessages = enrichedMessages;
+      let finalMessages = localIntroMessages.length > 0
+        ? [...localIntroMessages, ...enrichedMessages]
+        : enrichedMessages;
       const userMsgAt = get().lastUserMessageAt;
       if (get().sending && userMsgAt) {
         const userMsMs = toMs(userMsgAt);
@@ -1425,7 +1460,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             (m) => m.role === 'user' && m.timestamp && Math.abs(toMs(m.timestamp) - userMsMs) < 5000,
           );
           if (optimistic) {
-            finalMessages = [...enrichedMessages, optimistic];
+            finalMessages = [...finalMessages, optimistic];
           }
         }
       }

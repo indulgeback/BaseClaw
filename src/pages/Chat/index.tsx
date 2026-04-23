@@ -384,7 +384,7 @@ function WelcomeScreen() {
         {quickActions.map(({ key, label }) => (
           <button 
             key={key}
-            className="px-4 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-[13px] font-medium text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5 transition-colors bg-black/[0.02]"
+            className="px-4 py-1.5 rounded-full border-0 text-[13px] font-medium text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5 transition-colors bg-black/[0.02] dark:bg-white/5"
           >
             {label}
           </button>

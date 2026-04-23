@@ -97,7 +97,6 @@ import {
   type ProviderAccount,
   type ProviderType,
   type ProviderTypeInfo,
-  getProviderDocsUrl,
   getProviderIconUrl,
   normalizeProviderApiKeyInput,
   resolveProviderApiKeyForSave,
@@ -213,10 +212,10 @@ export function Setup() {
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors',
                     i < safeStepIndex
-                      ? 'border-primary bg-primary text-primary-foreground'
+                      ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
                       : i === safeStepIndex
-                        ? 'border-primary text-primary'
-                        : 'border-slate-600 text-slate-600'
+                        ? 'border-black text-black'
+                        : 'border-black/25 text-black/45'
                   )}
                 >
                   {i < safeStepIndex ? (
@@ -229,7 +228,7 @@ export function Setup() {
                   <div
                     className={cn(
                       'h-0.5 w-8 transition-colors',
-                      i < safeStepIndex ? 'bg-primary' : 'bg-slate-600'
+                      i < safeStepIndex ? 'bg-black' : 'bg-black/20'
                     )}
                   />
                 )}
@@ -298,7 +297,12 @@ export function Setup() {
                       {t('nav.skipSetup')}
                     </Button>
                   )}
-                  <Button data-testid="setup-next-button" onClick={handleNext} disabled={!canProceed}>
+                  <Button
+                    data-testid="setup-next-button"
+                    onClick={handleNext}
+                    disabled={!canProceed}
+                    className="rounded-xl bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 disabled:bg-black/40 disabled:text-white/70 dark:disabled:bg-white/40 dark:disabled:text-black/70"
+                  >
                     {isLastStep ? (
                       t('nav.getStarted')
                     ) : (
@@ -715,13 +719,14 @@ function ProviderContent({
   onApiKeyChange,
   onConfiguredChange,
 }: ProviderContentProps) {
-  const { t, i18n } = useTranslation(['setup', 'settings']);
+  const { t } = useTranslation(['setup', 'settings']);
   const devModeUnlocked = useSettingsStore((state) => state.devModeUnlocked);
   const [showKey, setShowKey] = useState(false);
   const [validating, setValidating] = useState(false);
   const [keyValid, setKeyValid] = useState<boolean | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [baseUrl, setBaseUrl] = useState('');
+  const [baseUrlHint, setBaseUrlHint] = useState('');
   const [modelId, setModelId] = useState('');
   const [apiProtocol, setApiProtocol] = useState<ProviderAccount['apiProtocol']>('openai-completions');
   const [providerMenuOpen, setProviderMenuOpen] = useState(false);
@@ -941,9 +946,10 @@ function ProviderContent({
           onApiKeyChange(storedKey || '');
 
           const info = providers.find((p) => p.id === selectedProvider);
-          const nextBaseUrl = savedProvider?.baseUrl || info?.defaultBaseUrl || '';
+          const nextBaseUrl = savedProvider?.baseUrl || '';
           const nextModelId = savedProvider?.model || info?.defaultModelId || '';
-          setBaseUrl(nextBaseUrl);
+          setBaseUrl('');
+          setBaseUrlHint(nextBaseUrl);
           setModelId(nextModelId);
           setApiProtocol(savedProvider?.apiProtocol || 'openai-completions');
           if (
@@ -991,10 +997,6 @@ function ProviderContent({
   }, [providerMenuOpen]);
 
   const selectedProviderData = providers.find((p) => p.id === selectedProvider);
-  const providerDocsUrl = getProviderDocsUrl(selectedProviderData, i18n.language);
-  const effectiveProviderDocsUrl = selectedProvider === 'ark' && arkMode === 'codeplan'
-    ? (selectedProviderData?.codePlanDocsUrl || providerDocsUrl)
-    : providerDocsUrl;
   const selectedProviderIconUrl = selectedProviderData
     ? getProviderIconUrl(selectedProviderData.id)
     : undefined;
@@ -1006,6 +1008,11 @@ function ProviderContent({
       modelId: selectedProviderData.codePlanPresetModelId,
     }
     : null;
+  const defaultBaseUrl = selectedProvider === 'ark' && arkMode === 'codeplan'
+    ? (codePlanPreset?.baseUrl || selectedProviderData?.defaultBaseUrl || '')
+    : (selectedProviderData?.defaultBaseUrl || '');
+  const baseUrlPlaceholder = baseUrlHint || defaultBaseUrl || getProtocolBaseUrlPlaceholder(apiProtocol);
+  const effectiveBaseUrl = baseUrl.trim() || baseUrlHint || defaultBaseUrl;
   const requiresKey = selectedProviderData?.requiresApiKey ?? false;
   const isOAuth = selectedProviderData?.isOAuth ?? false;
   const supportsApiKey = selectedProviderData?.supportsApiKey ?? false;
@@ -1050,7 +1057,7 @@ function ProviderContent({
           selectedAccountId || selectedProvider,
           normalizedApiKey,
           {
-            baseUrl: baseUrl.trim() || undefined,
+            baseUrl: effectiveBaseUrl || undefined,
             apiProtocol: (selectedProvider === 'custom' || selectedProvider === 'ollama')
               ? apiProtocol
               : undefined,
@@ -1090,7 +1097,7 @@ function ProviderContent({
         authMode: selectedProvider === 'ollama'
           ? 'local'
           : 'api_key',
-        baseUrl: baseUrl.trim() || undefined,
+        baseUrl: effectiveBaseUrl || undefined,
         apiProtocol: (selectedProvider === 'custom' || selectedProvider === 'ollama')
           ? apiProtocol
           : undefined,
@@ -1154,11 +1161,12 @@ function ProviderContent({
 
   // Can the user submit?
   const isApiKeyRequired = requiresKey || (supportsApiKey && authMode === 'apikey');
-  const canSubmit =
+  const canSubmit = Boolean(
     selectedProvider
     && (isApiKeyRequired ? normalizedApiKey.length > 0 : true)
     && (showModelIdField ? modelId.trim().length > 0 : true)
-    && !useOAuthFlow;
+    && !useOAuthFlow
+  );
 
   const handleSelectProvider = (providerId: string) => {
     onSelectProvider(providerId);
@@ -1166,6 +1174,8 @@ function ProviderContent({
     onConfiguredChange(false);
     onApiKeyChange('');
     setKeyValid(null);
+    setBaseUrl('');
+    setBaseUrlHint('');
     setProviderMenuOpen(false);
     setAuthMode('oauth');
     setArkMode('apikey');
@@ -1175,20 +1185,7 @@ function ProviderContent({
     <div className="space-y-6">
       {/* Provider selector — dropdown */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <Label>{t('provider.label')}</Label>
-          {selectedProvider && effectiveProviderDocsUrl && (
-            <a
-              href={effectiveProviderDocsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[13px] text-blue-500 hover:text-blue-600 font-medium inline-flex items-center gap-1"
-            >
-              {t('settings:aiProviders.dialog.customDoc')}
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          )}
-        </div>
+        <Label>{t('provider.label')}</Label>
         <div className="relative" ref={providerMenuRef}>
           <button
             type="button"
@@ -1296,7 +1293,8 @@ function ProviderContent({
                   type="button"
                   onClick={() => {
                     setArkMode('apikey');
-                    setBaseUrl(selectedProviderData?.defaultBaseUrl || '');
+                    setBaseUrl('');
+                    setBaseUrlHint('');
                     if (modelId.trim() === codePlanPreset.modelId) {
                       setModelId(selectedProviderData?.defaultModelId || '');
                     }
@@ -1315,7 +1313,8 @@ function ProviderContent({
                   type="button"
                   onClick={() => {
                     setArkMode('codeplan');
-                    setBaseUrl(codePlanPreset.baseUrl);
+                    setBaseUrl('');
+                    setBaseUrlHint('');
                     setModelId(codePlanPreset.modelId);
                     onConfiguredChange(false);
                   }}
@@ -1344,14 +1343,17 @@ function ProviderContent({
               <Input
                 id="baseUrl"
                 type="text"
-                placeholder={getProtocolBaseUrlPlaceholder(apiProtocol)}
+                placeholder={baseUrlPlaceholder}
                 value={baseUrl}
                 onChange={(e) => {
                   setBaseUrl(e.target.value);
                   onConfiguredChange(false);
                 }}
                 autoComplete="off"
-                className="bg-background border-input"
+                className={cn(
+                  'border-input placeholder:text-gray-400',
+                  baseUrl.trim() ? 'bg-white' : 'bg-gray-100'
+                )}
               />
             </div>
           )}
@@ -1438,7 +1440,7 @@ function ProviderContent({
                 onClick={() => setAuthMode('oauth')}
                 className={cn(
                   'flex-1 py-2 px-3 transition-colors',
-                  authMode === 'oauth' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'
+                  authMode === 'oauth' ? 'bg-primary text-primary-foreground dark:bg-white dark:text-black' : 'hover:bg-muted text-muted-foreground'
                 )}
               >
                 {t('settings:aiProviders.oauth.loginMode')}
@@ -1447,7 +1449,7 @@ function ProviderContent({
                 onClick={() => setAuthMode('apikey')}
                 className={cn(
                   'flex-1 py-2 px-3 transition-colors',
-                  authMode === 'apikey' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'
+                  authMode === 'apikey' ? 'bg-primary text-primary-foreground dark:bg-white dark:text-black' : 'hover:bg-muted text-muted-foreground'
                 )}
               >
                 {t('settings:aiProviders.oauth.apikeyMode')}
@@ -1487,14 +1489,14 @@ function ProviderContent({
           {/* Device OAuth Trigger */}
           {useOAuthFlow && (
             <div className="space-y-4 pt-2">
-              <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-4 text-center">
-                <p className="text-sm text-blue-200 mb-3 block">
+              <div className="rounded-lg bg-black/5 border border-black/10 p-4 text-center">
+                <p className="text-sm text-foreground/70 mb-3 block">
                   This provider requires signing in via your browser.
                 </p>
                 <Button
                   onClick={handleStartOAuth}
                   disabled={oauthFlowing}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full bg-black hover:bg-black/90 text-white dark:bg-white dark:text-black dark:hover:bg-white/90"
                 >
                   {oauthFlowing ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Waiting...</>
@@ -1550,7 +1552,7 @@ function ProviderContent({
                         />
 
                         <Button
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          className="w-full bg-black hover:bg-black/90 text-white dark:bg-white dark:text-black dark:hover:bg-white/90"
                           onClick={handleSubmitManualOAuthCode}
                           disabled={!manualCodeInput.trim()}
                         >
@@ -1617,7 +1619,13 @@ function ProviderContent({
           <Button
             onClick={handleValidateAndSave}
             disabled={!canSubmit || validating}
-            className={cn("w-full", useOAuthFlow && "hidden")}
+            className={cn(
+              'w-full border shadow-none',
+              canSubmit && !validating
+                ? 'border-black bg-black text-white hover:bg-black/90 dark:border-white dark:bg-white dark:text-black dark:hover:bg-white/90'
+                : 'border-transparent bg-gray-200 text-gray-500 hover:bg-gray-200',
+              useOAuthFlow && 'hidden'
+            )}
           >
             {validating ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1841,7 +1849,30 @@ function CompleteContent({ selectedProvider, installedSkills }: CompleteContentP
 
   return (
     <div className="text-center space-y-6">
-      <div className="text-6xl mb-4">🎉</div>
+      <div className="mb-4 flex justify-center" aria-hidden="true">
+        <svg
+          viewBox="0 0 96 96"
+          className="h-20 w-20"
+          role="img"
+        >
+          <path d="M22 75 38 32l26 26-42 17Z" fill="#f6c64a" />
+          <path d="M26.7 62.3 35.2 39.6l21.2 21.2-22.8 8.6-6.9-7.1Z" fill="#d4a82b" opacity="0.45" />
+          <path d="M28.1 58.6 33.9 43 52.8 61.9l-15.7 5.8-9-9.1Z" fill="#b453cf" opacity="0.85" />
+          <path d="M34.8 40.7 38 32l26 26-8.7 3.3-20.5-20.6Z" fill="#e86fb2" opacity="0.95" />
+          <path d="M22 75 38 32l26 26-42 17Z" fill="none" stroke="#1f2937" strokeWidth="2.8" strokeLinejoin="round" />
+          <path d="M48 29c4.8-7.4 9.9-9.4 15.4-6.1 5.8 3.5 10.5 1.4 14.1-6.2" fill="none" stroke="#f472b6" strokeWidth="3.6" strokeLinecap="round" />
+          <path d="M55 37c8.7-1.6 15.5-.7 20.3 2.8" fill="none" stroke="#3b82f6" strokeWidth="3.6" strokeLinecap="round" />
+          <path d="M28 28c-5.4-4.5-5.8-9-.9-13.4 4.4-4 4.2-7.4-.7-10.1" fill="none" stroke="#3b82f6" strokeWidth="3.6" strokeLinecap="round" />
+          <path d="M66 17.5 70 14" stroke="#f59e0b" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="M77 52 82 49" stroke="#f59e0b" strokeWidth="3.4" strokeLinecap="round" />
+          <path d="M69 61h5" stroke="#ef4444" strokeWidth="3.4" strokeLinecap="round" />
+          <rect x="41" y="20" width="5.8" height="5.8" rx="1.1" fill="#22c55e" transform="rotate(22 43.9 22.9)" />
+          <rect x="71" y="27" width="5.8" height="5.8" rx="1.1" fill="#ef4444" transform="rotate(-18 73.9 29.9)" />
+          <rect x="57" y="67" width="5.8" height="5.8" rx="1.1" fill="#3b82f6" transform="rotate(-22 59.9 69.9)" />
+          <rect x="78" y="67" width="5.8" height="5.8" rx="1.1" fill="#f472b6" transform="rotate(20 80.9 69.9)" />
+          <rect x="18" y="38" width="5.8" height="5.8" rx="1.1" fill="#ef4444" transform="rotate(20 20.9 40.9)" />
+        </svg>
+      </div>
       <h2 className="text-xl font-semibold">{t('complete.title')}</h2>
       <p className="text-muted-foreground">
         {t('complete.subtitle')}

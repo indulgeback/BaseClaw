@@ -53,13 +53,15 @@
         "pickAgent": "Выбрать агента",
         "clearTarget": "Очистить целевого агента",
         "targetChip": "@{{agent}}",
-        "agentPickerTitle": "Направить следующее сообщение другому агенту",
+        "agentSearchPlaceholder": "Искать ваших сотрудников",
+        "agentSearchEmpty": "Подходящие агенты не найдены",
         "gatewayDisconnectedPlaceholder": "Шлюз не подключён...",
         "send": "Отправить",
         "stop": "Остановить",
         "gatewayConnected": "подключён",
         "gatewayStatus": "шлюз {{state}} | порт: {{port}} {{pid}}",
-        "retryFailedAttachments": "Повторить неудавшиеся вложения"
+        "retryFailedAttachments": "Повторить неудавшиеся вложения",
+        "clearSessionAgent": "Очистить выбранного агента"
     },
     "historyBuckets": {
         "today": "Сегодня",

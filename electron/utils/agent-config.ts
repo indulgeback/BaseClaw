@@ -1,4 +1,4 @@
-import { access, copyFile, mkdir, readdir, rm } from 'fs/promises';
+import { access, copyFile, mkdir, readdir, readFile, rm } from 'fs/promises';
 import { constants } from 'fs';
 import { join, normalize } from 'path';
 import { deleteAgentChannelAccounts, listConfiguredChannels, readOpenClawConfig, writeOpenClawConfig } from './channel-config';
@@ -80,6 +80,8 @@ interface AgentConfigDocument extends Record<string, unknown> {
 export interface AgentSummary {
   id: string;
   name: string;
+  description?: string;
+  intro?: string;
   isDefault: boolean;
   modelDisplay: string;
   modelRef: string | null;
@@ -180,6 +182,104 @@ function createImplicitMainEntry(config: AgentConfigDocument): AgentListEntry {
     workspace: getDefaultWorkspacePath(config),
     agentDir: getDefaultAgentDirPath(MAIN_AGENT_ID),
   };
+}
+
+function cleanAgentDescriptionLine(line: string): string {
+  return line
+    .replace(/^>\s*/, '')
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
+    .trim();
+}
+
+async function readAgentWorkspaceDescription(workspace: string | undefined): Promise<string | undefined> {
+  if (!workspace || !workspace.trim()) return undefined;
+  const workspacePath = expandPath(workspace);
+  const identityPath = join(workspacePath, 'IDENTITY.md');
+
+  try {
+    const raw = await readFile(identityPath, 'utf8');
+    const lines = raw
+      .split(/\r?\n/)
+      .map(cleanAgentDescriptionLine)
+      .filter((line) => line.length > 0 && !line.startsWith('#'));
+    return lines[0] || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function stripManagedAgentBlocks(markdown: string): string {
+  return markdown
+    .replace(/<!--\s*openclawpro:begin\s*-->[\s\S]*?<!--\s*openclawpro:end\s*-->/gi, '')
+    .replace(/<!--\s*clawx:begin\s*-->[\s\S]*?<!--\s*clawx:end\s*-->/gi, '');
+}
+
+function stripCodeFences(markdown: string): string {
+  return markdown.replace(/```[\s\S]*?```/g, '').trim();
+}
+
+function clampMarkdown(markdown: string, maxLength: number): string {
+  const normalized = markdown
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  if (normalized.length <= maxLength) return normalized;
+
+  const clipped = normalized.slice(0, maxLength);
+  const lastBreak = clipped.lastIndexOf('\n## ');
+  if (lastBreak > maxLength * 0.45) {
+    return clipped.slice(0, lastBreak).trim();
+  }
+
+  return `${clipped.replace(/\s+\S*$/, '').trim()}...`;
+}
+
+function extractAgentIntroMarkdown(markdown: string): string | undefined {
+  const cleaned = stripCodeFences(stripManagedAgentBlocks(markdown));
+  const sectionMatches = [...cleaned.matchAll(/^##\s+(.+)$/gm)];
+
+  if (sectionMatches.length === 0) {
+    return clampMarkdown(cleaned, 4200) || undefined;
+  }
+
+  const firstSectionIndex = sectionMatches[0].index ?? 0;
+  const preamble = cleaned.slice(0, firstSectionIndex).trim();
+  const sectionParts: string[] = [];
+  const keepHeading = /(role definition|core mission|core capabilities|specialized skills|decision framework|available|payment rails|success metrics|works with|communication style|critical rules|research framework)/i;
+
+  for (let index = 0; index < sectionMatches.length; index += 1) {
+    const match = sectionMatches[index];
+    const start = match.index ?? 0;
+    const end = index + 1 < sectionMatches.length
+      ? sectionMatches[index + 1].index ?? cleaned.length
+      : cleaned.length;
+    const heading = match[1] || '';
+    if (keepHeading.test(heading)) {
+      sectionParts.push(cleaned.slice(start, end).trim());
+    }
+  }
+
+  const intro = [preamble, ...sectionParts].filter(Boolean).join('\n\n');
+  return clampMarkdown(intro || cleaned, 5200) || undefined;
+}
+
+async function readAgentWorkspaceIntro(workspace: string | undefined): Promise<string | undefined> {
+  if (!workspace || !workspace.trim()) return undefined;
+  const workspacePath = expandPath(workspace);
+  const candidateFiles = ['AGENTS.md', 'SOUL.md'];
+
+  for (const fileName of candidateFiles) {
+    try {
+      const raw = await readFile(join(workspacePath, fileName), 'utf8');
+      const intro = extractAgentIntroMarkdown(raw);
+      if (intro) return intro;
+    } catch {
+      // Try the next bootstrap file.
+    }
+  }
+
+  return undefined;
 }
 
 function normalizeAgentsConfig(config: AgentConfigDocument): {
@@ -506,28 +606,31 @@ async function buildSnapshotFromConfig(config: AgentConfigDocument, preloadedCha
   const defaultModelConfig = (config.agents as AgentsConfig | undefined)?.defaults?.model;
   const defaultModelLabel = formatModelLabel(defaultModelConfig);
   const defaultModelRef = resolveModelRef(defaultModelConfig);
-  const agents: AgentSummary[] = entries.map((entry) => {
+  const agents: AgentSummary[] = await Promise.all(entries.map(async (entry) => {
     const explicitModelRef = resolveModelRef(entry.model);
     const modelLabel = formatModelLabel(entry.model) || defaultModelLabel || 'Not configured';
     const inheritedModel = !explicitModelRef && Boolean(defaultModelLabel);
     const entryIdNorm = normalizeAgentIdForBinding(entry.id);
     const ownedChannels = agentChannelSets.get(entryIdNorm) ?? new Set<string>();
+    const workspace = entry.workspace || (entry.id === MAIN_AGENT_ID ? getDefaultWorkspacePath(config) : `~/.openclaw/workspace-${entry.id}`);
     return {
       id: entry.id,
       name: entry.name || (entry.id === MAIN_AGENT_ID ? MAIN_AGENT_NAME : entry.id),
+      description: await readAgentWorkspaceDescription(workspace),
+      intro: await readAgentWorkspaceIntro(workspace),
       isDefault: entry.id === defaultAgentId,
       modelDisplay: modelLabel,
       modelRef: explicitModelRef || defaultModelRef || null,
       overrideModelRef: explicitModelRef,
       inheritedModel,
-      workspace: entry.workspace || (entry.id === MAIN_AGENT_ID ? getDefaultWorkspacePath(config) : `~/.openclaw/workspace-${entry.id}`),
+      workspace,
       agentDir: entry.agentDir || getDefaultAgentDirPath(entry.id),
       mainSessionKey: buildAgentMainSessionKey(config, entry.id),
       channelTypes: configuredChannels
         .filter((ct) => ownedChannels.has(ct))
         .map((channelType) => toUiChannelType(channelType)),
     };
-  });
+  }));
 
   return {
     agents,

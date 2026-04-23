@@ -80,7 +80,7 @@ export function ExecutionGraphCard({
   return (
     <div
       data-testid="chat-execution-graph"
-      className="w-full rounded-2xl border border-black/10 bg-[#f5f1e8]/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
+      className="w-full rounded-2xl border border-black/10 bg-white px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04]"
     >
       <div className="flex items-start justify-between gap-3">
         <div>

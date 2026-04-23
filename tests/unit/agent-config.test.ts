@@ -137,6 +137,61 @@ describe('agent config lifecycle', () => {
     });
   });
 
+  it('exposes agent workspace description and intro in the snapshot', async () => {
+    const workspaceDir = join(testHome, '.openclaw', 'agency-agents', 'accounts-payable-agent');
+    await mkdir(workspaceDir, { recursive: true });
+    await writeFile(
+      join(workspaceDir, 'IDENTITY.md'),
+      '# Accounts Payable Agent\nMoves money safely across supported payment rails.',
+      'utf8',
+    );
+    await writeFile(
+      join(workspaceDir, 'AGENTS.md'),
+      [
+        '# Accounts Payable Agent Personality',
+        '',
+        'You are **AccountsPayable**, the autonomous payment operations specialist.',
+        '',
+        '## Core Mission',
+        '- Process vendor invoices',
+        '- Maintain a clean audit trail',
+        '',
+        '## Core Workflows',
+        '```ts',
+        'payInvoice();',
+        '```',
+        '',
+        '## OpenClaw Environment',
+        'This section should not be selected by heading.',
+      ].join('\n'),
+      'utf8',
+    );
+    await writeOpenClawJson({
+      agents: {
+        list: [
+          {
+            id: 'accounts-payable-agent',
+            name: 'accounts-payable-agent',
+            default: true,
+            workspace: workspaceDir,
+          },
+        ],
+      },
+    });
+
+    const { listAgentsSnapshot } = await import('@electron/utils/agent-config');
+    const snapshot = await listAgentsSnapshot();
+
+    expect(snapshot.agents[0]).toMatchObject({
+      id: 'accounts-payable-agent',
+      description: 'Moves money safely across supported payment rails.',
+    });
+    expect(snapshot.agents[0].intro).toContain('You are **AccountsPayable**');
+    expect(snapshot.agents[0].intro).toContain('## Core Mission');
+    expect(snapshot.agents[0].intro).not.toContain('payInvoice');
+    expect(snapshot.agents[0].intro).not.toContain('OpenClaw Environment');
+  });
+
   it('updates and clears per-agent model overrides', async () => {
     await writeOpenClawJson({
       agents: {

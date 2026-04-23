@@ -94,10 +94,14 @@ export function createHistoryActions(
         // Restore file attachments for user/assistant messages (from cache + text patterns)
         const enrichedMessages = enrichWithCachedImages(filteredMessages);
 
+        // Preserve local-only agent intro messages while history hydration catches up.
+        const localIntroMessages = get().messages.filter((message) => message._localKind === 'agent-intro');
         // Preserve the optimistic user message during an active send.
         // The Gateway may not include the user's message in chat.history
         // until the run completes, causing it to flash out of the UI.
-        let finalMessages = enrichedMessages;
+        let finalMessages = localIntroMessages.length > 0
+          ? [...localIntroMessages, ...enrichedMessages]
+          : enrichedMessages;
         const userMsgAt = get().lastUserMessageAt;
         if (get().sending && userMsgAt) {
           const userMsMs = toMs(userMsgAt);
@@ -110,7 +114,7 @@ export function createHistoryActions(
               (m) => m.role === 'user' && m.timestamp && Math.abs(toMs(m.timestamp) - userMsMs) < 5000,
             );
             if (optimistic) {
-              finalMessages = [...enrichedMessages, optimistic];
+              finalMessages = [...finalMessages, optimistic];
             }
           }
         }

@@ -53,13 +53,15 @@
         "pickAgent": "选择 Agent",
         "clearTarget": "清除目标 Agent",
         "targetChip": "@{{agent}}",
-        "agentPickerTitle": "将下一条消息直接发送给其他 Agent",
+        "agentSearchPlaceholder": "搜索你的员工",
+        "agentSearchEmpty": "没有找到匹配的 Agent",
         "gatewayDisconnectedPlaceholder": "网关未连接...",
         "send": "发送",
         "stop": "停止",
         "gatewayConnected": "已连接",
         "gatewayStatus": "gateway {{state}} | port: {{port}} {{pid}}",
-        "retryFailedAttachments": "重试失败的附件"
+        "retryFailedAttachments": "重试失败的附件",
+        "clearSessionAgent": "清除当前 Agent"
     },
     "historyBuckets": {
         "today": "今天",

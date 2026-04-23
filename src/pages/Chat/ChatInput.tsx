@@ -7,17 +7,20 @@
  * are sent with the message (no base64 over WebSocket).
  */
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { SendHorizontal, Square, X, Paperclip, FileText, Film, Music, FileArchive, File, Loader2, AtSign } from 'lucide-react';
+import { SendHorizontal, Square, X, Paperclip, FileText, Film, Music, FileArchive, File, Loader2, AtSign, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { hostApiFetch } from '@/lib/host-api';
 import { invokeIpc } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { useGatewayStore } from '@/stores/gateway';
 import { useAgentsStore } from '@/stores/agents';
 import { useChatStore } from '@/stores/chat';
+import { getAgencyAgentCategory, getAgencyAgentDescription } from '@/lib/agency-agents';
 import type { AgentSummary } from '@/types/agent';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -58,6 +61,24 @@ function FileIcon({ mimeType, className }: { mimeType: string; className?: strin
   return <File className={className} />;
 }
 
+function getAgentPickerDescription(agent: AgentSummary, tAgents: TFunction<'agents'>): string {
+  const localizedDescription = tAgents(`agencyAgentDescriptions.${agent.id}`, { defaultValue: '' });
+  if (localizedDescription) return localizedDescription;
+
+  const placeholderPattern = /fill this in during your first conversation/i;
+  if (agent.description && !placeholderPattern.test(agent.description)) {
+    return agent.description;
+  }
+
+  const sourceDescription = getAgencyAgentDescription(agent.id);
+  if (sourceDescription) return sourceDescription;
+
+  const category = getAgencyAgentCategory(agent.id);
+  if (category) return tAgents(`agencyCategories.${category.id}.description`);
+
+  return agent.isDefault ? tAgents('agency.defaultDescription') : tAgents('agency.customDescription');
+}
+
 /**
  * Read a browser File object as base64 string (without the data URL prefix).
  */
@@ -86,28 +107,48 @@ function readFileAsBase64(file: globalThis.File): Promise<string> {
 
 export function ChatInput({ onSend, onStop, disabled = false, sending = false, isEmpty = false }: ChatInputProps) {
   const { t } = useTranslation('chat');
+  const { t: tAgents } = useTranslation('agents');
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [targetAgentId, setTargetAgentId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [agentSearch, setAgentSearch] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
   const gatewayStatus = useGatewayStore((s) => s.status);
   const agents = useAgentsStore((s) => s.agents);
   const currentAgentId = useChatStore((s) => s.currentAgentId);
-  const currentAgentName = useMemo(
-    () => (agents ?? []).find((agent) => agent.id === currentAgentId)?.name ?? currentAgentId,
+  const newSession = useChatStore((s) => s.newSession);
+  const currentAgent = useMemo(
+    () => (agents ?? []).find((agent) => agent.id === currentAgentId) ?? null,
     [agents, currentAgentId],
   );
   const mentionableAgents = useMemo(
     () => (agents ?? []).filter((agent) => agent.id !== currentAgentId),
     [agents, currentAgentId],
   );
+  const filteredMentionableAgents = useMemo(() => {
+    const query = agentSearch.trim().toLowerCase();
+    if (!query) return mentionableAgents;
+    return mentionableAgents.filter((agent) => {
+      const haystack = [
+        agent.name,
+        agent.id,
+        agent.description,
+        getAgentPickerDescription(agent, tAgents),
+        agent.modelDisplay,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [agentSearch, mentionableAgents, tAgents]);
   const selectedTarget = useMemo(
     () => (agents ?? []).find((agent) => agent.id === targetAgentId) ?? null,
     [agents, targetAgentId],
   );
+  const sessionAgentChip = currentAgentId !== 'main' ? currentAgent : null;
+  const activeAgentChip = selectedTarget ?? sessionAgentChip;
+  const activeAgentChipIsTarget = Boolean(selectedTarget);
   const showAgentPicker = mentionableAgents.length > 0;
 
   // Auto-resize textarea
@@ -140,6 +181,7 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
 
   useEffect(() => {
     if (!pickerOpen) return;
+    setAgentSearch('');
     const handlePointerDown = (event: MouseEvent) => {
       if (!pickerRef.current?.contains(event.target as Node)) {
         setPickerOpen(false);
@@ -409,15 +451,21 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
 
         {/* Input Row */}
         <div className={`relative bg-white dark:bg-card rounded-[28px] shadow-sm border p-1.5 transition-all ${dragOver ? 'border-primary ring-1 ring-primary' : 'border-black/10 dark:border-white/10'}`}>
-          {selectedTarget && (
+          {activeAgentChip && (
             <div className="px-2.5 pt-2 pb-1">
               <button
                 type="button"
-                onClick={() => setTargetAgentId(null)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-primary/10"
-                title={t('composer.clearTarget')}
+                onClick={() => {
+                  if (activeAgentChipIsTarget) {
+                    setTargetAgentId(null);
+                    return;
+                  }
+                  newSession('main');
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/5 px-3 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-primary/10"
+                title={activeAgentChipIsTarget ? t('composer.clearTarget') : t('composer.clearSessionAgent')}
               >
-                <span>{t('composer.targetChip', { agent: selectedTarget.name })}</span>
+                <span>{t('composer.targetChip', { agent: activeAgentChip.name || activeAgentChip.id })}</span>
                 <X className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             </div>
@@ -453,14 +501,22 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
                 </Button>
                 {pickerOpen && (
                   <div className="absolute left-0 bottom-full z-20 mb-2 w-72 overflow-hidden rounded-2xl border border-black/10 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-card">
-                    <div className="px-3 py-2 text-[11px] font-medium text-muted-foreground/80">
-                      {t('composer.agentPickerTitle', { currentAgent: currentAgentName })}
+                    <div className="relative p-2">
+                      <Search className="pointer-events-none absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+                      <Input
+                        value={agentSearch}
+                        onChange={(event) => setAgentSearch(event.target.value)}
+                        placeholder={t('composer.agentSearchPlaceholder')}
+                        className="h-9 rounded-xl border-black/10 bg-black/5 pl-8 text-[13px] shadow-none focus-visible:ring-1 focus-visible:ring-black/20 dark:border-white/10 dark:bg-white/5 dark:focus-visible:ring-white/20"
+                        autoFocus
+                      />
                     </div>
                     <div className="max-h-64 overflow-y-auto">
-                      {mentionableAgents.map((agent) => (
+                      {filteredMentionableAgents.length > 0 ? filteredMentionableAgents.map((agent) => (
                         <AgentPickerItem
                           key={agent.id}
                           agent={agent}
+                          description={getAgentPickerDescription(agent, tAgents)}
                           selected={agent.id === targetAgentId}
                           onSelect={() => {
                             setTargetAgentId(agent.id);
@@ -468,7 +524,11 @@ export function ChatInput({ onSend, onStop, disabled = false, sending = false, i
                             textareaRef.current?.focus();
                           }}
                         />
-                      ))}
+                      )) : (
+                        <div className="px-3 py-8 text-center text-[13px] text-muted-foreground">
+                          {t('composer.agentSearchEmpty')}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -611,10 +671,12 @@ function AttachmentPreview({
 
 function AgentPickerItem({
   agent,
+  description,
   selected,
   onSelect,
 }: {
   agent: AgentSummary;
+  description: string;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -628,8 +690,8 @@ function AgentPickerItem({
       )}
     >
       <span className="text-[14px] font-medium text-foreground">{agent.name}</span>
-      <span className="text-[11px] text-muted-foreground">
-        {agent.modelDisplay}
+      <span className="w-full truncate text-[11px] text-muted-foreground">
+        {description}
       </span>
     </button>
   );

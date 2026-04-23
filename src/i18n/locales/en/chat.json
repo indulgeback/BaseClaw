@@ -53,13 +53,15 @@
         "pickAgent": "Choose agent",
         "clearTarget": "Clear target agent",
         "targetChip": "@{{agent}}",
-        "agentPickerTitle": "Route the next message to another agent",
+        "agentSearchPlaceholder": "Search your employees",
+        "agentSearchEmpty": "No matching agents",
         "gatewayDisconnectedPlaceholder": "Gateway not connected...",
         "send": "Send",
         "stop": "Stop",
         "gatewayConnected": "connected",
         "gatewayStatus": "gateway {{state}} | port: {{port}} {{pid}}",
-        "retryFailedAttachments": "Retry failed attachments"
+        "retryFailedAttachments": "Retry failed attachments",
+        "clearSessionAgent": "Clear selected agent"
     },
     "historyBuckets": {
         "today": "Today",

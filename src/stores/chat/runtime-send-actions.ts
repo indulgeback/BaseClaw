@@ -39,6 +39,21 @@ function ensureSessionEntry(sessions: ChatSession[], sessionKey: string): ChatSe
   return [...sessions, { key: sessionKey, displayName: sessionKey }];
 }
 
+function hasOnlyLocalIntroMessages(messages: RawMessage[]): boolean {
+  return messages.length > 0 && messages.every((message) => message._localKind === 'agent-intro');
+}
+
+function isDisposableEmptySession(
+  sessionKey: string,
+  messages: RawMessage[],
+  sessionLabels: Record<string, string>,
+  sessionLastActivity: Record<string, number>,
+): boolean {
+  if (sessionKey.endsWith(':main') || sessionLabels[sessionKey]) return false;
+  if (hasOnlyLocalIntroMessages(messages)) return true;
+  return messages.length === 0 && !sessionLastActivity[sessionKey];
+}
+
 export function createRuntimeSendActions(set: ChatSet, get: ChatGet): Pick<RuntimeActions, 'sendMessage' | 'abortRun'> {
   return {
     sendMessage: async (
@@ -52,7 +67,12 @@ export function createRuntimeSendActions(set: ChatSet, get: ChatGet): Pick<Runti
       const targetSessionKey = resolveMainSessionKeyForAgent(targetAgentId) ?? get().currentSessionKey;
       if (targetSessionKey !== get().currentSessionKey) {
         const current = get();
-        const leavingEmpty = !current.currentSessionKey.endsWith(':main') && current.messages.length === 0;
+        const leavingEmpty = isDisposableEmptySession(
+          current.currentSessionKey,
+          current.messages,
+          current.sessionLabels,
+          current.sessionLastActivity,
+        );
         set((s) => ({
           currentSessionKey: targetSessionKey,
           currentAgentId: getAgentIdFromSessionKey(targetSessionKey),

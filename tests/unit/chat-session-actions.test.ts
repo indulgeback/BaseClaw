@@ -9,7 +9,7 @@ vi.mock('@/lib/api-client', () => ({
 type ChatLikeState = {
   currentSessionKey: string;
   sessions: Array<{ key: string; displayName?: string; updatedAt?: number }>;
-  messages: Array<{ role: string; timestamp?: number; content?: unknown }>;
+  messages: Array<{ role: string; timestamp?: number; content?: unknown; _localKind?: 'agent-intro' }>;
   sessionLabels: Record<string, string>;
   sessionLastActivity: Record<string, number>;
   streamingText: string;
@@ -96,6 +96,25 @@ describe('chat session actions', () => {
     expect(h.read().loadHistory).toHaveBeenCalledTimes(1);
   });
 
+  it('switchSession removes a non-main session that only contains the local agent intro', async () => {
+    const { createSessionActions } = await import('@/stores/chat/session-actions');
+    const h = makeHarness({
+      currentSessionKey: 'agent:foo:session-intro',
+      sessions: [{ key: 'agent:foo:session-intro' }, { key: 'agent:foo:main' }],
+      messages: [{ role: 'assistant', content: 'Intro', _localKind: 'agent-intro' }],
+      sessionLabels: {},
+      sessionLastActivity: { 'agent:foo:session-intro': 1711111111111 },
+    });
+    const actions = createSessionActions(h.set as never, h.get as never);
+
+    actions.switchSession('agent:foo:main');
+    const next = h.read();
+    expect(next.currentSessionKey).toBe('agent:foo:main');
+    expect(next.sessions.find((s) => s.key === 'agent:foo:session-intro')).toBeUndefined();
+    expect(next.sessionLastActivity['agent:foo:session-intro']).toBeUndefined();
+    expect(h.read().loadHistory).toHaveBeenCalledTimes(1);
+  });
+
   it('deleteSession updates current session and keeps sidebar consistent', async () => {
     const { createSessionActions } = await import('@/stores/chat/session-actions');
     const h = makeHarness({
@@ -174,4 +193,3 @@ describe('chat session actions', () => {
     expect(h.read().sessions.find((session) => session.key === 'agent:main:cron:job-1')?.updatedAt).toBe(1773281731621);
   });
 });
-
