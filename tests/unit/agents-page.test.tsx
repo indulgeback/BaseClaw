@@ -8,9 +8,12 @@ const subscribeHostEventMock = vi.fn();
 const fetchAgentsMock = vi.fn();
 const updateAgentMock = vi.fn();
 const updateAgentModelMock = vi.fn();
+const createAgentFromTemplateMock = vi.fn();
 const refreshProviderSnapshotMock = vi.fn();
+const switchSessionMock = vi.fn();
+const navigateMock = vi.fn();
 
-const { gatewayState, agentsState, providersState } = vi.hoisted(() => ({
+const { gatewayState, agentsState, providersState, marketCatalog, templateDetail, loadAgentTemplateDetailMock, tMock } = vi.hoisted(() => ({
   gatewayState: {
     status: { state: 'running', port: 18789 },
   },
@@ -26,6 +29,76 @@ const { gatewayState, agentsState, providersState } = vi.hoisted(() => ({
     vendors: [] as Array<Record<string, unknown>>,
     defaultAccountId: '' as string,
   },
+  marketCatalog: {
+    sourceRepo: 'msitarzewski/agency-agents',
+    sourceCommit: '783f6a72bfd7f3135700ac273c619d92821b419a',
+    sourceCommitShort: '783f6a7',
+    generatedAt: '2026-04-23T00:00:00.000Z',
+    categories: [
+      { id: 'engineering', name: 'Engineering', count: 1 },
+      { id: 'design', name: 'Design', count: 1 },
+    ],
+    templates: [
+      {
+        id: 'frontend-developer',
+        templateId: 'frontend-developer',
+        name: 'Frontend Developer',
+        description: 'Builds polished web interfaces.',
+        categoryId: 'engineering',
+        category: 'Engineering',
+        version: '783f6a7',
+        badge: 'Imported',
+        status: 'stable',
+        tags: [],
+        modelRef: null,
+        previewFiles: [],
+        sourceRepo: 'msitarzewski/agency-agents',
+        sourceCommit: '783f6a72bfd7f3135700ac273c619d92821b419a',
+        sourcePath: 'engineering/engineering-frontend-developer.md',
+      },
+      {
+        id: 'ui-designer',
+        templateId: 'ui-designer',
+        name: 'UI Designer',
+        description: 'Shapes product interfaces.',
+        categoryId: 'design',
+        category: 'Design',
+        version: '783f6a7',
+        badge: 'Imported',
+        status: 'stable',
+        tags: [],
+        modelRef: null,
+        previewFiles: [],
+        sourceRepo: 'msitarzewski/agency-agents',
+        sourceCommit: '783f6a72bfd7f3135700ac273c619d92821b419a',
+        sourcePath: 'design/design-ui-designer.md',
+      },
+    ],
+  },
+  templateDetail: {
+    id: 'frontend-developer',
+    templateId: 'frontend-developer',
+    name: 'Frontend Developer',
+    description: 'Builds polished web interfaces.',
+    categoryId: 'engineering',
+    category: 'Engineering',
+    version: '783f6a7',
+    badge: 'Imported',
+    status: 'stable',
+    tags: [],
+    modelRef: null,
+    previewFiles: [],
+    sourceRepo: 'msitarzewski/agency-agents',
+    sourceCommit: '783f6a72bfd7f3135700ac273c619d92821b419a',
+    sourcePath: 'engineering/engineering-frontend-developer.md',
+    files: {
+      'SOUL.md': '## Identity\nFrontend soul',
+      'AGENTS.md': '## Mission\nFrontend work',
+      'IDENTITY.md': '# Frontend Developer\nBuilds polished web interfaces.',
+    },
+  },
+  loadAgentTemplateDetailMock: vi.fn(),
+  tMock: vi.fn((key: string) => key),
 }));
 
 vi.mock('@/stores/gateway', () => ({
@@ -37,6 +110,7 @@ vi.mock('@/stores/agents', () => ({
     fetchAgents: typeof fetchAgentsMock;
     updateAgent: typeof updateAgentMock;
     updateAgentModel: typeof updateAgentModelMock;
+    createAgentFromTemplate: typeof createAgentFromTemplateMock;
     createAgent: ReturnType<typeof vi.fn>;
     deleteAgent: ReturnType<typeof vi.fn>;
   }) => unknown) => {
@@ -45,11 +119,22 @@ vi.mock('@/stores/agents', () => ({
       fetchAgents: fetchAgentsMock,
       updateAgent: updateAgentMock,
       updateAgentModel: updateAgentModelMock,
+      createAgentFromTemplate: createAgentFromTemplateMock,
       createAgent: vi.fn(),
       deleteAgent: vi.fn(),
     };
     return typeof selector === 'function' ? selector(state) : state;
   },
+}));
+
+vi.mock('@/stores/chat', () => ({
+  useChatStore: (selector: (state: { switchSession: typeof switchSessionMock }) => unknown) => selector({
+    switchSession: switchSessionMock,
+  }),
+}));
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => navigateMock,
 }));
 
 vi.mock('@/stores/providers', () => ({
@@ -72,9 +157,18 @@ vi.mock('@/lib/host-events', () => ({
   subscribeHostEvent: (...args: unknown[]) => subscribeHostEventMock(...args),
 }));
 
+vi.mock('@/lib/agent-market', () => ({
+  getAgentMarketCatalog: () => marketCatalog,
+  loadAgentTemplateDetail: (...args: unknown[]) => loadAgentTemplateDetailMock(...args),
+}));
+
 vi.mock('react-i18next', () => ({
+  initReactI18next: {
+    type: '3rdParty',
+    init: vi.fn(),
+  },
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: tMock,
   }),
 }));
 
@@ -99,6 +193,8 @@ describe('Agents page status refresh', () => {
     fetchAgentsMock.mockResolvedValue(undefined);
     updateAgentMock.mockResolvedValue(undefined);
     updateAgentModelMock.mockResolvedValue(undefined);
+    createAgentFromTemplateMock.mockResolvedValue(undefined);
+    loadAgentTemplateDetailMock.mockResolvedValue(templateDetail);
     refreshProviderSnapshotMock.mockResolvedValue(undefined);
     hostApiFetchMock.mockResolvedValue({
       success: true,
@@ -195,6 +291,7 @@ describe('Agents page status refresh', () => {
       expect(fetchAgentsMock).toHaveBeenCalledTimes(1);
     });
 
+    fireEvent.click(screen.getByTestId('agents-scene-manage'));
     fireEvent.click(screen.getByTitle('settings'));
     fireEvent.click(screen.getByText('settingsDialog.modelLabel').closest('button') as HTMLButtonElement);
 
@@ -234,6 +331,8 @@ describe('Agents page status refresh', () => {
 
     const { rerender } = render(<Agents />);
 
+    await screen.findByTestId('agents-page');
+    fireEvent.click(screen.getByTestId('agents-scene-manage'));
     expect(await screen.findByText('Main')).toBeInTheDocument();
 
     agentsState.loading = true;
@@ -255,5 +354,93 @@ describe('Agents page status refresh', () => {
 
     expect(container.querySelector('svg.animate-spin')).toBeTruthy();
     expect(screen.queryByText('title')).not.toBeInTheDocument();
+  });
+
+  it('defaults to the market with category sections and installs templates from lazy detail', async () => {
+    render(<Agents />);
+
+    expect(await screen.findByTestId('agents-market')).toBeInTheDocument();
+    expect(screen.getByTestId('agents-category-engineering')).toBeInTheDocument();
+    expect(screen.getByTestId('agents-market-section-engineering')).toHaveTextContent('Frontend Developer');
+    expect(screen.getByTestId('agents-market-section-design')).toHaveTextContent('UI Designer');
+
+    fireEvent.click(screen.getByTestId('agent-template-add-frontend-developer'));
+
+    await waitFor(() => {
+      expect(loadAgentTemplateDetailMock).toHaveBeenCalledWith('frontend-developer', 'engineering');
+      expect(createAgentFromTemplateMock).toHaveBeenCalledWith(templateDetail);
+    });
+  });
+
+  it('starts chat for an installed imported template from the market', async () => {
+    agentsState.agents = [
+      {
+        id: 'frontend-developer',
+        templateId: 'frontend-developer',
+        name: 'Frontend Developer',
+        isDefault: false,
+        modelDisplay: 'gpt-5',
+        modelRef: 'openai/gpt-5',
+        overrideModelRef: null,
+        inheritedModel: true,
+        workspace: '~/.openclaw/workspace-frontend-developer',
+        agentDir: '~/.openclaw/agents/frontend-developer/agent',
+        mainSessionKey: 'agent:frontend-developer:main',
+        channelTypes: [],
+      },
+    ];
+
+    render(<Agents />);
+
+    fireEvent.click(await screen.findByTestId('agent-template-chat-frontend-developer'));
+
+    expect(switchSessionMock).toHaveBeenCalledWith('agent:frontend-developer:main');
+    expect(navigateMock).toHaveBeenCalledWith('/');
+  });
+
+  it('opens the management file drawer and saves edited workspace files', async () => {
+    agentsState.agents = [
+      {
+        id: 'frontend-developer',
+        name: 'Frontend Developer',
+        isDefault: false,
+        modelDisplay: 'gpt-5',
+        modelRef: 'openai/gpt-5',
+        overrideModelRef: null,
+        inheritedModel: true,
+        workspace: '~/.openclaw/workspace-frontend-developer',
+        agentDir: '~/.openclaw/agents/frontend-developer/agent',
+        mainSessionKey: 'agent:frontend-developer:main',
+        channelTypes: [],
+        sourceRepo: 'msitarzewski/agency-agents',
+        sourcePath: 'engineering/engineering-frontend-developer.md',
+      },
+    ];
+    hostApiFetchMock.mockImplementation((path: string, options?: { method?: string }) => {
+      if (path === '/api/channels/accounts') return Promise.resolve({ success: true, channels: [] });
+      if (path.includes('/files/AGENTS.md') && options?.method === 'PUT') return Promise.resolve({ success: true, content: 'updated' });
+      if (path.includes('/files/AGENTS.md')) return Promise.resolve({ success: true, content: 'original' });
+      return Promise.resolve({ success: true });
+    });
+
+    render(<Agents />);
+
+    fireEvent.click(await screen.findByTestId('agents-scene-manage'));
+    fireEvent.click(screen.getByTestId('agent-files-frontend-developer'));
+
+    const editor = await screen.findByTestId('agent-file-editor');
+    expect(editor).toHaveValue('original');
+    fireEvent.change(editor, { target: { value: 'updated' } });
+    fireEvent.click(screen.getByTestId('agent-file-save'));
+
+    await waitFor(() => {
+      expect(hostApiFetchMock).toHaveBeenCalledWith(
+        '/api/agents/frontend-developer/files/AGENTS.md',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ content: 'updated' }),
+        }),
+      );
+    });
   });
 });

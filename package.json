@@ -26,9 +26,9 @@
       ]
     }
   },
-  "description": "SpriteClaw - Graphical AI Assistant based on OpenClaw",
+  "description": "PokeClaw - Graphical AI Assistant based on OpenClaw",
   "main": "dist-electron/main/index.js",
-  "author": "SpriteClaw Team",
+  "author": "PokeClaw Team",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -57,6 +57,7 @@
     "prep:win-binaries": "pnpm run uv:download:win && pnpm run node:download:win",
     "icons": "zx scripts/generate-icons.mjs",
     "rename:brand": "node scripts/rename-brand.mjs",
+    "agents:sync-agency": "node scripts/sync-agency-agents.mjs",
     "sprite:convert-webm": "node scripts/convert-sprite-webm-alpha.mjs",
     "package": "node scripts/generate-ext-bridge.mjs && vite build && zx scripts/bundle-openclaw.mjs && zx scripts/bundle-openclaw-plugins.mjs && zx scripts/bundle-preinstalled-skills.mjs",
     "package:mac": "pnpm run package && electron-builder --mac --publish never",

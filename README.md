@@ -102,6 +102,10 @@ Communicate with AI agents through a modern chat experience. Support for multipl
 When you target another agent with `@agent`, SpriteClaw switches into that agent's own conversation context directly instead of relaying through the default agent. Agent workspaces stay separate by default, and stronger isolation depends on OpenClaw sandbox settings.
 Each agent can also override its own `provider/model` runtime setting; agents without overrides continue inheriting the global default model.
 
+### 🗂️ Built-In Agents Market
+The Agents page opens to an offline market of 184 templates from the pinned The Agency / `msitarzewski/agency-agents` snapshot (`783f6a7`). Templates are grouped into 14 top-level categories, installed without runtime GitHub access, and converted into OpenClaw workspace files (`SOUL.md`, `AGENTS.md`, `IDENTITY.md`) only when you add one.
+The Manage view keeps the existing agent controls, lets you edit those workspace files, and can jump directly into chat for any installed agent.
+
 ### 📡 Multi-Channel Management
 Configure and monitor multiple AI channels simultaneously. Each channel operates independently, allowing you to run specialized agents for different tasks.
 Each channel now supports multiple accounts, per-account agent binding, and switching the channel default account directly from the Channels page.

@@ -63,6 +63,7 @@ vi.mock('@electron/utils/logger', () => ({
 
 import {
   GATEWAY_CONNECT_HANDSHAKE_TIMEOUT_MS,
+  buildGatewayConnectFrame,
   connectGatewaySocket,
   probeGatewayReady,
 } from '@electron/gateway/ws-client';
@@ -146,6 +147,18 @@ describe('connectGatewaySocket', () => {
     await expect(connectionPromise).resolves.toBe(socket);
     expect(onHandshakeComplete).toHaveBeenCalledWith(socket);
     expect(pendingRequests.size).toBe(0);
+  });
+
+  it('identifies the UI client as PokeClaw during gateway registration', () => {
+    const { frame } = buildGatewayConnectFrame({
+      challengeNonce: 'nonce-123',
+      token: 'token-123',
+      deviceIdentity: null,
+      platform: 'darwin',
+    });
+
+    const params = (frame as { params: { client: { displayName: string } } }).params;
+    expect(params.client.displayName).toBe('PokeClaw');
   });
 
   it('still fails when the connect response exceeds the configured timeout', async () => {

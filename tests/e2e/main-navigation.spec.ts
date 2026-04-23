@@ -118,6 +118,7 @@ test.describe('ClawX main navigation without setup flow', () => {
       await completeSetup(page);
       await page.getByTestId('sidebar-nav-agents').click();
       await expect(page.getByTestId('agents-page')).toBeVisible();
+      await page.getByTestId('agents-scene-manage').click();
       await expect(page.getByTestId(`agent-card-${agentId}`)).toContainText(agentName);
 
       const agentCard = page.getByTestId(`agent-card-${agentId}`);
@@ -152,6 +153,7 @@ test.describe('ClawX main navigation without setup flow', () => {
       await completeSetup(page);
       await page.getByTestId('sidebar-nav-agents').click();
       await expect(page.getByTestId('agents-page')).toBeVisible();
+      await page.getByTestId('agents-scene-manage').click();
       await expect(page.getByTestId(`agent-card-${agentId}`)).toContainText(agentName);
 
       await page.getByTestId('agents-add-agent').click();

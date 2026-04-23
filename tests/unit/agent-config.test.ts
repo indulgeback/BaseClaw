@@ -509,4 +509,102 @@ describe('agent config lifecycle', () => {
     expect(agentIds).not.toContain('2');
     expect(agentIds).not.toContain('1');
   });
+
+  it('creates imported templates with stable ids, source metadata, and workspace files', async () => {
+    await writeOpenClawJson({
+      agents: {
+        list: [{ id: 'main', name: 'Main', default: true }],
+      },
+    });
+
+    const {
+      createAgent,
+      listAgentsSnapshot,
+      readAgentWorkspaceFile,
+      updateAgentWorkspaceFile,
+    } = await import('@electron/utils/agent-config');
+
+    await createAgent('Frontend Developer', {
+      agentId: 'frontend-developer',
+      templateId: 'frontend-developer',
+      sourceRepo: 'msitarzewski/agency-agents',
+      sourceCommit: '783f6a72bfd7f3135700ac273c619d92821b419a',
+      sourcePath: 'engineering/engineering-frontend-developer.md',
+      categoryId: 'engineering',
+      workspaceFiles: {
+        'SOUL.md': 'soul',
+        'AGENTS.md': 'agents',
+        'IDENTITY.md': 'identity',
+      },
+    });
+
+    const snapshot = await listAgentsSnapshot();
+    const imported = snapshot.agents.find((agent) => agent.id === 'frontend-developer');
+    expect(imported).toMatchObject({
+      id: 'frontend-developer',
+      templateId: 'frontend-developer',
+      sourceRepo: 'msitarzewski/agency-agents',
+      sourcePath: 'engineering/engineering-frontend-developer.md',
+      categoryId: 'engineering',
+    });
+    const configAfterCreate = await readOpenClawJson();
+    const createdEntry = ((configAfterCreate.agents as { list: Array<Record<string, unknown>> }).list)
+      .find((agent) => agent.id === 'frontend-developer');
+    expect(createdEntry).not.toHaveProperty('templateId');
+    expect(createdEntry).not.toHaveProperty('sourceRepo');
+    const metadata = JSON.parse(
+      await readFile(join(testHome, '.openclaw', 'clawx-agent-metadata.json'), 'utf8'),
+    ) as { agents: Record<string, Record<string, unknown>> };
+    expect(metadata.agents['frontend-developer']).toMatchObject({
+      templateId: 'frontend-developer',
+      sourceRepo: 'msitarzewski/agency-agents',
+      sourcePath: 'engineering/engineering-frontend-developer.md',
+      categoryId: 'engineering',
+    });
+    await expect(readAgentWorkspaceFile('frontend-developer', 'AGENTS.md')).resolves.toBe('agents');
+
+    await updateAgentWorkspaceFile('frontend-developer', 'AGENTS.md', 'updated agents');
+    await expect(readAgentWorkspaceFile('frontend-developer', 'AGENTS.md')).resolves.toBe('updated agents');
+    await expect(createAgent('Frontend Developer', { agentId: 'frontend-developer' })).rejects.toThrow(
+      'Agent "frontend-developer" already exists',
+    );
+  });
+
+  it('migrates leaked imported template metadata out of openclaw.json', async () => {
+    await writeOpenClawJson({
+      agents: {
+        list: [
+          { id: 'main', name: 'Main', default: true },
+          {
+            id: 'frontend-developer',
+            name: 'Frontend Developer',
+            templateId: 'frontend-developer',
+            sourceRepo: 'msitarzewski/agency-agents',
+            sourceCommit: '783f6a72bfd7f3135700ac273c619d92821b419a',
+            sourcePath: 'engineering/engineering-frontend-developer.md',
+            categoryId: 'engineering',
+          },
+        ],
+      },
+    });
+
+    const { listAgentsSnapshot } = await import('@electron/utils/agent-config');
+
+    const snapshot = await listAgentsSnapshot();
+    expect(snapshot.agents.find((agent) => agent.id === 'frontend-developer')).toMatchObject({
+      templateId: 'frontend-developer',
+      sourceRepo: 'msitarzewski/agency-agents',
+      sourcePath: 'engineering/engineering-frontend-developer.md',
+      categoryId: 'engineering',
+    });
+
+    const migratedConfig = await readOpenClawJson();
+    const migratedEntry = ((migratedConfig.agents as { list: Array<Record<string, unknown>> }).list)
+      .find((agent) => agent.id === 'frontend-developer');
+    expect(migratedEntry).not.toHaveProperty('templateId');
+    expect(migratedEntry).not.toHaveProperty('sourceRepo');
+    expect(migratedEntry).not.toHaveProperty('sourceCommit');
+    expect(migratedEntry).not.toHaveProperty('sourcePath');
+    expect(migratedEntry).not.toHaveProperty('categoryId');
+  });
 });

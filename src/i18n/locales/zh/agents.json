@@ -12,6 +12,43 @@
     "deleteAgent": "删除 Agent",
     "settings": "设置",
     "creating": "创建中...",
+    "scene": {
+        "market": "市场",
+        "manage": "管理"
+    },
+    "market": {
+        "catalog": "目录",
+        "sourceNote": "内置 {{count}} 个来自 The Agency / agency-agents 快照 {{commit}} 的模板，按 {{categories}} 个分类离线浏览。",
+        "sectionCount": "{{count}} 个模板",
+        "add": "添加",
+        "added": "已添加",
+        "chat": "对话"
+    },
+    "manage": {
+        "importedFrom": "导入自 {{repo}} · {{path}}"
+    },
+    "files": {
+        "title": "{{name}} 文件",
+        "description": "编辑这个 Agent 的 OpenClaw 工作区引导文件。",
+        "source": "导入自 {{repo}} · {{path}}",
+        "edit": "编辑文件"
+    },
+    "categories": {
+        "academic": "学术",
+        "design": "设计",
+        "engineering": "工程",
+        "finance": "金融",
+        "game-development": "游戏开发",
+        "marketing": "市场营销",
+        "paid-media": "付费媒体",
+        "product": "产品",
+        "project-management": "项目管理",
+        "sales": "销售",
+        "spatial-computing": "空间计算",
+        "specialized": "专项",
+        "support": "支持",
+        "testing": "测试"
+    },
     "createDialog": {
         "title": "添加 Agent",
         "description": "输入名称即可创建新 Agent，可选择是否继承主 Agent 的工作区引导文件。",
@@ -58,6 +95,8 @@
     "toast": {
         "agentCreated": "Agent 已创建",
         "agentCreateFailed": "创建 Agent 失败：{{error}}",
+        "templateAdded": "{{name}} 已添加",
+        "templateAddFailed": "添加模板失败：{{error}}",
         "agentDeleted": "Agent 已删除",
         "agentDeleteFailed": "删除 Agent 失败：{{error}}",
         "agentUpdated": "Agent 已更新",
@@ -72,6 +111,9 @@
         "channelAssigned": "{{channel}} 已分配给 Agent",
         "channelAssignFailed": "分配频道失败：{{error}}",
         "channelRemoved": "{{channel}} 已移除",
-        "channelRemoveFailed": "移除频道失败：{{error}}"
+        "channelRemoveFailed": "移除频道失败：{{error}}",
+        "fileLoadFailed": "加载文件失败：{{error}}",
+        "fileSaved": "文件已保存",
+        "fileSaveFailed": "保存文件失败：{{error}}"
     }
 }

@@ -12,6 +12,43 @@
     "deleteAgent": "Delete Agent",
     "settings": "Settings",
     "creating": "Creating...",
+    "scene": {
+        "market": "Market",
+        "manage": "Manage"
+    },
+    "market": {
+        "catalog": "Catalog",
+        "sourceNote": "{{count}} built-in templates from The Agency / agency-agents snapshot {{commit}}, organized across {{categories}} categories and available offline.",
+        "sectionCount": "{{count}} templates",
+        "add": "Add",
+        "added": "Added",
+        "chat": "Chat"
+    },
+    "manage": {
+        "importedFrom": "Imported from {{repo}} · {{path}}"
+    },
+    "files": {
+        "title": "{{name}} Files",
+        "description": "Edit this agent's OpenClaw workspace bootstrap files.",
+        "source": "Imported from {{repo}} · {{path}}",
+        "edit": "Edit files"
+    },
+    "categories": {
+        "academic": "Academic",
+        "design": "Design",
+        "engineering": "Engineering",
+        "finance": "Finance",
+        "game-development": "Game Development",
+        "marketing": "Marketing",
+        "paid-media": "Paid Media",
+        "product": "Product",
+        "project-management": "Project Management",
+        "sales": "Sales",
+        "spatial-computing": "Spatial Computing",
+        "specialized": "Specialized",
+        "support": "Support",
+        "testing": "Testing"
+    },
     "createDialog": {
         "title": "Add Agent",
         "description": "Create a new agent by name. You can optionally inherit the main agent's workspace bootstrap files.",
@@ -58,6 +95,8 @@
     "toast": {
         "agentCreated": "Agent created",
         "agentCreateFailed": "Failed to create agent: {{error}}",
+        "templateAdded": "{{name}} added",
+        "templateAddFailed": "Failed to add template: {{error}}",
         "agentDeleted": "Agent deleted",
         "agentDeleteFailed": "Failed to delete agent: {{error}}",
         "agentUpdated": "Agent updated",
@@ -72,6 +111,9 @@
         "channelAssigned": "{{channel}} assigned to agent",
         "channelAssignFailed": "Failed to assign channel: {{error}}",
         "channelRemoved": "{{channel}} removed",
-        "channelRemoveFailed": "Failed to remove channel: {{error}}"
+        "channelRemoveFailed": "Failed to remove channel: {{error}}",
+        "fileLoadFailed": "Failed to load file: {{error}}",
+        "fileSaved": "File saved",
+        "fileSaveFailed": "Failed to save file: {{error}}"
     }
 }

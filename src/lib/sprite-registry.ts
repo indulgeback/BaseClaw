@@ -18,7 +18,7 @@ export const SPRITE_PROFILES: Record<SpriteCharacterId, SpriteProfile> = {
     id: 'raccoon',
     name: 'Raccoon Sprite',
     shortName: 'Raccoon',
-    description: 'A nimble guide that keeps SpriteClaw lively, warm, and alert.',
+    description: 'A nimble guide that keeps PokeClaw lively, warm, and alert.',
     accent: 'hsl(28 76% 58%)',
     assets: {
       idle: {

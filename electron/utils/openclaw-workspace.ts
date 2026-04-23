@@ -13,6 +13,10 @@ import { getResourcesDir } from './paths';
 
 const CLAWX_BEGIN = '<!-- clawx:begin -->';
 const CLAWX_END = '<!-- clawx:end -->';
+const LEGACY_CONTEXT_MARKERS = [
+  ['<!-- shortclaw:begin -->', '<!-- shortclaw:end -->'],
+  ['<!-- openclawpro:begin -->', '<!-- openclawpro:end -->'],
+] as const;
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -34,13 +38,25 @@ async function ensureDir(dir: string): Promise<void> {
  * Otherwise appends it at the end.
  */
 export function mergeClawXSection(existing: string, section: string): string {
-  const wrapped = `${CLAWX_BEGIN}\n${section.trim()}\n${CLAWX_END}`;
-  const beginIdx = existing.indexOf(CLAWX_BEGIN);
-  const endIdx = existing.indexOf(CLAWX_END);
-  if (beginIdx !== -1 && endIdx !== -1) {
-    return existing.slice(0, beginIdx) + wrapped + existing.slice(endIdx + CLAWX_END.length);
+  let base = existing;
+  for (const [legacyBegin, legacyEnd] of LEGACY_CONTEXT_MARKERS) {
+    let beginIdx = base.indexOf(legacyBegin);
+    let endIdx = base.indexOf(legacyEnd);
+    while (beginIdx !== -1 && endIdx !== -1 && endIdx > beginIdx) {
+      const removeEnd = endIdx + legacyEnd.length;
+      base = `${base.slice(0, beginIdx).trimEnd()}\n\n${base.slice(removeEnd).trimStart()}`;
+      beginIdx = base.indexOf(legacyBegin);
+      endIdx = base.indexOf(legacyEnd);
+    }
   }
-  return existing.trimEnd() + '\n\n' + wrapped + '\n';
+
+  const wrapped = `${CLAWX_BEGIN}\n${section.trim()}\n${CLAWX_END}`;
+  const beginIdx = base.indexOf(CLAWX_BEGIN);
+  const endIdx = base.indexOf(CLAWX_END);
+  if (beginIdx !== -1 && endIdx !== -1) {
+    return base.slice(0, beginIdx) + wrapped + base.slice(endIdx + CLAWX_END.length);
+  }
+  return base.trimEnd() + '\n\n' + wrapped + '\n';
 }
 
 // ── Workspace directory resolution ───────────────────────────────

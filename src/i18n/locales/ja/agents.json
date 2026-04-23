@@ -12,6 +12,43 @@
     "deleteAgent": "Agent を削除",
     "settings": "設定",
     "creating": "作成中...",
+    "scene": {
+        "market": "マーケット",
+        "manage": "管理"
+    },
+    "market": {
+        "catalog": "カタログ",
+        "sourceNote": "The Agency / agency-agents のスナップショット {{commit}} から {{count}} 件のテンプレートを内蔵し、{{categories}} カテゴリでオフライン閲覧できます。",
+        "sectionCount": "{{count}} 件のテンプレート",
+        "add": "追加",
+        "added": "追加済み",
+        "chat": "チャット"
+    },
+    "manage": {
+        "importedFrom": "{{repo}} からインポート · {{path}}"
+    },
+    "files": {
+        "title": "{{name}} ファイル",
+        "description": "この Agent の OpenClaw ワークスペース初期ファイルを編集します。",
+        "source": "{{repo}} からインポート · {{path}}",
+        "edit": "ファイル編集"
+    },
+    "categories": {
+        "academic": "Academic",
+        "design": "Design",
+        "engineering": "Engineering",
+        "finance": "Finance",
+        "game-development": "Game Development",
+        "marketing": "Marketing",
+        "paid-media": "Paid Media",
+        "product": "Product",
+        "project-management": "Project Management",
+        "sales": "Sales",
+        "spatial-computing": "Spatial Computing",
+        "specialized": "Specialized",
+        "support": "Support",
+        "testing": "Testing"
+    },
     "createDialog": {
         "title": "Agent を追加",
         "description": "名前だけで新しい Agent を作成できます。メイン Agent のワークスペース初期ファイルを引き継ぐかどうかも選択できます。",
@@ -58,6 +95,8 @@
     "toast": {
         "agentCreated": "Agent を作成しました",
         "agentCreateFailed": "Agent の作成に失敗しました: {{error}}",
+        "templateAdded": "{{name}} を追加しました",
+        "templateAddFailed": "テンプレートの追加に失敗しました: {{error}}",
         "agentDeleted": "Agent を削除しました",
         "agentDeleteFailed": "Agent の削除に失敗しました: {{error}}",
         "agentUpdated": "Agent を更新しました",
@@ -72,6 +111,9 @@
         "channelAssigned": "{{channel}} を Agent に割り当てました",
         "channelAssignFailed": "Channel の割り当てに失敗しました: {{error}}",
         "channelRemoved": "{{channel}} を削除しました",
-        "channelRemoveFailed": "Channel の削除に失敗しました: {{error}}"
+        "channelRemoveFailed": "Channel の削除に失敗しました: {{error}}",
+        "fileLoadFailed": "ファイルの読み込みに失敗しました: {{error}}",
+        "fileSaved": "ファイルを保存しました",
+        "fileSaveFailed": "ファイルの保存に失敗しました: {{error}}"
     }
 }
