@@ -32,6 +32,7 @@ export function buildSpriteSequence(
 export function deriveSpriteState(signals: SpriteSignals): SpriteState {
   if (!signals.documentVisible) return 'sleep';
   if (signals.sending || signals.pendingFinal || signals.hasStreaming) return 'working';
+  if (!signals.windowFocused) return 'sleep';
   if (signals.inputFocused || signals.hasDraft) return 'listen';
   return 'idle';
 }

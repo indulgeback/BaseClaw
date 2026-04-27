@@ -30,6 +30,14 @@ describe('sprite state derivation', () => {
     })).toBe('working');
   });
 
+  it('keeps working ahead of window blur while a run is active', () => {
+    expect(deriveSpriteState({
+      ...DEFAULT_SPRITE_SIGNALS,
+      windowFocused: false,
+      sending: true,
+    })).toBe('working');
+  });
+
   it('maps sleep when the main window loses focus', () => {
     expect(deriveSpriteState({
       ...DEFAULT_SPRITE_SIGNALS,

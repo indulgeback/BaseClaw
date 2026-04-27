@@ -85,14 +85,69 @@ test.describe('ClawX main navigation without setup flow', () => {
       const sidebar = page.getByTestId('sidebar');
       const toggle = page.getByRole('button', { name: 'Collapse sidebar' });
       const newChatButton = page.getByTestId('sidebar-new-chat');
+      const settingsLink = page.getByTestId('sidebar-nav-settings');
+      const settingsTooltipTrigger = page.getByTestId('sidebar-nav-settings-tooltip-trigger');
+      const devConsoleButton = page.getByTestId('sidebar-open-dev-console');
 
       await expect(sidebar).toHaveClass(/w-\[268px\]/);
       await expect(newChatButton).not.toHaveText('');
+      await expect(settingsLink).toHaveText('');
+      await expect(devConsoleButton).toHaveText('');
+
+      const footerLayout = await page.evaluate(() => {
+        const sidebarBox = document.querySelector('[data-testid="sidebar"]')?.getBoundingClientRect();
+        const settingsBox = document.querySelector('[data-testid="sidebar-nav-settings"]')?.getBoundingClientRect();
+        const devConsoleBox = document.querySelector('[data-testid="sidebar-open-dev-console"]')?.getBoundingClientRect();
+
+        if (!sidebarBox || !settingsBox || !devConsoleBox) {
+          throw new Error('Sidebar footer controls were not rendered');
+        }
+
+        return {
+          sameRow: Math.abs(settingsBox.top - devConsoleBox.top) < 2,
+          devConsoleRightGap: sidebarBox.right - devConsoleBox.right,
+          settingsBeforeDevConsole: settingsBox.right <= devConsoleBox.left,
+        };
+      });
+
+      expect(footerLayout.sameRow).toBe(true);
+      expect(footerLayout.devConsoleRightGap).toBeLessThanOrEqual(14);
+      expect(footerLayout.settingsBeforeDevConsole).toBe(true);
+
+      const settingsLabel = await settingsLink.getAttribute('aria-label');
+      await settingsTooltipTrigger.hover();
+      await expect(page.getByRole('tooltip')).toContainText(settingsLabel ?? '');
+
+      await page.keyboard.press('Escape');
+      await page.mouse.move(0, 0);
+      await expect(page.getByRole('tooltip')).toBeHidden();
+      const devConsoleLabel = await devConsoleButton.getAttribute('aria-label');
+      await devConsoleButton.hover();
+      await expect(page.getByRole('tooltip')).toContainText(devConsoleLabel ?? '');
 
       await toggle.click();
       await expect(sidebar).toHaveClass(/w-\[68px\]/);
       await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
       await expect(newChatButton).toHaveText('');
+      await expect(settingsLink).toHaveText('');
+      await expect(devConsoleButton).toHaveText('');
+
+      const collapsedFooterLayout = await page.evaluate(() => {
+        const settingsBox = document.querySelector('[data-testid="sidebar-nav-settings"]')?.getBoundingClientRect();
+        const devConsoleBox = document.querySelector('[data-testid="sidebar-open-dev-console"]')?.getBoundingClientRect();
+
+        if (!settingsBox || !devConsoleBox) {
+          throw new Error('Sidebar footer controls were not rendered');
+        }
+
+        return {
+          sameColumn: Math.abs(settingsBox.left - devConsoleBox.left) < 2,
+          devConsoleBelowSettings: devConsoleBox.top >= settingsBox.bottom,
+        };
+      });
+
+      expect(collapsedFooterLayout.sameColumn).toBe(true);
+      expect(collapsedFooterLayout.devConsoleBelowSettings).toBe(true);
 
       await page.getByRole('button', { name: 'Expand sidebar' }).click();
       await expect(sidebar).toHaveClass(/w-\[268px\]/);
@@ -194,6 +249,7 @@ test.describe('ClawX main navigation without setup flow', () => {
 
       await expect(page.getByTestId('main-layout')).toBeVisible();
       await page.getByTestId('sidebar-nav-skills').click();
+      await page.getByTestId('skills-scene-manage').click();
       await page.getByTestId('skills-open-install-drawer').click();
 
       const drawer = page.getByTestId('skills-install-drawer');

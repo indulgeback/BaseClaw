@@ -35,10 +35,28 @@ interface PreinstalledSkillSpec {
     slug: string;
     version?: string;
     autoEnable?: boolean;
+    categoryId?: string;
 }
 
 interface PreinstalledManifest {
     skills?: PreinstalledSkillSpec[];
+}
+
+interface SkillsMarketCategorySpec {
+    id: string;
+    name: string;
+}
+
+interface SkillsMarketSpec extends PreinstalledSkillSpec {
+    repo?: string;
+    repoPath?: string;
+    ref?: string;
+    awesomeCategoryPath?: string;
+}
+
+interface SkillsMarketManifest {
+    categories?: SkillsMarketCategorySpec[];
+    skills?: SkillsMarketSpec[];
 }
 
 interface PreinstalledLockEntry {
@@ -51,10 +69,11 @@ interface PreinstalledLockFile {
 }
 
 interface PreinstalledMarker {
-    source: 'clawx-preinstalled';
+    source: 'clawx-preinstalled' | 'clawx-market-preset';
     slug: string;
     version: string;
     installedAt: string;
+    categoryId?: string;
 }
 
 async function fileExists(p: string): Promise<boolean> {
@@ -85,7 +104,7 @@ async function writeConfig(config: OpenClawConfig): Promise<void> {
     await writeFile(OPENCLAW_CONFIG_PATH, json, 'utf-8');
 }
 
-async function setSkillsEnabled(skillKeys: string[], enabled: boolean): Promise<void> {
+export async function setSkillsEnabled(skillKeys: string[], enabled: boolean): Promise<void> {
     if (skillKeys.length === 0) {
         return;
     }
@@ -231,6 +250,8 @@ export async function ensureBuiltinSkillsInstalled(): Promise<void> {
 
 const PREINSTALLED_MANIFEST_NAME = 'preinstalled-manifest.json';
 const PREINSTALLED_MARKER_NAME = '.clawx-preinstalled.json';
+const SKILLS_MARKET_MANIFEST_NAME = 'market-manifest.json';
+const SKILLS_MARKET_LOCK_NAME = '.skills-market-lock.json';
 
 async function readPreinstalledManifest(): Promise<PreinstalledSkillSpec[]> {
     const candidates = [
@@ -267,6 +288,41 @@ function resolvePreinstalledSkillsSourceRoot(): string | null {
     return root || null;
 }
 
+async function readSkillsMarketManifest(): Promise<SkillsMarketSpec[]> {
+    const candidates = [
+        join(getResourcesDir(), 'skills', SKILLS_MARKET_MANIFEST_NAME),
+        join(process.cwd(), 'resources', 'skills', SKILLS_MARKET_MANIFEST_NAME),
+    ];
+
+    const manifestPath = candidates.find((p) => existsSync(p));
+    if (!manifestPath) {
+        return [];
+    }
+
+    try {
+        const raw = await readFile(manifestPath, 'utf-8');
+        const parsed = JSON.parse(raw) as SkillsMarketManifest;
+        if (!Array.isArray(parsed.skills)) {
+            return [];
+        }
+        return parsed.skills.filter((s): s is SkillsMarketSpec => Boolean(s?.slug));
+    } catch (error) {
+        logger.warn('Failed to read skills market manifest:', error);
+        return [];
+    }
+}
+
+function resolveSkillsMarketSourceRoot(): string | null {
+    const candidates = [
+        join(getResourcesDir(), 'skills-market-presets'),
+        join(process.cwd(), 'build', 'skills-market-presets'),
+        join(__dirname, '../../build/skills-market-presets'),
+    ];
+
+    const root = candidates.find((dir) => existsSync(dir));
+    return root || null;
+}
+
 async function readPreinstalledLockVersions(sourceRoot: string): Promise<Map<string, string>> {
     const lockPath = join(sourceRoot, '.preinstalled-lock.json');
     if (!existsSync(lockPath)) {
@@ -290,6 +346,29 @@ async function readPreinstalledLockVersions(sourceRoot: string): Promise<Map<str
     }
 }
 
+async function readSkillsMarketLockVersions(sourceRoot: string): Promise<Map<string, string>> {
+    const lockPath = join(sourceRoot, SKILLS_MARKET_LOCK_NAME);
+    if (!existsSync(lockPath)) {
+        return new Map();
+    }
+    try {
+        const raw = await readFile(lockPath, 'utf-8');
+        const parsed = JSON.parse(raw) as PreinstalledLockFile;
+        const versions = new Map<string, string>();
+        for (const entry of parsed.skills || []) {
+            const slug = entry.slug?.trim();
+            const version = entry.version?.trim();
+            if (slug && version) {
+                versions.set(slug, version);
+            }
+        }
+        return versions;
+    } catch (error) {
+        logger.warn('Failed to read skills market lock file:', error);
+        return new Map();
+    }
+}
+
 async function tryReadMarker(markerPath: string): Promise<PreinstalledMarker | null> {
     if (!existsSync(markerPath)) {
         return null;
@@ -304,6 +383,65 @@ async function tryReadMarker(markerPath: string): Promise<PreinstalledMarker | n
     } catch {
         return null;
     }
+}
+
+async function installSkillFromSource(
+    slug: string,
+    source: PreinstalledMarker['source'],
+    version: string,
+    categoryId?: string,
+): Promise<void> {
+    const sourceRoot = resolvePreinstalledSkillsSourceRoot();
+    if (!sourceRoot) {
+        throw new Error('Preinstalled skills source root not found');
+    }
+
+    const sourceDir = join(sourceRoot, slug);
+    const sourceManifest = join(sourceDir, 'SKILL.md');
+    if (!existsSync(sourceManifest)) {
+        throw new Error(`Preset skill source missing SKILL.md: ${slug}`);
+    }
+
+    const targetRoot = join(homedir(), '.openclaw', 'skills');
+    const targetDir = join(targetRoot, slug);
+    const targetManifest = join(targetDir, 'SKILL.md');
+    const markerPath = join(targetDir, PREINSTALLED_MARKER_NAME);
+
+    await mkdir(targetRoot, { recursive: true });
+
+    if (!existsSync(targetManifest)) {
+        await mkdir(targetDir, { recursive: true });
+        await cpAsyncSafe(sourceDir, targetDir);
+    }
+
+    const markerPayload: PreinstalledMarker = {
+        source,
+        slug,
+        version,
+        installedAt: new Date().toISOString(),
+        categoryId,
+    };
+    await writeFile(markerPath, `${JSON.stringify(markerPayload, null, 2)}\n`, 'utf-8');
+    await setSkillsEnabled([slug], true);
+}
+
+export async function installSkillPreset(templateId: string, categoryId: string): Promise<void> {
+    const skills = await readSkillsMarketManifest();
+    const spec = skills.find((entry) => entry.slug === templateId);
+    if (!spec) {
+        throw new Error(`Unknown preset skill: ${templateId}`);
+    }
+
+    const sourceRoot = resolveSkillsMarketSourceRoot();
+    if (!sourceRoot) {
+        throw new Error('Skills market source root not found');
+    }
+    const lockVersions = await readSkillsMarketLockVersions(sourceRoot);
+    const version = lockVersions.get(templateId)
+        || (spec.version || 'bundled').trim()
+        || 'bundled';
+
+    await installSkillFromSource(templateId, 'clawx-market-preset', version, categoryId);
 }
 
 /**

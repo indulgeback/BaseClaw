@@ -119,9 +119,9 @@ SpriteClaw 现在还内置了腾讯官方个人微信渠道插件，可直接在
 
 
 ### 🧩 可扩展技能系统
-通过预构建的技能扩展 AI 智能体的能力。在集成的技能面板中浏览、安装和管理技能——无需包管理器。
-SpriteClaw 还会内置预装完整的文档处理技能（`pdf`、`xlsx`、`docx`、`pptx`），在启动时自动部署到托管技能目录（默认 `~/.openclaw/skills`），并在首次安装时默认启用。额外预装技能（`find-skills`、`self-improving-agent`、`tavily-search`、`brave-web-search`）也会默认启用；若缺少必需的 API Key，OpenClaw 会在运行时给出配置错误提示。  
-Skills 页面可展示来自多个 OpenClaw 来源的技能（托管目录、workspace、额外技能目录），并显示每个技能的实际路径，便于直接打开真实安装位置。
+通过预构建的技能扩展 AI 智能体的能力。Skills 页面现在和 Agents 一样拆分为 **市场** 与 **管理** 两个场景。
+内置 Skills 市场现在改为基于 [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) 固定快照生成的离线精选目录，因此可以在不访问 ClawHub 的情况下浏览并添加来自多个分类的精选预制技能。SpriteClaw 仍会在启动时自动部署一小组默认预装技能（`pdf`、`xlsx`、`docx`、`pptx`、`find-skills`、`self-improving-agent`、`tavily-search`、`brave-web-search`）到托管技能目录（默认 `~/.openclaw/skills`），并在首次安装时默认启用。
+管理场景会继续展示来自多个 OpenClaw 来源的技能（bundled/core、内置市场安装、ClawHub 安装、workspace、额外技能目录），并显示每个技能的实际路径，便于直接打开真实安装位置；ClawHub 搜索则作为补充安装来源保留在管理场景中。
 
 重点搜索技能所需环境变量：
 - `BRAVE_SEARCH_API_KEY`：用于 `brave-web-search`

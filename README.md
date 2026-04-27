@@ -118,9 +118,9 @@ The Cron page now lets you configure external delivery directly in the task form
 
 
 ### 🧩 Extensible Skill System
-Extend your AI agents with pre-built skills. Browse, install, and manage skills through the integrated skill panel—no package managers required.
-SpriteClaw also pre-bundles full document-processing skills (`pdf`, `xlsx`, `docx`, `pptx`), deploys them automatically to the managed skills directory (default `~/.openclaw/skills`) on startup, and enables them by default on first install. Additional bundled skills (`find-skills`, `self-improving-agent`, `tavily-search`, `brave-web-search`) are also enabled by default; if required API keys are missing, OpenClaw will surface configuration errors in runtime.  
-The Skills page can display skills discovered from multiple OpenClaw sources (managed dir, workspace, and extra skill dirs), and now shows each skill's actual location so you can open the real folder directly.
+Extend your AI agents with pre-built skills. The Skills page now mirrors Agents with separate **Market** and **Manage** scenes.
+The built-in Skills Market is now an offline curated catalog generated from a fixed snapshot of [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills), so you can browse and add hand-picked presets from many categories without hitting ClawHub at runtime. SpriteClaw still pre-bundles a smaller default startup set (`pdf`, `xlsx`, `docx`, `pptx`, `find-skills`, `self-improving-agent`, `tavily-search`, `brave-web-search`), deploying those into the managed skills directory (default `~/.openclaw/skills`) on startup and enabling the default bundle on first install.
+The Manage scene continues to show skills discovered from multiple OpenClaw sources (bundled/core, built-in market installs, ClawHub installs, workspace, and extra skill dirs), exposes each skill's actual location, and keeps ClawHub search as a secondary install source instead of mixing online results into the built-in market.
 
 Environment variables for bundled search skills:
 - `BRAVE_SEARCH_API_KEY` for `brave-web-search`

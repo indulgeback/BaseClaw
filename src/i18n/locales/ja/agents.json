@@ -18,7 +18,6 @@
     },
     "market": {
         "catalog": "カタログ",
-        "sourceNote": "The Agency / agency-agents のスナップショット {{commit}} から {{count}} 件のテンプレートを内蔵し、{{categories}} カテゴリでオフライン閲覧できます。",
         "sectionCount": "{{count}} 件のテンプレート",
         "add": "追加",
         "added": "追加済み",

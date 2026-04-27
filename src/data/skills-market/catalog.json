@@ -1,0 +1,917 @@
+{
+  "sourceRepo": "VoltAgent/awesome-openclaw-skills",
+  "sourceCommit": "main",
+  "sourceCommitShort": "main",
+  "generatedAt": "2026-04-24T12:29:38.062Z",
+  "categories": [
+    {
+      "id": "git-and-github",
+      "name": "Git & GitHub",
+      "count": 2
+    },
+    {
+      "id": "coding-agents-and-ides",
+      "name": "Coding Agents & IDEs",
+      "count": 2
+    },
+    {
+      "id": "browser-and-automation",
+      "name": "Browser & Automation",
+      "count": 2
+    },
+    {
+      "id": "web-and-frontend-development",
+      "name": "Web & Frontend Development",
+      "count": 2
+    },
+    {
+      "id": "devops-and-cloud",
+      "name": "DevOps & Cloud",
+      "count": 2
+    },
+    {
+      "id": "image-and-video-generation",
+      "name": "Image & Video Generation",
+      "count": 1
+    },
+    {
+      "id": "apple-apps-and-services",
+      "name": "Apple Apps & Services",
+      "count": 1
+    },
+    {
+      "id": "search-and-research",
+      "name": "Search & Research",
+      "count": 2
+    },
+    {
+      "id": "clawdbot-tools",
+      "name": "Clawdbot Tools",
+      "count": 1
+    },
+    {
+      "id": "cli-utilities",
+      "name": "CLI Utilities",
+      "count": 1
+    },
+    {
+      "id": "marketing-and-sales",
+      "name": "Marketing & Sales",
+      "count": 1
+    },
+    {
+      "id": "productivity-and-tasks",
+      "name": "Productivity & Tasks",
+      "count": 2
+    },
+    {
+      "id": "ai-and-llms",
+      "name": "AI & LLMs",
+      "count": 2
+    },
+    {
+      "id": "media-and-streaming",
+      "name": "Media & Streaming",
+      "count": 1
+    },
+    {
+      "id": "notes-and-pkm",
+      "name": "Notes & PKM",
+      "count": 1
+    },
+    {
+      "id": "ios-and-macos-development",
+      "name": "iOS & macOS Development",
+      "count": 1
+    },
+    {
+      "id": "transportation",
+      "name": "Transportation",
+      "count": 1
+    },
+    {
+      "id": "personal-development",
+      "name": "Personal Development",
+      "count": 1
+    },
+    {
+      "id": "health-and-fitness",
+      "name": "Health & Fitness",
+      "count": 1
+    },
+    {
+      "id": "communication",
+      "name": "Communication",
+      "count": 1
+    },
+    {
+      "id": "speech-and-transcription",
+      "name": "Speech & Transcription",
+      "count": 1
+    },
+    {
+      "id": "smart-home-and-iot",
+      "name": "Smart Home & IoT",
+      "count": 1
+    },
+    {
+      "id": "shopping-and-e-commerce",
+      "name": "Shopping & E-commerce",
+      "count": 1
+    },
+    {
+      "id": "calendar-and-scheduling",
+      "name": "Calendar & Scheduling",
+      "count": 1
+    },
+    {
+      "id": "pdf-and-documents",
+      "name": "PDF & Documents",
+      "count": 2
+    },
+    {
+      "id": "self-hosted-and-automation",
+      "name": "Self-Hosted & Automation",
+      "count": 1
+    },
+    {
+      "id": "security-and-passwords",
+      "name": "Security & Passwords",
+      "count": 1
+    },
+    {
+      "id": "gaming",
+      "name": "Gaming",
+      "count": 1
+    }
+  ],
+  "templates": [
+    {
+      "id": "arc-skill-gitops",
+      "templateId": "arc-skill-gitops",
+      "name": "arc-skill-gitops",
+      "description": "Automated deployment, rollback, and version management for agent workflows and skills.",
+      "categoryId": "git-and-github",
+      "category": "Git & GitHub",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🚀",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/trypto1019/arc-skill-gitops",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/gitops.py"
+      ]
+    },
+    {
+      "id": "agentdo",
+      "templateId": "agentdo",
+      "name": "agentdo",
+      "description": "Post tasks for other AI agents to do, or pick up work from the AgentDo task queue (agentdo.dev). Use when: (1) you need something done that you can't do yourself (scraping, data collection, image conversion, research, verification), (2) you want to offer your skills to other agents, (3) you need a human for a physical ",
+      "categoryId": "git-and-github",
+      "category": "Git & GitHub",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/wrannaman/agentdo",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "academic-research",
+      "templateId": "academic-research",
+      "name": "academic-research",
+      "description": "Search academic papers and conduct literature reviews using OpenAlex API (free, no key needed). Use when the user needs to find scholarly papers by topic/author/DOI, explore citation chains, get structured paper metadata (title, authors, abstract, citations, DOI, open access URL), fetch full text of open access papers,",
+      "categoryId": "coding-agents-and-ides",
+      "category": "Coding Agents & IDEs",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🔎",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/rogersuperbuilderalpha/academic-research",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/literature-review.py"
+      ]
+    },
+    {
+      "id": "active-maintenance",
+      "templateId": "active-maintenance",
+      "name": "active-maintenance",
+      "description": "# Active Maintenance Skill **Automated system health and memory metabolism for OpenClaw.** Inspired by the `ClawIntelligentMemory` project, this skill ensures Kim Assistant's environment stays clean and its memory stays dense. --- ## Features 1. **System Health Checks**: Monitor disk usage and critical resources. 2. **",
+      "categoryId": "coding-agents-and-ides",
+      "category": "Coding Agents & IDEs",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/xiaowenzhou/active-maintenance",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "agent-browser",
+      "templateId": "agent-browser",
+      "name": "agent-browser",
+      "description": "Automates browser interactions for web testing, form filling, screenshots, and data extraction. Use when the user needs to navigate websites, interact with web pages, fill forms, take screenshots, test web applications, or extract information from web pages.",
+      "categoryId": "browser-and-automation",
+      "category": "Browser & Automation",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🌐",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/murphykobe/agent-browser-2",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/authentication.md"
+      ]
+    },
+    {
+      "id": "agent-daily-planner",
+      "templateId": "agent-daily-planner",
+      "name": "agent-daily-planner",
+      "description": "# Agent Daily Planner 📋 A structured daily planning and execution tracking system for AI agents. Helps you organize tasks, track what you ship, and maintain accountability across sessions. ## Why This Exists Agents lose context between sessions. Without a planning system, you waste time re-orienting instead of shippin",
+      "categoryId": "browser-and-automation",
+      "category": "Browser & Automation",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/gpunter/agent-daily-planner",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "actionbook",
+      "templateId": "actionbook",
+      "name": "actionbook",
+      "description": "Activate when the user needs to interact with any website — browser automation, web scraping, screenshots, form filling, UI testing, monitoring, or building AI agents. Provides pre-verified page actions with step-by-step instructions and tested selectors.",
+      "categoryId": "web-and-frontend-development",
+      "category": "Web & Frontend Development",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/adcentury/actionbook",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/authentication.md"
+      ]
+    },
+    {
+      "id": "agent-dashboard",
+      "templateId": "agent-dashboard",
+      "name": "agent-dashboard",
+      "description": "Real-time agent dashboard for OpenClaw. Monitor active tasks, cron job health, issues, and action items from anywhere. Three setup tiers: (1) Zero-config canvas rendering inside OpenClaw, (2) GitHub Pages with 30-second polling — free, 2-minute setup, (3) Supabase Realtime + Vercel for instant websocket updates. All da",
+      "categoryId": "web-and-frontend-development",
+      "category": "Web & Frontend Development",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tahseen137/agent-dashboard",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "assets/push-dashboard.sh"
+      ]
+    },
+    {
+      "id": "agentic-devops",
+      "templateId": "agentic-devops",
+      "name": "agentic-devops",
+      "description": "Production-grade agent DevOps toolkit — Docker, process management, log analysis, and health monitoring. Built by engineers who run production.",
+      "categoryId": "devops-and-cloud",
+      "category": "DevOps & Cloud",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🛠️",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tkuehnl/agentic-devops",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "id": "agent-metrics-osiris",
+      "templateId": "agent-metrics-osiris",
+      "name": "agent-metrics",
+      "description": "Observability and metrics for AI agents - track calls, errors, latency",
+      "categoryId": "devops-and-cloud",
+      "category": "DevOps & Cloud",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "📊",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/nantes/agent-metrics-osiris",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "metrics.py"
+      ]
+    },
+    {
+      "id": "ace-music",
+      "templateId": "ace-music",
+      "name": "ace-music",
+      "description": "Generate AI music using ACE-Step 1.5 via ACE Music's free API. Use when the user asks to create, generate, or compose music, songs, beats, instrumentals, or audio tracks. Supports lyrics, style prompts, covers, and repainting. Free API, no cost.",
+      "categoryId": "image-and-video-generation",
+      "category": "Image & Video Generation",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🎵",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/fspecii/ace-music",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/api-docs.md"
+      ]
+    },
+    {
+      "id": "apple-contacts",
+      "templateId": "apple-contacts",
+      "name": "apple-contacts",
+      "description": "Look up contacts from macOS Contacts.app. Use when resolving phone numbers to names, finding contact info, or searching the address book.",
+      "categoryId": "apple-apps-and-services",
+      "category": "Apple Apps & Services",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tyler6204/apple-contacts",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "academic-deep-research",
+      "templateId": "academic-deep-research",
+      "name": "academic-deep-research",
+      "description": "Transparent, rigorous research with full methodology — not a black-box API wrapper. Conducts exhaustive investigation through mandated 2-cycle research per theme, APA 7th citations, evidence hierarchy, and 3 user checkpoints. Self-contained using native OpenClaw tools (web_search, web_fetch, sessions_spawn). Use for li",
+      "categoryId": "search-and-research",
+      "category": "Search & Research",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🔬",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/kesslerio/academic-deep-research",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "academic-writer",
+      "templateId": "academic-writer",
+      "name": "academic-writer",
+      "description": "Professional LaTeX writing assistant. Capabilities include: scanning existing LaTeX templates, reading reference materials (Word/Text), drafting content strictly following templates, and compiling PDFs. Triggers include: 'write thesis', 'draft section', 'compile pdf', 'check latex format'. Designed to work in tandem wi",
+      "categoryId": "search-and-research",
+      "category": "Search & Research",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/dayunyan/academic-writer",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/writer_tools.py"
+      ]
+    },
+    {
+      "id": "agent-builder",
+      "templateId": "agent-builder",
+      "name": "agent-builder",
+      "description": "Build high-performing OpenClaw agents end-to-end. Use when you want to design a new agent (persona + operating rules) and generate the required OpenClaw workspace files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md, HEARTBEAT.md, optional MEMORY.md + memory/YYYY-MM-DD.md). Also use to iterate on an existing agent’s behavio",
+      "categoryId": "clawdbot-tools",
+      "category": "Clawdbot Tools",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/plgonzalezrx8/agent-builder",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/architecture.md"
+      ]
+    },
+    {
+      "id": "activity-analyzer",
+      "templateId": "activity-analyzer",
+      "name": "activity-analyzer",
+      "description": "# Activity Analyzer Skill ## 🔒 Privacy & Security Notice > **⚠️ Important: Before running this skill, please read carefully.** > - **Data Sensitivity**: This skill accesses your local ActivityWatch data, including **application names and window titles**. Window titles may contain sensitive information (document names,",
+      "categoryId": "cli-utilities",
+      "category": "CLI Utilities",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/qew21/activity-analyzer",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/fetch_activity.js"
+      ]
+    },
+    {
+      "id": "ad-ready",
+      "templateId": "ad-ready",
+      "name": "ad-ready",
+      "description": "Generate advertising images automatically from a product URL + brand profile. ✅ USE WHEN: - User provides a product URL (e-commerce link) - Want automated product scraping + image generation - Have a brand profile to apply (70+ brands available) - Need funnel-stage targeting (awareness/consideration/conversion) - Want ",
+      "categoryId": "marketing-and-sales",
+      "category": "Marketing & Sales",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/pauldelavallaz/ad-ready",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "configs/Brief_Generator/brief_prompt.json"
+      ]
+    },
+    {
+      "id": "4to1-planner",
+      "templateId": "4to1-planner",
+      "name": "4to1-planner",
+      "description": "AI planning coach using the 4To1 Method™ — turn 4-year vision into daily action. Connects to Notion, Todoist, Google Calendar, or local Markdown. Use when user wants to plan goals, do weekly reviews, track projects, or set up a planning system.",
+      "categoryId": "productivity-and-tasks",
+      "category": "Productivity & Tasks",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🎯",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/qingxuantang/4to1-planner",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "adaptive-reasoning",
+      "templateId": "adaptive-reasoning",
+      "name": "adaptive-reasoning",
+      "description": "Automatically assess task complexity and adjust reasoning level. Triggers on every user message to evaluate whether extended thinking (reasoning mode) would improve response quality. Use this as a pre-processing step before answering complex questions.",
+      "categoryId": "productivity-and-tasks",
+      "category": "Productivity & Tasks",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/enzoricciulli/adaptive-reasoning",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "aap-passport",
+      "templateId": "aap-passport",
+      "name": "aap",
+      "description": "Agent Attestation Protocol - The Reverse Turing Test. Verify AI agents, block humans.",
+      "categoryId": "ai-and-llms",
+      "category": "AI & LLMs",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/ira-hash/aap-passport",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "PROTOCOL.md"
+      ]
+    },
+    {
+      "id": "adversarial-prompting",
+      "templateId": "adversarial-prompting",
+      "name": "adversarial-prompting",
+      "description": "Applies rigorous adversarial analysis to generate, critique, fix, and consolidate solutions for any problem (technical or non-technical). Use when facing complex problems requiring thorough analysis, multiple solution approaches, and validation of proposed fixes before implementation.",
+      "categoryId": "ai-and-llms",
+      "category": "AI & LLMs",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/abe238/adversarial-prompting",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/export_analysis.py"
+      ]
+    },
+    {
+      "id": "alexa-control",
+      "templateId": "alexa-control",
+      "name": "alexa-remote",
+      "description": "Control Alexa devices via CLI - set alarms, play music, flash briefings, smart home commands. Use when asked to set an alarm, play something on Echo, control smart home devices, or send voice commands to Alexa.",
+      "categoryId": "media-and-streaming",
+      "category": "Media & Streaming",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/ignito-pg/alexa-control",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/alexa-cmd.sh"
+      ]
+    },
+    {
+      "id": "acc-error-memory",
+      "templateId": "acc-error-memory",
+      "name": "acc-error-memory",
+      "description": "Error pattern tracking for AI agents. Detects corrections, escalates recurring mistakes, learns mitigations. The 'something's off' detector from the AI Brain series.",
+      "categoryId": "notes-and-pkm",
+      "category": "Notes & PKM",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "⚡",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/impkind/acc-error-memory",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "apple-docs",
+      "templateId": "apple-docs",
+      "name": "apple-docs",
+      "description": "Query Apple Developer Documentation, APIs, and WWDC videos (2014-2025). Search SwiftUI, UIKit, Objective-C, Swift frameworks and watch sessions.",
+      "categoryId": "ios-and-macos-development",
+      "category": "iOS & macOS Development",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "📄",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/thesethrose/apple-docs",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "cli.js"
+      ]
+    },
+    {
+      "id": "bahn",
+      "templateId": "bahn",
+      "name": "bahn",
+      "description": "Search Deutsche Bahn train connections using the bahn-cli tool. Use when you need to find train connections between German stations, check departure times, or help with travel planning. Works with station names like \"Berlin Hbf\", \"München\", \"Hannover\".",
+      "categoryId": "transportation",
+      "category": "Transportation",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tobiasbischoff/bahn",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "adaptive-learning-agents",
+      "templateId": "adaptive-learning-agents",
+      "name": "adaptive-learning-agents",
+      "description": "# Adaptive Learning Agent **Learn from errors and corrections in real-time. Continuously improve by capturing failures, user feedback, and successful patterns.** Free and open-source (MIT License) • Zero dependencies • Works locally --- ## 🚀 Why This Skill? ### Problem Statement Working with Claude or any AI agent mea",
+      "categoryId": "personal-development",
+      "category": "Personal Development",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/vedantsingh60/adaptive-learning-agents",
+      "previewFiles": [
+        "SKILL.md",
+        "LICENSE.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "fitbit",
+      "templateId": "fitbit",
+      "name": "fitbit",
+      "description": "Query Fitbit health data including sleep, heart rate, activity, SpO2, and breathing rate. Use when user asks about their fitness, sleep quality, steps, or health metrics.",
+      "categoryId": "health-and-fitness",
+      "category": "Health & Fitness",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "💪",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/mjrussell/fitbit",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "agent-mail",
+      "templateId": "agent-mail",
+      "name": "agentmail",
+      "description": "Email inbox for AI agents. Check messages, send emails, and communicate via your own @agentmail.to address.",
+      "categoryId": "communication",
+      "category": "Communication",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "📬",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/rimelucci/agent-mail",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/check_inbox.py"
+      ]
+    },
+    {
+      "id": "addis-assistant-stt",
+      "templateId": "addis-assistant-stt",
+      "name": "addis-assistant",
+      "description": "Provides Speech-to-Text (STT) and text Translation using the Addis Assistant API (api.addisassistant.com). Use when the user needs to convert an audio file to text (specifically Amharic), or translate text between languages (e.g., Amharic to English). Requires 'x-api-key'.",
+      "categoryId": "speech-and-transcription",
+      "category": "Speech & Transcription",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/dagmawibabi/addis-assistant-stt",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/api_spec.md"
+      ]
+    },
+    {
+      "id": "bambu-cli",
+      "templateId": "bambu-cli",
+      "name": "bambu-cli",
+      "description": "Operate and troubleshoot BambuLab printers with the bambu-cli (status/watch, print start/pause/resume/stop, files, camera, gcode, AMS, calibration, motion, fans, light, config, doctor). Use when a user asks to control or monitor a BambuLab printer, set up profiles or access codes, or translate a task into safe bambu-cl",
+      "categoryId": "smart-home-and-iot",
+      "category": "Smart Home & IoT",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tobiasbischoff/bambu-cli",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/commands.md"
+      ]
+    },
+    {
+      "id": "add-wish",
+      "templateId": "add-wish",
+      "name": "add-wish",
+      "description": "Save any product to a universal wishlist. Converts any product URL into a one-click \"save for later\" link. Works with any retailer, any AI platform, zero setup.",
+      "categoryId": "shopping-and-e-commerce",
+      "category": "Shopping & E-commerce",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/leebellon/add-wish",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "accli",
+      "templateId": "accli",
+      "name": "accli",
+      "description": "This skill should be used when interacting with Apple Calendar on macOS. Use it for listing calendars, viewing events, creating/updating/deleting calendar events, and checking availability/free-busy times. Triggers on requests like \"check my calendar\", \"schedule a meeting\", \"what's on my schedule\", \"am I free tomorrow\"",
+      "categoryId": "calendar-and-scheduling",
+      "category": "Calendar & Scheduling",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/joargp/accli",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "docsync",
+      "templateId": "docsync",
+      "name": "docsync",
+      "description": "Auto-generate docs from code and detect documentation drift via git hooks. Free README gen + paid living docs.",
+      "categoryId": "pdf-and-documents",
+      "category": "PDF & Documents",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "📖",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/suhteevah/docsync",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "convert-to-pdf",
+      "templateId": "convert-to-pdf",
+      "name": "convert-to-pdf",
+      "description": "# convert-to-pdf ## Purpose This skill converts one or multiple documents to PDF by: 1) accepting one or multiple input files from the user, 2) uploading them to the Solutions API convert endpoint, 3) polling the job status until it is finished, 4) returning download URL(s) for the resulting file(s). If multiple files ",
+      "categoryId": "pdf-and-documents",
+      "category": "PDF & Documents",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "📄",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/crossservicesolutions/convert-to-pdf",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "bridle",
+      "templateId": "bridle",
+      "name": "bridle",
+      "description": "Unified configuration manager for AI coding assistants. Manage profiles, install skills/agents/commands, and switch configurations across Claude Code, OpenCode, Goose, and Amp.",
+      "categoryId": "self-hosted-and-automation",
+      "category": "Self-Hosted & Automation",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/bjesuiter/bridle",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ]
+    },
+    {
+      "id": "1password",
+      "templateId": "1password",
+      "name": "1password",
+      "description": "Set up and use 1Password CLI (op). Use when installing the CLI, enabling desktop app integration, signing in (single or multi-account), or reading/injecting/running secrets via op.",
+      "categoryId": "security-and-passwords",
+      "category": "Security & Passwords",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/steipete/1password",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "references/cli-examples.md"
+      ]
+    },
+    {
+      "id": "yumfu",
+      "templateId": "yumfu",
+      "name": "yumfu",
+      "description": "Multiplayer text RPG with 10 playable worlds — play together in Telegram groups! Worlds: 笑傲江湖, Harry Potter, Warrior Cats, F15 Down, 龙虾三国, 倚天屠龙记, Game of Thrones, Lord of the Rings, 西游记 (Journey to the West), 战国乱世 (Sengoku Chaos). Each player gets their own character in a shared world with AI art every scene. PvP, team",
+      "categoryId": "gaming",
+      "category": "Gaming",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "🌍",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/yumyumtum/yumfu",
+      "previewFiles": [
+        "SKILL.md",
+        "README.md",
+        "CLAWHUB.md"
+      ]
+    }
+  ]
+}

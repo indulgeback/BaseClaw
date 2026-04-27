@@ -15,11 +15,10 @@ describe('sprite clip queue planning', () => {
     ]);
   });
 
-  it('routes non-idle to non-idle through exit and next enter', () => {
+  it('routes non-idle to non-idle straight into the next working motion', () => {
     const sequence = planPath('raccoon', 'listen', 'working');
     expect(sequence.map((item) => `${item.state}:${item.phase}`)).toEqual([
       'listen:exit',
-      'idle:loop',
       'working:enter',
       'working:loop',
     ]);
@@ -72,6 +71,25 @@ describe('sprite clip queue planning', () => {
     );
     expect(inListenLoop.playbackQueue.map((item) => `${item.state}:${item.phase}`)).toEqual([
       'listen:loop',
+    ]);
+  });
+
+  it('drops the intermediate idle loop when switching from listen to working', () => {
+    const listening = createSpritePlaybackSnapshot('raccoon', 'listen', 'listen');
+    const toWorking = reconcilePlaybackSnapshot(listening, 'working');
+    const afterLoopAdvance = advancePlaybackSnapshot(toWorking);
+
+    expect(toWorking.playbackQueue.map((item) => `${item.state}:${item.phase}`)).toEqual([
+      'listen:exit',
+      'working:enter',
+      'working:loop',
+    ]);
+    expect(afterLoopAdvance.activeClip && `${afterLoopAdvance.activeClip.state}:${afterLoopAdvance.activeClip.phase}`).toBe(
+      'listen:exit',
+    );
+    expect(afterLoopAdvance.playbackQueue.map((item) => `${item.state}:${item.phase}`)).toEqual([
+      'working:enter',
+      'working:loop',
     ]);
   });
 });

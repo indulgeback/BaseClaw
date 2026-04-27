@@ -18,7 +18,6 @@
     },
     "market": {
         "catalog": "Catalog",
-        "sourceNote": "{{count}} built-in templates from The Agency / agency-agents snapshot {{commit}}, organized across {{categories}} categories and available offline.",
         "sectionCount": "{{count}} templates",
         "add": "Add",
         "added": "Added",

@@ -49,7 +49,7 @@ const { gatewayState, agentsState, providersState, marketCatalog, templateDetail
         version: '783f6a7',
         badge: 'Imported',
         status: 'stable',
-        tags: [],
+        tags: ['frontend', 'ui', 'react'],
         modelRef: null,
         previewFiles: [],
         sourceRepo: 'msitarzewski/agency-agents',
@@ -66,7 +66,7 @@ const { gatewayState, agentsState, providersState, marketCatalog, templateDetail
         version: '783f6a7',
         badge: 'Imported',
         status: 'stable',
-        tags: [],
+        tags: ['design', 'product'],
         modelRef: null,
         previewFiles: [],
         sourceRepo: 'msitarzewski/agency-agents',
@@ -362,7 +362,18 @@ describe('Agents page status refresh', () => {
     expect(await screen.findByTestId('agents-market')).toBeInTheDocument();
     expect(screen.getByTestId('agents-category-engineering')).toBeInTheDocument();
     expect(screen.getByTestId('agents-market-section-engineering')).toHaveTextContent('Frontend Developer');
-    expect(screen.getByTestId('agents-market-section-design')).toHaveTextContent('UI Designer');
+    expect(screen.getByTestId('agent-template-frontend-developer')).toHaveTextContent('frontend');
+    expect(screen.getByTestId('agent-template-frontend-developer')).toHaveTextContent('ui');
+    expect(screen.getByTestId('agent-template-frontend-developer')).not.toHaveTextContent('react');
+    expect(screen.getByTestId('agent-template-frontend-developer')).toHaveTextContent('563');
+    expect(screen.getByTestId('agent-template-frontend-developer')).toHaveTextContent('1.8k');
+    expect(screen.queryByTestId('agents-market-section-design')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('agents-category-design'));
+    expect(await screen.findByTestId('agents-market-section-design')).toHaveTextContent('UI Designer');
+    expect(screen.queryByTestId('agents-market-section-engineering')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('agents-category-engineering'));
 
     fireEvent.click(screen.getByTestId('agent-template-add-frontend-developer'));
 
@@ -392,6 +403,9 @@ describe('Agents page status refresh', () => {
 
     render(<Agents />);
 
+    expect(screen.queryByText('Added')).not.toBeInTheDocument();
+    expect(screen.queryByText('已添加')).not.toBeInTheDocument();
+    expect(screen.queryByText('追加済み')).not.toBeInTheDocument();
     fireEvent.click(await screen.findByTestId('agent-template-chat-frontend-developer'));
 
     expect(switchSessionMock).toHaveBeenCalledWith('agent:frontend-developer:main');

@@ -58,7 +58,6 @@ describe('sprite store transition routing', () => {
     expect(useSpriteStore.getState().transitionMode).toBe('bridging');
     expect(useSpriteStore.getState().playbackQueue.map((clip) => `${clip.state}:${clip.phase}`)).toEqual([
       'listen:exit',
-      'idle:loop',
       'working:enter',
       'working:loop',
     ]);

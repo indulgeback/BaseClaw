@@ -15,7 +15,6 @@ import {
   PanelLeft,
   Plus,
   Terminal,
-  ExternalLink,
   Trash2,
   Cpu,
 } from 'lucide-react';
@@ -28,6 +27,7 @@ import { useAgentsStore } from '@/stores/agents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { hostApiFetch } from '@/lib/host-api';
 import { useTranslation } from 'react-i18next';
 import logoSvg from '@/assets/logo.svg';
@@ -70,13 +70,6 @@ function NavItem({ to, icon, label, badge, collapsed, onClick, testId }: NavItem
     >
       {({ isActive }) => (
         <>
-          <span
-            className={cn(
-              'absolute left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-foreground transition-opacity',
-              isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
-              collapsed && 'left-1'
-            )}
-          />
           <div
             className={cn(
               'flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] transition-all duration-200',
@@ -263,15 +256,12 @@ export function Sidebar() {
       <div className={cn("flex h-16 items-center px-3", sidebarCollapsed ? "justify-center" : "justify-between")}>
         {!sidebarCollapsed && (
           <div className="flex min-w-0 items-center gap-2.5 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] bg-card shadow-[0_10px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] dark:shadow-none dark:ring-white/[0.08]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center">
               <img src={logoSvg} alt="PokeClaw" className="h-5 w-auto shrink-0" />
             </div>
             <div className="min-w-0">
               <span className="block truncate whitespace-nowrap text-[15px] font-semibold tracking-[-0.02em] text-foreground">
                 PokeClaw
-              </span>
-              <span className="block truncate text-[11px] font-medium uppercase tracking-[0.18em] text-foreground/45">
-                Desktop
               </span>
             </div>
           </div>
@@ -384,62 +374,75 @@ export function Sidebar() {
       )}
 
       {/* Footer */}
-      <div className="mt-auto border-t border-black/[0.06] p-3 dark:border-white/[0.07]">
-        <NavLink
-            to="/settings"
-            data-testid="sidebar-nav-settings"
-            className={({ isActive }) =>
-              cn(
-                'group relative flex min-h-10 items-center gap-2.5 rounded-[14px] px-3 py-2 text-[14px] font-medium transition-all duration-200',
-                'text-foreground/70 hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
-                'dark:text-foreground/70 dark:hover:bg-accent dark:hover:shadow-none',
-                isActive && 'bg-card text-foreground shadow-[0_10px_28px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] dark:bg-card dark:shadow-none dark:ring-white/[0.06]',
-                sidebarCollapsed ? 'justify-center px-0' : ''
-              )
-            }
-          >
-          {({ isActive }) => (
-            <>
-              <span
-                className={cn(
-              'absolute left-1 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-foreground transition-opacity',
-                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'
+      <div
+        className={cn(
+          'mt-auto flex border-t border-black/[0.06] dark:border-white/[0.07]',
+          sidebarCollapsed
+            ? 'flex-col items-center justify-center gap-1.5 p-2'
+            : 'flex-row items-center justify-end gap-1 p-3',
+        )}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex" data-testid="sidebar-nav-settings-tooltip-trigger">
+              <NavLink
+                to="/settings"
+                data-testid="sidebar-nav-settings"
+                aria-label={t('sidebar.settings')}
+                className={({ isActive }) =>
+                  cn(
+                    'group relative flex items-center justify-center rounded-[14px] font-medium transition-all duration-200',
+                    'text-foreground/70 hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
+                    'dark:text-foreground/70 dark:hover:bg-accent dark:hover:shadow-none',
+                    isActive && 'bg-card text-foreground shadow-[0_10px_28px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] dark:bg-card dark:shadow-none dark:ring-white/[0.06]',
+                    sidebarCollapsed ? 'h-8 w-8' : 'h-10 w-10',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className={cn(
+                      'flex shrink-0 items-center justify-center rounded-[10px] transition-all duration-200',
+                      sidebarCollapsed ? 'h-6 w-6' : 'h-7 w-7',
+                      isActive
+                        ? 'bg-foreground/10 text-foreground'
+                        : 'text-muted-foreground group-hover:bg-accent group-hover:text-foreground',
+                    )}>
+                      <SettingsIcon className="h-[18px] w-[18px]" strokeWidth={2} />
+                    </div>
+                  </>
                 )}
-              />
-              <div className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] transition-all duration-200',
-                isActive
-                  ? 'bg-foreground/10 text-foreground'
-                  : 'text-muted-foreground group-hover:bg-accent group-hover:text-foreground'
-              )}>
-                <SettingsIcon className="h-[18px] w-[18px]" strokeWidth={2} />
-              </div>
-              {!sidebarCollapsed && <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap tracking-[-0.01em]">{t('sidebar.settings')}</span>}
-            </>
-          )}
-        </NavLink>
+              </NavLink>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="top">{t('sidebar.settings')}</TooltipContent>
+        </Tooltip>
 
-        <Button
-          data-testid="sidebar-open-dev-console"
-          variant="ghost"
-          className={cn(
-            'group mt-1 flex h-auto w-full items-center gap-2.5 rounded-[14px] px-3 py-2 text-[14px] font-medium transition-all duration-200',
-            'text-foreground/62 hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
-            'dark:hover:bg-accent dark:hover:shadow-none',
-            sidebarCollapsed ? 'justify-center px-0' : 'justify-start'
-          )}
-          onClick={openDevConsole}
-        >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px] text-muted-foreground transition-colors group-hover:text-foreground">
-            <Terminal className="h-[18px] w-[18px]" strokeWidth={2} />
-          </div>
-          {!sidebarCollapsed && (
-            <>
-              <span className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap">{t('common:sidebar.openClawPage')}</span>
-              <ExternalLink className="h-3 w-3 shrink-0 ml-auto opacity-50 text-muted-foreground" />
-            </>
-          )}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              data-testid="sidebar-open-dev-console"
+              variant="ghost"
+              size="icon"
+              aria-label={t('common:sidebar.openClawPage')}
+              className={cn(
+                'group rounded-[14px] text-foreground/62 transition-all duration-200',
+                'hover:bg-accent hover:text-foreground hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]',
+                'dark:hover:bg-accent dark:hover:shadow-none',
+                sidebarCollapsed ? 'h-8 w-8' : 'h-10 w-10',
+              )}
+              onClick={openDevConsole}
+            >
+              <span className={cn(
+                'relative flex shrink-0 items-center justify-center rounded-[10px] text-muted-foreground transition-colors group-hover:text-foreground',
+                sidebarCollapsed ? 'h-6 w-6' : 'h-7 w-7',
+              )}>
+                <Terminal className="h-[18px] w-[18px]" strokeWidth={2} />
+              </span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">{t('common:sidebar.openClawPage')}</TooltipContent>
+        </Tooltip>
       </div>
 
       <ConfirmDialog

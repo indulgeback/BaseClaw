@@ -330,8 +330,8 @@ test.describe('ClawX chat execution graph', () => {
       await expect(page.getByTestId('main-layout')).toBeVisible();
       await expect(page.getByTestId('chat-execution-graph')).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId('chat-execution-graph')).toHaveAttribute('data-collapsed', 'true');
-      await expect(page.getByTestId('chat-execution-graph')).toContainText('0 tool calls');
-      await expect(page.getByTestId('chat-execution-graph')).toContainText('9 process messages');
+      await expect(page.getByTestId('chat-execution-graph')).toContainText(/0\s*(tool calls|个工具调用)/);
+      await expect(page.getByTestId('chat-execution-graph')).toContainText(/9\s*(process messages|条过程消息)/);
       await expect(page.getByText(longRunSummary, { exact: true })).toBeVisible();
       await expect(page.getByText(longRunReplyText, { exact: true })).toHaveCount(0);
     } finally {

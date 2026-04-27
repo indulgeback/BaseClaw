@@ -1,0 +1,30 @@
+{
+  "templates": [
+    {
+      "id": "alexa-control",
+      "templateId": "alexa-control",
+      "name": "alexa-remote",
+      "description": "Control Alexa devices via CLI - set alarms, play music, flash briefings, smart home commands. Use when asked to set an alarm, play something on Echo, control smart home devices, or send voice commands to Alexa.",
+      "categoryId": "media-and-streaming",
+      "category": "Media & Streaming",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/ignito-pg/alexa-control",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json",
+        "scripts/alexa-cmd.sh"
+      ],
+      "files": {
+        "SKILL.md": "---\nname: alexa-remote\ndescription: Control Alexa devices via CLI - set alarms, play music, flash briefings, smart home commands. Use when asked to set an alarm, play something on Echo, control smart home devices, or send voice commands to Alexa.\n---\n\n# Alexa Remote Control\n\nControl Amazon Echo devices via shell commands using [alexa-remote-control](https://github.com/adn77/alexa-remote-control).\n\n## Setup\n\n### 1. Clone the repo\n\n```bash\ngit clone https://github.com/adn77/alexa-remote-control.git\ncd alexa-remote-control\n```\n\n### 2. Get a refresh token\n\nThe script needs a refresh token from Amazon. Use [alexa-cookie-cli](https://github.com/adn77/alexa-cookie-cli):\n\n```bash\nnpx alexa-cookie-cli\n```\n\nThis opens a browser for Amazon login. After authentication, copy the `refreshToken` (starts with `Atnr|...`).\n\n### 3. Create a wrapper script\n\nCreate `alexa-alarm.sh` (or similar) with credentials:\n\n```bash\n#!/bin/bash\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\nTIME=\"${1:-7:00 am}\"\nDEVICE=\"${2:-Bedroom Echo Show}\"\n\nexport REFRESH_TOKEN='Atnr|YOUR_TOKEN_HERE'\nexport AMAZON='amazon.co.uk'      # or amazon.com for US\nexport ALEXA='alexa.amazon.co.uk' # or alexa.amazon.com\n\n\"$SCRIPT_DIR/alexa_remote_control.sh\" -d \"$DEVICE\" -e \"textcommand:Set an alarm for $TIME\"\n```\n\nMake executable: `chmod +x alexa-alarm.sh`\n\n## Usage\n\n### Set alarms\n\n```bash\n./alexa-alarm.sh \"6:30 am\"                    # Default device\n./alexa-alarm.sh \"7:00 am\" \"Kitchen Echo\"     # Specific device\n```\n\n### Generic commands\n\n```bash\n# Play flash briefing (news)\n./alexa_remote_control.sh -d \"Bedroom Echo Show\" -e \"textcommand:Play my flash briefing\"\n\n# Play music\n./alexa_remote_control.sh -d \"Kitchen Echo\" -e \"textcommand:Play BBC Radio 6\"\n\n# Smart home\n./alexa_remote_control.sh -d \"Living Room Echo\" -e \"textcommand:Turn off the lights\"\n\n# Weather\n./alexa_remote_control.sh -d \"Bedroom Echo Show\" -e \"textcommand:What's the weather\"\n\n# Timer\n./alexa_remote_control.sh -d \"Kitchen Echo\" -e \"textcommand:Set a timer for 10 minutes\"\n```\n\n### List devices\n\n```bash\n./alexa_remote_control.sh -a  # Lists all devices with names/types\n```\n\n## Environment Variables\n\n| Variable | Description | Example |\n|----------|-------------|---------|\n| `REFRESH_TOKEN` | Amazon auth token | `Atnr|EwMDI...` |\n| `AMAZON` | Amazon domain | `amazon.co.uk` / `amazon.com` |\n| `ALEXA` | Alexa domain | `alexa.amazon.co.uk` |\n\n## Notes\n\n- Token expires periodically; re-run `alexa-cookie-cli` if auth fails\n- Device names are case-sensitive; use `-a` to check exact names\n- UK users: use `amazon.co.uk` / `alexa.amazon.co.uk`\n- US users: use `amazon.com` / `alexa.amazon.com`\n",
+        "_meta.json": "{\n  \"owner\": \"ignito-pg\",\n  \"slug\": \"alexa-control\",\n  \"displayName\": \"Alexa Control\",\n  \"latest\": {\n    \"version\": \"1.0.0\",\n    \"publishedAt\": 1770588103269,\n    \"commit\": \"https://github.com/openclaw/skills/commit/4c8cd5d8e147ad60f9e93709f3c1c69c023fe543\"\n  },\n  \"history\": []\n}\n",
+        "scripts/alexa-cmd.sh": "#!/bin/bash\n# Generic Alexa command wrapper\n# Usage: ./alexa-cmd.sh \"Your voice command\" [\"Device Name\"]\n#\n# Examples:\n#   ./alexa-cmd.sh \"Set an alarm for 6:30 am\"\n#   ./alexa-cmd.sh \"Play BBC Radio 6\" \"Kitchen Echo\"\n#   ./alexa-cmd.sh \"Turn off the lights\" \"Living Room Echo\"\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\nALEXA_DIR=\"${ALEXA_REMOTE_DIR:-$SCRIPT_DIR/../../alexa-remote-control}\"\n\nCOMMAND=\"${1:?Usage: $0 \\\"command\\\" [\\\"Device Name\\\"]}\"\nDEVICE=\"${2:-Bedroom Echo Show}\"\n\n# Set these environment variables or edit here\nexport REFRESH_TOKEN=\"${REFRESH_TOKEN:?Set REFRESH_TOKEN env var}\"\nexport AMAZON=\"${AMAZON:-amazon.co.uk}\"\nexport ALEXA=\"${ALEXA:-alexa.amazon.co.uk}\"\n\n\"$ALEXA_DIR/alexa_remote_control.sh\" -d \"$DEVICE\" -e \"textcommand:$COMMAND\"\n"
+      }
+    }
+  ]
+}

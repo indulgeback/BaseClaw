@@ -1,0 +1,28 @@
+{
+  "templates": [
+    {
+      "id": "apple-contacts",
+      "templateId": "apple-contacts",
+      "name": "apple-contacts",
+      "description": "Look up contacts from macOS Contacts.app. Use when resolving phone numbers to names, finding contact info, or searching the address book.",
+      "categoryId": "apple-apps-and-services",
+      "category": "Apple Apps & Services",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tyler6204/apple-contacts",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ],
+      "files": {
+        "SKILL.md": "---\nname: apple-contacts\ndescription: Look up contacts from macOS Contacts.app. Use when resolving phone numbers to names, finding contact info, or searching the address book.\nmetadata: {\"clawdbot\":{\"emoji\":\"👤\",\"os\":[\"darwin\"]}}\n---\n\n# Apple Contacts\n\nQuery Contacts.app via AppleScript.\n\n## Quick Lookups\n\n```bash\n# By phone (name only)\nosascript -e 'tell application \"Contacts\" to get name of every person whose value of phones contains \"+1XXXXXXXXXX\"'\n\n# By name\nosascript -e 'tell application \"Contacts\" to get name of every person whose name contains \"John\"'\n\n# List all\nosascript -e 'tell application \"Contacts\" to get name of every person'\n```\n\n## Full Contact Info\n\n⚠️ Don't use `first person whose` — buggy. Use this pattern:\n\n```bash\n# By phone\nosascript -e 'tell application \"Contacts\"\n  set matches to every person whose value of phones contains \"+1XXXXXXXXXX\"\n  if length of matches > 0 then\n    set p to item 1 of matches\n    return {name of p, value of phones of p, value of emails of p}\n  end if\nend tell'\n\n# By name\nosascript -e 'tell application \"Contacts\"\n  set matches to every person whose name contains \"John\"\n  if length of matches > 0 then\n    set p to item 1 of matches\n    return {name of p, value of phones of p, value of emails of p}\n  end if\nend tell'\n```\n\n## Phone Lookup\n\n⚠️ **Exact string match required** — must match stored format exactly.\n\n| Stored | Search | Works? |\n|--------|--------|--------|\n| `+1XXXXXXXXXX` | `+1XXXXXXXXXX` | ✅ |\n| `+1XXXXXXXXXX` | `XXXXXXXXXX` | ❌ |\n\nTry with `+1` prefix first. If fails, search by name instead.\n\n## Name Search\n\n- Case-insensitive\n- Partial match with `contains`\n- Exact match: use `is` instead of `contains`\n\n## Output\n\nReturns comma-separated: `name, phone1, [phone2...], email1, [email2...]`\n\nNo match = empty output (not an error).\n",
+        "_meta.json": "{\n  \"owner\": \"tyler6204\",\n  \"slug\": \"apple-contacts\",\n  \"displayName\": \"Apple Contacts\",\n  \"latest\": {\n    \"version\": \"1.2.0\",\n    \"publishedAt\": 1768477582354,\n    \"commit\": \"https://github.com/clawdbot/skills/commit/1f367f640c62c9d4c4f22bf57d623e3b1be386bd\"\n  },\n  \"history\": [\n    {\n      \"version\": \"1.1.1\",\n      \"publishedAt\": 1768374427066,\n      \"commit\": \"https://github.com/clawdbot/skills/commit/023aadc36c679c11ffcaae5023bfb3d0294295b7\"\n    }\n  ]\n}\n"
+      }
+    }
+  ]
+}

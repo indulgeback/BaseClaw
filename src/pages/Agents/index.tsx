@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Bot, Check, FileText, LibraryBig, MessageCircle, Plus, RefreshCw, Settings2, Trash2, X } from 'lucide-react';
+import { AlertCircle, Bot, Check, ChevronLeft, ChevronRight, FileText, Flame, Heart, MessageCircle, Plus, RefreshCw, Settings2, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,27 @@ interface RuntimeProviderOption {
   label: string;
   modelIdPlaceholder?: string;
   configuredModelId?: string;
+}
+
+function hashStringToNumber(value: string): number {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
+function getMockAgentMarketMetrics(templateId: string): { heat: number; likes: number } {
+  const hash = hashStringToNumber(templateId);
+  return {
+    heat: 420 + (hash % 4_800),
+    likes: 85 + ((hash >>> 8) % 1_900),
+  };
+}
+
+function formatAgentMarketMetric(value: number): string {
+  if (value < 1_000) return String(value);
+  return `${(value / 1_000).toFixed(1)}k`;
 }
 
 function resolveRuntimeProviderKey(account: ProviderAccount): string {
@@ -143,7 +164,6 @@ export function Agents() {
 
   useEffect(() => {
     let mounted = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void Promise.all([fetchAgents(), fetchChannelAccounts(), refreshProviderSnapshot()]).finally(() => {
       if (mounted) {
         setHasCompletedInitialLoad(true);
@@ -170,7 +190,6 @@ export function Agents() {
     lastGatewayStateRef.current = gatewayStatus.state;
 
     if (previousGatewayState !== 'running' && gatewayStatus.state === 'running') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       void fetchChannelAccounts();
     }
   }, [fetchChannelAccounts, gatewayStatus.state]);
@@ -216,25 +235,48 @@ export function Agents() {
 
   return (
     <div data-testid="agents-page" className="flex flex-col -m-6 dark:bg-background h-[calc(100vh-2.5rem)] overflow-hidden">
-      <div className="w-full max-w-7xl mx-auto flex flex-col h-full p-6 md:p-10 pt-12 md:pt-16">
-        <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 shrink-0 gap-4">
-          <div>
+      <div className="w-full max-w-7xl mx-auto flex flex-col h-full p-6 md:p-10 pt-10 md:pt-12">
+        <div className="mb-7 flex shrink-0 flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
             <h1
-              className="text-5xl md:text-6xl font-serif text-foreground mb-3 font-normal tracking-tight"
+              className="mb-3 text-4xl font-normal tracking-tight text-foreground md:text-5xl"
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
             >
               {t('title')}
             </h1>
-            <p className="text-[17px] text-foreground/70 font-medium">{t('subtitle')}</p>
-            <p className="mt-3 max-w-2xl text-[13px] leading-6 text-muted-foreground">
-              {t('market.sourceNote', {
-                count: marketCatalog.templates.length,
-                categories: marketCatalog.categories.length,
-                commit: marketCatalog.sourceCommitShort,
-              })}
-            </p>
+            <p className="max-w-2xl text-[15px] font-medium leading-6 text-foreground/65 md:text-[16px]">{t('subtitle')}</p>
           </div>
-          <div className="flex items-center gap-3 md:mt-2">
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <div className="flex rounded-full bg-muted/60 p-1">
+              <button
+                type="button"
+                data-testid="agents-scene-market"
+                aria-pressed={scene === 'market'}
+                onClick={() => setScene('market')}
+                className={cn(
+                  'rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
+                  scene === 'market'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {t('scene.market')}
+              </button>
+              <button
+                type="button"
+                data-testid="agents-scene-manage"
+                aria-pressed={scene === 'manage'}
+                onClick={() => setScene('manage')}
+                className={cn(
+                  'rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
+                  scene === 'manage'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {t('scene.manage')}
+              </button>
+            </div>
             <Button
               variant="outline"
               onClick={handleRefresh}
@@ -252,31 +294,6 @@ export function Agents() {
               {t('addAgent')}
             </Button>
           </div>
-        </div>
-
-        <div className="mb-6 flex w-fit rounded-full border border-border bg-muted/40 p-1">
-          <button
-            type="button"
-            data-testid="agents-scene-market"
-            onClick={() => setScene('market')}
-            className={cn(
-              'rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
-              scene === 'market' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t('scene.market')}
-          </button>
-          <button
-            type="button"
-            data-testid="agents-scene-manage"
-            onClick={() => setScene('manage')}
-            className={cn(
-              'rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
-              scene === 'manage' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {t('scene.manage')}
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 pb-10 min-h-0 -mr-2">
@@ -309,7 +326,7 @@ export function Agents() {
               onStartAgentSession={handleStartAgentSession}
             />
           ) : (
-            <div className="space-y-3" data-testid="agents-manage-list">
+            <div className="space-y-2" data-testid="agents-manage-list">
               {visibleAgents.map((agent) => (
                 <AgentCard
                   key={agent.id}
@@ -521,6 +538,11 @@ function AgentMarket({
   onStartAgentSession: (agentId: string) => void;
 }) {
   const { t } = useTranslation('agents');
+  const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id ?? '');
+  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollCategoriesLeft, setCanScrollCategoriesLeft] = useState(false);
+  const [canScrollCategoriesRight, setCanScrollCategoriesRight] = useState(false);
+
   const installedByTemplateId = useMemo(() => {
     const result = new Map<string, AgentSummary>();
     for (const agent of agents) {
@@ -528,127 +550,193 @@ function AgentMarket({
     }
     return result;
   }, [agents]);
+  const activeCategory = categories.find((category) => category.id === activeCategoryId) ?? categories[0] ?? null;
+  const visibleTemplates = activeCategory ? (templatesByCategory.get(activeCategory.id) ?? []) : [];
+
+  const updateCategoryScrollState = useCallback(() => {
+    const node = categoryScrollRef.current;
+    if (!node) {
+      setCanScrollCategoriesLeft(false);
+      setCanScrollCategoriesRight(false);
+      return;
+    }
+
+    const maxScrollLeft = Math.max(node.scrollWidth - node.clientWidth, 0);
+    setCanScrollCategoriesLeft(node.scrollLeft > 4);
+    setCanScrollCategoriesRight(node.scrollLeft < maxScrollLeft - 4);
+  }, []);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(updateCategoryScrollState);
+    const handleResize = () => updateCategoryScrollState();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [categories, updateCategoryScrollState]);
+
+  const scrollCategoriesBy = useCallback((direction: 'left' | 'right') => {
+    const node = categoryScrollRef.current;
+    if (!node) return;
+    const delta = Math.max(node.clientWidth * 0.6, 160);
+    node.scrollBy({
+      left: direction === 'left' ? -delta : delta,
+      behavior: 'smooth',
+    });
+  }, []);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[230px_minmax(0,1fr)]" data-testid="agents-market">
-      <nav className="lg:sticky lg:top-0 lg:self-start rounded-[2rem] border border-border bg-card/70 p-3 shadow-sm backdrop-blur">
-        <div className="mb-2 flex items-center gap-2 px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          <LibraryBig className="h-4 w-4" />
-          {t('market.catalog')}
+    <div className="space-y-6" data-testid="agents-market">
+      <div className="flex items-center gap-2">
+        <nav
+          ref={categoryScrollRef}
+          className="flex min-w-0 flex-1 gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] md:gap-3 [&::-webkit-scrollbar]:hidden"
+          aria-label={t('market.catalog')}
+          onScroll={updateCategoryScrollState}
+          style={{ msOverflowStyle: 'none' }}
+        >
+          {categories.map((category) => {
+            const isActive = category.id === activeCategory?.id;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                data-testid={`agents-category-${category.id}`}
+                onClick={() => setActiveCategoryId(category.id)}
+                className={cn(
+                  'shrink-0 rounded-full px-4 py-2 text-[13px] font-medium leading-none transition-colors md:px-5 md:text-[14px]',
+                  isActive
+                    ? 'bg-muted text-foreground shadow-none'
+                    : 'text-foreground/65 hover:bg-muted/60 hover:text-foreground',
+                )}
+              >
+                {t(`categories.${category.id}`, category.name)}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => scrollCategoriesBy('left')}
+            disabled={!canScrollCategoriesLeft}
+            aria-label={t('common:actions.previous')}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => scrollCategoriesBy('right')}
+            disabled={!canScrollCategoriesRight}
+            aria-label={t('common:actions.next')}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              data-testid={`agents-category-${category.id}`}
-              onClick={() => {
-                document.getElementById(`agent-market-${category.id}`)?.scrollIntoView({
-                  block: 'start',
-                  behavior: 'smooth',
-                });
-              }}
-              className="flex shrink-0 items-center justify-between gap-3 rounded-full px-3 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:rounded-2xl"
-            >
-              <span className="whitespace-nowrap">{t(`categories.${category.id}`, category.name)}</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
-                {category.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <div className="space-y-10">
-        {categories.map((category) => {
-          const templates = templatesByCategory.get(category.id) ?? [];
-          return (
-            <section
-              key={category.id}
-              id={`agent-market-${category.id}`}
-              data-testid={`agents-market-section-${category.id}`}
-              className="scroll-mt-8"
-            >
-              <div className="mb-4 flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-serif font-normal tracking-tight text-foreground">
-                    {t(`categories.${category.id}`, category.name)}
-                  </h2>
-                  <p className="mt-1 text-[13px] text-muted-foreground">
-                    {t('market.sectionCount', { count: templates.length })}
-                  </p>
-                </div>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {templates.map((template) => {
-                  const installed = installedTemplateIds.has(template.templateId);
-                  const installedAgent = installedByTemplateId.get(template.templateId);
-                  return (
-                    <article
-                      key={template.templateId}
-                      data-testid={`agent-template-${template.templateId}`}
-                      className="group flex min-h-[188px] flex-col rounded-[1.75rem] border border-border bg-card/65 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-card hover:shadow-md"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted text-xl">
-                          {template.emoji || <Bot className="h-5 w-5" />}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="line-clamp-2 text-[16px] font-semibold leading-snug text-foreground">
-                            {template.name}
-                          </h3>
-                          <p className="mt-1 line-clamp-3 text-[13px] leading-5 text-muted-foreground">
-                            {template.description}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground/80">
-                        {template.sourceRepo} · {template.version}
-                      </p>
-                      <div className="mt-auto flex items-center justify-end gap-2 pt-5">
-                        {installed ? (
-                          <>
-                            <Button
-                              variant="outline"
-                              className="h-8 rounded-full px-3 text-[12px]"
-                              disabled
-                            >
-                              <Check className="mr-1.5 h-3.5 w-3.5" />
-                              {t('market.added')}
-                            </Button>
-                            <Button
-                              data-testid={`agent-template-chat-${template.templateId}`}
-                              className="h-8 rounded-full px-3 text-[12px]"
-                              onClick={() => onStartAgentSession(installedAgent?.id || template.templateId)}
-                            >
-                              <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
-                              {t('market.chat')}
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            data-testid={`agent-template-add-${template.templateId}`}
-                            className="h-8 rounded-full px-3 text-[12px]"
-                            disabled={addingTemplateId === template.templateId}
-                            onClick={() => onAddTemplate(template)}
-                          >
-                            {addingTemplateId === template.templateId ? (
-                              <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            )}
-                            {t('market.add')}
-                          </Button>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        })}
       </div>
+
+      {activeCategory && (
+        <section
+          id={`agent-market-${activeCategory.id}`}
+          data-testid={`agents-market-section-${activeCategory.id}`}
+          className="space-y-4"
+        >
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h3 className="text-2xl font-serif font-normal tracking-tight text-foreground">
+                {t(`categories.${activeCategory.id}`, activeCategory.name)}
+              </h3>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {visibleTemplates.map((template) => {
+              const installed = installedTemplateIds.has(template.templateId);
+              const installedAgent = installedByTemplateId.get(template.templateId);
+              const visibleTags = template.tags.slice(0, 2);
+              const metrics = getMockAgentMarketMetrics(template.templateId);
+              return (
+                <article
+                  key={template.templateId}
+                  data-testid={`agent-template-${template.templateId}`}
+                  className="group flex min-h-[176px] flex-col rounded-2xl border border-border/70 bg-card/70 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-colors duration-200 hover:border-foreground/12 hover:bg-card hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] dark:hover:shadow-none"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/70 text-lg">
+                      {template.emoji || <Bot className="h-5 w-5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
+                        {template.name}
+                      </h3>
+                      <p className="mt-1.5 line-clamp-3 text-[12.5px] leading-[1.45] text-muted-foreground">
+                        {template.description}
+                      </p>
+                    </div>
+                  </div>
+                  {visibleTags.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {visibleTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="max-w-full truncate rounded-full bg-muted px-2 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                    <div className="flex min-w-0 items-center gap-2 text-[11px] font-medium text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 leading-none">
+                        <Flame className="h-3.5 w-3.5 text-foreground/45" />
+                        {formatAgentMarketMetric(metrics.heat)}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 leading-none">
+                        <Heart className="h-3.5 w-3.5 text-foreground/45" />
+                        {formatAgentMarketMetric(metrics.likes)}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center justify-end gap-2">
+                    {installed ? (
+                      <Button
+                        variant="outline"
+                        data-testid={`agent-template-chat-${template.templateId}`}
+                        className="h-7 rounded-full px-2.5 text-[12px]"
+                        onClick={() => onStartAgentSession(installedAgent?.id || template.templateId)}
+                      >
+                        <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                        {t('market.chat')}
+                      </Button>
+                    ) : (
+                      <Button
+                        data-testid={`agent-template-add-${template.templateId}`}
+                        className="h-7 rounded-full px-2.5 text-[12px]"
+                        disabled={addingTemplateId === template.templateId}
+                        onClick={() => onAddTemplate(template)}
+                      >
+                        {addingTemplateId === template.templateId ? (
+                          <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        {t('market.add')}
+                      </Button>
+                    )}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

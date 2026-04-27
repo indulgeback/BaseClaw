@@ -1,0 +1,28 @@
+{
+  "templates": [
+    {
+      "id": "bahn",
+      "templateId": "bahn",
+      "name": "bahn",
+      "description": "Search Deutsche Bahn train connections using the bahn-cli tool. Use when you need to find train connections between German stations, check departure times, or help with travel planning. Works with station names like \"Berlin Hbf\", \"München\", \"Hannover\".",
+      "categoryId": "transportation",
+      "category": "Transportation",
+      "version": "383c32a",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [],
+      "emoji": "✨",
+      "sourceRepo": "openclaw/skills",
+      "sourceCommit": "383c32a71cc58085f8644b4dbe0d99d036ab9203",
+      "sourcePath": "skills/tobiasbischoff/bahn",
+      "previewFiles": [
+        "SKILL.md",
+        "_meta.json"
+      ],
+      "files": {
+        "SKILL.md": "---\nname: bahn\ndescription: Search Deutsche Bahn train connections using the bahn-cli tool. Use when you need to find train connections between German stations, check departure times, or help with travel planning. Works with station names like \"Berlin Hbf\", \"München\", \"Hannover\".\n---\n\n# Deutsche Bahn CLI\n\nSearch train connections using the `bahn-cli` tool.\n\n## Installation\n\nThe tool should be installed globally or in the workspace. If not installed:\n\n```bash\ncd ~/Code/bahn-cli && npm install\n```\n\n## Usage\n\nSearch train connections:\n\n```bash\ncd ~/Code/bahn-cli && node index.js search \"<from>\" \"<to>\" [options]\n```\n\n### Options\n\n- `--date YYYY-MM-DD` - Departure date (default: today)\n- `--time HH:MM` - Departure time (default: current time)\n- `--results <number>` - Number of results to show (default: 5)\n\n### Examples\n\nSearch connections from Hannover to Bonn:\n```bash\ncd ~/Code/bahn-cli && node index.js search \"Hannover Hbf\" \"Bonn Hbf\" --results 3\n```\n\nSearch with specific date and time:\n```bash\ncd ~/Code/bahn-cli && node index.js search \"Berlin\" \"München\" --date 2026-02-05 --time 14:30\n```\n\n## Station Names\n\n- Use common German station names\n- \"Hbf\" means Hauptbahnhof (main station)\n- Examples: \"Berlin Hbf\", \"München Hbf\", \"Frankfurt(Main)Hbf\", \"Köln Hbf\"\n- Station names are case-insensitive\n\n## Output\n\nThe tool shows:\n- Departure and arrival times\n- Platform numbers\n- Duration\n- Number of changes\n- Intermediate stops for connections with changes\n- Train numbers (ICE, IC, RE, etc.)\n\n## Notes\n\n- The CLI uses the db-vendo-client library\n- Some station names in output may show \"undefined\" (cosmetic issue, doesn't affect functionality)\n- Direct connections are listed first\n- Times are in 24-hour format\n",
+        "_meta.json": "{\n  \"owner\": \"tobiasbischoff\",\n  \"slug\": \"bahn\",\n  \"displayName\": \"Deutsche Bahn CLI\",\n  \"latest\": {\n    \"version\": \"1.0.0\",\n    \"publishedAt\": 1769404815120,\n    \"commit\": \"https://github.com/clawdbot/skills/commit/82d928c3b516447060d055b94edc90f4b261ab85\"\n  },\n  \"history\": []\n}\n"
+      }
+    }
+  ]
+}

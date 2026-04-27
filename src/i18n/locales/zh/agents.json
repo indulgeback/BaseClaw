@@ -18,7 +18,6 @@
     },
     "market": {
         "catalog": "目录",
-        "sourceNote": "内置 {{count}} 个来自 The Agency / agency-agents 快照 {{commit}} 的模板，按 {{categories}} 个分类离线浏览。",
         "sectionCount": "{{count}} 个模板",
         "add": "添加",
         "added": "已添加",

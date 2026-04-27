@@ -118,9 +118,9 @@ AIタスクを自動的に実行するようスケジュール設定できます
 
 
 ### 🧩 拡張可能なスキルシステム
-事前構築されたスキルでAIエージェントを拡張できます。統合スキルパネルからスキルの閲覧、インストール、管理が可能です。パッケージマネージャーは不要です。
-SpriteClaw はドキュメント処理スキル（`pdf`、`xlsx`、`docx`、`pptx`）もフル内容で同梱し、起動時に管理スキルディレクトリ（既定 `~/.openclaw/skills`）へ自動配備し、初回インストール時に既定で有効化します。追加の同梱スキル（`find-skills`、`self-improving-agent`、`tavily-search`、`brave-web-search`）も既定で有効化されますが、必要な API キーが未設定の場合は OpenClaw が実行時に設定エラーを表示します。  
-Skills ページでは OpenClaw の複数ソース（管理ディレクトリ、workspace、追加スキルディレクトリ）から検出されたスキルを表示でき、各スキルの実際のパスを確認して実フォルダを直接開けます。
+事前構築されたスキルでAIエージェントを拡張できます。Skills ページは Agents と同様に **市場** と **管理** の 2 シーン構成になりました。
+内蔵 Skills 市場は [VoltAgent/awesome-openclaw-skills](https://github.com/VoltAgent/awesome-openclaw-skills) の固定スナップショットから生成したオフラインの厳選カタログになり、ClawHub に実行時アクセスしなくても複数カテゴリのテンプレートを閲覧・追加できます。SpriteClaw は引き続き、起動時に小さな既定プリインストール群（`pdf`、`xlsx`、`docx`、`pptx`、`find-skills`、`self-improving-agent`、`tavily-search`、`brave-web-search`）を管理スキルディレクトリ（既定 `~/.openclaw/skills`）へ自動配備します。
+管理シーンでは bundled/core、内蔵市場から追加したスキル、ClawHub から追加したスキル、workspace、追加スキルディレクトリなど複数の OpenClaw ソースをまとめて確認でき、実際の配置パスも開けます。ClawHub 検索は補助的な追加経路として管理シーン側に残しています。
 
 主な検索スキルで必要な環境変数:
 - `BRAVE_SEARCH_API_KEY`: `brave-web-search` 用

@@ -89,6 +89,10 @@ test.describe('Agents market', () => {
 
       await page.getByTestId('agents-category-engineering').click();
       await expect(page.getByTestId('agents-market-section-engineering')).toBeVisible();
+      await page.getByTestId('agents-category-design').click();
+      await expect(page.getByTestId('agents-market-section-design')).toBeVisible();
+      await page.getByTestId('agents-category-engineering').click();
+      await expect(page.getByTestId('agents-market-section-engineering')).toBeVisible();
 
       await page.getByTestId('agent-template-add-frontend-developer').click();
       await expect(page.getByTestId('agent-template-chat-frontend-developer')).toBeVisible();

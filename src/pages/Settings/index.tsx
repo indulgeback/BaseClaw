@@ -506,10 +506,10 @@ export function Settings() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start justify-between mb-12 shrink-0 gap-4">
           <div>
-            <h1 data-testid="settings-page-title" className="text-5xl md:text-6xl font-serif text-foreground mb-3 font-normal tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}>
+            <h1 data-testid="settings-page-title" className="mb-3 text-4xl font-normal tracking-tight text-foreground md:text-5xl" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}>
               {t('title')}
             </h1>
-            <p className="text-[17px] text-foreground/70 font-medium">
+            <p className="max-w-2xl text-[15px] font-medium leading-6 text-foreground/65 md:text-[16px]">
               {t('subtitle')}
             </p>
           </div>

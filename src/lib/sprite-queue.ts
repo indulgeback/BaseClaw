@@ -49,6 +49,13 @@ export function planPath(
     return clips;
   }
 
+  if (fromSettledState !== 'idle' && toRequestedState !== 'idle') {
+    pushClip(clips, characterId, fromSettledState, 'exit');
+    pushClip(clips, characterId, toRequestedState, 'enter');
+    pushClip(clips, characterId, toRequestedState, 'loop');
+    return clips;
+  }
+
   if (fromSettledState !== 'idle') {
     pushClip(clips, characterId, fromSettledState, 'exit');
     pushClip(clips, characterId, 'idle', 'loop');

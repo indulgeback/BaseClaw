@@ -1,0 +1,333 @@
+{
+  "sourceRepo": "VoltAgent/awesome-openclaw-skills",
+  "sourceRef": "main",
+  "generatedStrategy": "curated-per-category",
+  "categories": [
+    { "id": "git-and-github", "name": "Git & GitHub" },
+    { "id": "coding-agents-and-ides", "name": "Coding Agents & IDEs" },
+    { "id": "browser-and-automation", "name": "Browser & Automation" },
+    { "id": "web-and-frontend-development", "name": "Web & Frontend Development" },
+    { "id": "devops-and-cloud", "name": "DevOps & Cloud" },
+    { "id": "image-and-video-generation", "name": "Image & Video Generation" },
+    { "id": "apple-apps-and-services", "name": "Apple Apps & Services" },
+    { "id": "search-and-research", "name": "Search & Research" },
+    { "id": "clawdbot-tools", "name": "Clawdbot Tools" },
+    { "id": "cli-utilities", "name": "CLI Utilities" },
+    { "id": "marketing-and-sales", "name": "Marketing & Sales" },
+    { "id": "productivity-and-tasks", "name": "Productivity & Tasks" },
+    { "id": "ai-and-llms", "name": "AI & LLMs" },
+    { "id": "media-and-streaming", "name": "Media & Streaming" },
+    { "id": "notes-and-pkm", "name": "Notes & PKM" },
+    { "id": "ios-and-macos-development", "name": "iOS & macOS Development" },
+    { "id": "transportation", "name": "Transportation" },
+    { "id": "personal-development", "name": "Personal Development" },
+    { "id": "health-and-fitness", "name": "Health & Fitness" },
+    { "id": "communication", "name": "Communication" },
+    { "id": "speech-and-transcription", "name": "Speech & Transcription" },
+    { "id": "smart-home-and-iot", "name": "Smart Home & IoT" },
+    { "id": "shopping-and-e-commerce", "name": "Shopping & E-commerce" },
+    { "id": "calendar-and-scheduling", "name": "Calendar & Scheduling" },
+    { "id": "pdf-and-documents", "name": "PDF & Documents" },
+    { "id": "self-hosted-and-automation", "name": "Self-Hosted & Automation" },
+    { "id": "security-and-passwords", "name": "Security & Passwords" },
+    { "id": "gaming", "name": "Gaming" }
+  ],
+  "skills": [
+    {
+      "slug": "arc-skill-gitops",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/trypto1019/arc-skill-gitops",
+      "ref": "main",
+      "categoryId": "git-and-github",
+      "awesomeCategoryPath": "categories/git-and-github.md"
+    },
+    {
+      "slug": "agentdo",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/wrannaman/agentdo",
+      "ref": "main",
+      "categoryId": "git-and-github",
+      "awesomeCategoryPath": "categories/git-and-github.md"
+    },
+    {
+      "slug": "academic-research",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/rogersuperbuilderalpha/academic-research",
+      "ref": "main",
+      "categoryId": "coding-agents-and-ides",
+      "awesomeCategoryPath": "categories/coding-agents-and-ides.md"
+    },
+    {
+      "slug": "active-maintenance",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/xiaowenzhou/active-maintenance",
+      "ref": "main",
+      "categoryId": "coding-agents-and-ides",
+      "awesomeCategoryPath": "categories/coding-agents-and-ides.md"
+    },
+    {
+      "slug": "agent-browser",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/murphykobe/agent-browser-2",
+      "ref": "main",
+      "categoryId": "browser-and-automation",
+      "awesomeCategoryPath": "categories/browser-and-automation.md"
+    },
+    {
+      "slug": "agent-daily-planner",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/gpunter/agent-daily-planner",
+      "ref": "main",
+      "categoryId": "browser-and-automation",
+      "awesomeCategoryPath": "categories/browser-and-automation.md"
+    },
+    {
+      "slug": "actionbook",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/adcentury/actionbook",
+      "ref": "main",
+      "categoryId": "web-and-frontend-development",
+      "awesomeCategoryPath": "categories/web-and-frontend-development.md"
+    },
+    {
+      "slug": "agent-dashboard",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/tahseen137/agent-dashboard",
+      "ref": "main",
+      "categoryId": "web-and-frontend-development",
+      "awesomeCategoryPath": "categories/web-and-frontend-development.md"
+    },
+    {
+      "slug": "agentic-devops",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/tkuehnl/agentic-devops",
+      "ref": "main",
+      "categoryId": "devops-and-cloud",
+      "awesomeCategoryPath": "categories/devops-and-cloud.md"
+    },
+    {
+      "slug": "agent-metrics-osiris",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/nantes/agent-metrics-osiris",
+      "ref": "main",
+      "categoryId": "devops-and-cloud",
+      "awesomeCategoryPath": "categories/devops-and-cloud.md"
+    },
+    {
+      "slug": "ace-music",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/fspecii/ace-music",
+      "ref": "main",
+      "categoryId": "image-and-video-generation",
+      "awesomeCategoryPath": "categories/image-and-video-generation.md"
+    },
+    {
+      "slug": "apple-contacts",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/tyler6204/apple-contacts",
+      "ref": "main",
+      "categoryId": "apple-apps-and-services",
+      "awesomeCategoryPath": "categories/apple-apps-and-services.md"
+    },
+    {
+      "slug": "academic-deep-research",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/kesslerio/academic-deep-research",
+      "ref": "main",
+      "categoryId": "search-and-research",
+      "awesomeCategoryPath": "categories/search-and-research.md"
+    },
+    {
+      "slug": "academic-writer",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/dayunyan/academic-writer",
+      "ref": "main",
+      "categoryId": "search-and-research",
+      "awesomeCategoryPath": "categories/search-and-research.md"
+    },
+    {
+      "slug": "agent-builder",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/plgonzalezrx8/agent-builder",
+      "ref": "main",
+      "categoryId": "clawdbot-tools",
+      "awesomeCategoryPath": "categories/clawdbot-tools.md"
+    },
+    {
+      "slug": "activity-analyzer",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/qew21/activity-analyzer",
+      "ref": "main",
+      "categoryId": "cli-utilities",
+      "awesomeCategoryPath": "categories/cli-utilities.md"
+    },
+    {
+      "slug": "ad-ready",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/pauldelavallaz/ad-ready",
+      "ref": "main",
+      "categoryId": "marketing-and-sales",
+      "awesomeCategoryPath": "categories/marketing-and-sales.md"
+    },
+    {
+      "slug": "4to1-planner",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/qingxuantang/4to1-planner",
+      "ref": "main",
+      "categoryId": "productivity-and-tasks",
+      "awesomeCategoryPath": "categories/productivity-and-tasks.md"
+    },
+    {
+      "slug": "adaptive-reasoning",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/enzoricciulli/adaptive-reasoning",
+      "ref": "main",
+      "categoryId": "productivity-and-tasks",
+      "awesomeCategoryPath": "categories/productivity-and-tasks.md"
+    },
+    {
+      "slug": "aap-passport",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/ira-hash/aap-passport",
+      "ref": "main",
+      "categoryId": "ai-and-llms",
+      "awesomeCategoryPath": "categories/ai-and-llms.md"
+    },
+    {
+      "slug": "adversarial-prompting",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/abe238/adversarial-prompting",
+      "ref": "main",
+      "categoryId": "ai-and-llms",
+      "awesomeCategoryPath": "categories/ai-and-llms.md"
+    },
+    {
+      "slug": "alexa-control",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/ignito-pg/alexa-control",
+      "ref": "main",
+      "categoryId": "media-and-streaming",
+      "awesomeCategoryPath": "categories/media-and-streaming.md"
+    },
+    {
+      "slug": "acc-error-memory",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/impkind/acc-error-memory",
+      "ref": "main",
+      "categoryId": "notes-and-pkm",
+      "awesomeCategoryPath": "categories/notes-and-pkm.md"
+    },
+    {
+      "slug": "apple-docs",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/thesethrose/apple-docs",
+      "ref": "main",
+      "categoryId": "ios-and-macos-development",
+      "awesomeCategoryPath": "categories/ios-and-macos-development.md"
+    },
+    {
+      "slug": "bahn",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/tobiasbischoff/bahn",
+      "ref": "main",
+      "categoryId": "transportation",
+      "awesomeCategoryPath": "categories/transportation.md"
+    },
+    {
+      "slug": "adaptive-learning-agents",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/vedantsingh60/adaptive-learning-agents",
+      "ref": "main",
+      "categoryId": "personal-development",
+      "awesomeCategoryPath": "categories/personal-development.md"
+    },
+    {
+      "slug": "fitbit",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/mjrussell/fitbit",
+      "ref": "main",
+      "categoryId": "health-and-fitness",
+      "awesomeCategoryPath": "categories/health-and-fitness.md"
+    },
+    {
+      "slug": "agent-mail",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/rimelucci/agent-mail",
+      "ref": "main",
+      "categoryId": "communication",
+      "awesomeCategoryPath": "categories/communication.md"
+    },
+    {
+      "slug": "addis-assistant-stt",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/dagmawibabi/addis-assistant-stt",
+      "ref": "main",
+      "categoryId": "speech-and-transcription",
+      "awesomeCategoryPath": "categories/speech-and-transcription.md"
+    },
+    {
+      "slug": "bambu-cli",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/tobiasbischoff/bambu-cli",
+      "ref": "main",
+      "categoryId": "smart-home-and-iot",
+      "awesomeCategoryPath": "categories/smart-home-and-iot.md"
+    },
+    {
+      "slug": "add-wish",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/leebellon/add-wish",
+      "ref": "main",
+      "categoryId": "shopping-and-e-commerce",
+      "awesomeCategoryPath": "categories/shopping-and-e-commerce.md"
+    },
+    {
+      "slug": "accli",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/joargp/accli",
+      "ref": "main",
+      "categoryId": "calendar-and-scheduling",
+      "awesomeCategoryPath": "categories/calendar-and-scheduling.md"
+    },
+    {
+      "slug": "docsync",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/suhteevah/docsync",
+      "ref": "main",
+      "categoryId": "pdf-and-documents",
+      "awesomeCategoryPath": "categories/pdf-and-documents.md"
+    },
+    {
+      "slug": "convert-to-pdf",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/crossservicesolutions/convert-to-pdf",
+      "ref": "main",
+      "categoryId": "pdf-and-documents",
+      "awesomeCategoryPath": "categories/pdf-and-documents.md"
+    },
+    {
+      "slug": "bridle",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/bjesuiter/bridle",
+      "ref": "main",
+      "categoryId": "self-hosted-and-automation",
+      "awesomeCategoryPath": "categories/self-hosted-and-automation.md"
+    },
+    {
+      "slug": "1password",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/steipete/1password",
+      "ref": "main",
+      "categoryId": "security-and-passwords",
+      "awesomeCategoryPath": "categories/security-and-passwords.md"
+    },
+    {
+      "slug": "yumfu",
+      "repo": "openclaw/skills",
+      "repoPath": "skills/yumyumtum/yumfu",
+      "ref": "main",
+      "categoryId": "gaming",
+      "awesomeCategoryPath": "categories/gaming.md"
+    }
+  ]
+}

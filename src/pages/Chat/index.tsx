@@ -4,7 +4,7 @@
  * via gateway:rpc IPC. Session selector, thinking toggle, and refresh
  * are in the toolbar; messages render with markdown + streaming.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { useChatStore, type RawMessage } from '@/stores/chat';
 import { useGatewayStore } from '@/stores/gateway';
@@ -85,6 +85,7 @@ export function Chat() {
     inputFocused: false,
     hasDraft: false,
   });
+  const [optimisticSpriteWorking, setOptimisticSpriteWorking] = useState(false);
   const [windowFocused, setWindowFocused] = useState(() =>
     typeof document !== 'undefined' ? document.hasFocus() : true
   );
@@ -229,38 +230,32 @@ export function Chat() {
 
   const isEmpty = messages.length === 0 && !sending;
 
-  useEffect(() => {
+  const syncSpriteOverlayNow = useCallback(() => {
+    void invokeIpc('sprite:overlaySyncState', useSpriteStore.getState().getPayload()).catch(() => {});
+  }, []);
+
+  const handleSendMessage = useCallback<Parameters<typeof ChatInput>[0]['onSend']>((text, attachments, targetAgentId) => {
+    setOptimisticSpriteWorking(true);
     setSpriteSignals({
       inputFocused: composerPresence.inputFocused,
-      hasDraft: composerPresence.hasDraft,
-      sending,
-      pendingFinal,
-      hasStreaming: hasAnyStreamContent,
+      hasDraft: false,
+      sending: true,
+      pendingFinal: false,
+      hasStreaming: false,
       windowFocused,
       documentVisible,
     });
+    syncSpriteOverlayNow();
+    void sendMessage(text, attachments, targetAgentId).finally(() => {
+      setOptimisticSpriteWorking(false);
+    });
   }, [
-    composerPresence.hasDraft,
     composerPresence.inputFocused,
     documentVisible,
-    hasAnyStreamContent,
-    pendingFinal,
-    sending,
+    sendMessage,
     setSpriteSignals,
+    syncSpriteOverlayNow,
     windowFocused,
-  ]);
-
-  useEffect(() => {
-    void invokeIpc('sprite:overlaySyncState', getSpritePayload()).catch(() => {});
-  }, [
-    activeSpriteClip,
-    currentSpriteState,
-    getSpritePayload,
-    requestedSpriteState,
-    settledSpriteState,
-    spritePlaybackQueue,
-    spriteQueueVersion,
-    spriteCharacterId,
   ]);
 
   const subagentCompletionInfos = messages.map((message) => parseSubagentCompletionInfo(message));
@@ -485,6 +480,45 @@ export function Chat() {
     }];
   });
   const hasActiveExecutionGraph = userRunCards.some((card) => card.active);
+
+  useEffect(() => {
+    setSpriteSignals({
+      inputFocused: composerPresence.inputFocused,
+      hasDraft: composerPresence.hasDraft,
+      sending: sending || hasActiveExecutionGraph || optimisticSpriteWorking,
+      pendingFinal,
+      hasStreaming: hasAnyStreamContent,
+      windowFocused,
+      documentVisible,
+    });
+    syncSpriteOverlayNow();
+  }, [
+    composerPresence.hasDraft,
+    composerPresence.inputFocused,
+    documentVisible,
+    hasActiveExecutionGraph,
+    hasAnyStreamContent,
+    optimisticSpriteWorking,
+    pendingFinal,
+    sending,
+    setSpriteSignals,
+    syncSpriteOverlayNow,
+    windowFocused,
+  ]);
+
+  useEffect(() => {
+    void invokeIpc('sprite:overlaySyncState', getSpritePayload()).catch(() => {});
+  }, [
+    activeSpriteClip,
+    currentSpriteState,
+    getSpritePayload,
+    requestedSpriteState,
+    settledSpriteState,
+    spritePlaybackQueue,
+    spriteQueueVersion,
+    spriteCharacterId,
+  ]);
+
   const replyTextOverrides = useMemo(() => {
     const map = new Map<number, string>();
     for (const card of userRunCards) {
@@ -587,7 +621,7 @@ export function Chat() {
               ref={contentRef}
               className={cn(
                 "space-y-4 transition-all duration-300",
-                isEmpty ? "mx-auto w-full max-w-3xl" : "max-w-4xl",
+                isEmpty ? "mx-auto w-full max-w-3xl" : "mx-auto w-full max-w-4xl",
               )}
             >
               {isEmpty ? (
@@ -686,12 +720,16 @@ export function Chat() {
 
                   {/* Activity indicator: waiting for next AI turn after tool execution */}
                   {sending && pendingFinal && !shouldRenderStreaming && !hasActiveExecutionGraph && (
-                    <ActivityIndicator phase="tool_processing" />
+                    <div className="mx-auto w-full max-w-4xl">
+                      <ActivityIndicator phase="tool_processing" />
+                    </div>
                   )}
 
                   {/* Typing indicator when sending but no stream content yet */}
                   {sending && !pendingFinal && !hasAnyStreamContent && !hasActiveExecutionGraph && (
-                    <TypingIndicator />
+                    <div className="mx-auto w-full max-w-4xl">
+                      <TypingIndicator />
+                    </div>
                   )}
                 </>
               )}
@@ -721,7 +759,7 @@ export function Chat() {
 
       {/* Input Area */}
       <ChatInput
-        onSend={sendMessage}
+        onSend={handleSendMessage}
         onStop={abortRun}
         disabled={!isGatewayRunning}
         sending={sending || hasActiveExecutionGraph}
