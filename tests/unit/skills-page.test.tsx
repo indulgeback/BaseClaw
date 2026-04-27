@@ -96,7 +96,7 @@ const { gatewayState, skillsState, marketCatalog, templateDetail, loadSkillTempl
   tMock: vi.fn((key: string, options?: Record<string, unknown>) => {
     if (key === 'filter.all') return `all (${options?.count ?? 0})`;
     if (key === 'filter.bundled') return `bundled (${options?.count ?? 0})`;
-    if (key === 'filter.builtInMarket') return `built-in market (${options?.count ?? 0})`;
+    if (key === 'filter.builtInMarket') return `market skills (${options?.count ?? 0})`;
     if (key === 'filter.clawhub') return `clawhub (${options?.count ?? 0})`;
     if (key === 'market.categoryCount') return `${options?.count ?? 0} presets`;
     if (key === 'toast.presetInstalled') return `${options?.name ?? 'skill'} added`;
@@ -304,7 +304,7 @@ describe('Skills page', () => {
 
     fireEvent.click(screen.getByTestId('skills-scene-manage'));
     await screen.findByTestId('skills-manage');
-    fireEvent.click(screen.getByText('built-in market (1)'));
+    fireEvent.click(screen.getByText('market skills (1)'));
     fireEvent.click(screen.getByText('actions.enableVisible'));
 
     await waitFor(() => {

@@ -86,6 +86,10 @@ test.describe('Agents market', () => {
       await page.getByTestId('sidebar-nav-agents').click();
       await expect(page.getByTestId('agents-page')).toBeVisible();
       await expect(page.getByTestId('agents-market')).toBeVisible();
+      await expect(page.getByTestId('agents-category-engineering')).toHaveCSS('white-space', 'nowrap');
+      await expect(page.getByTestId('agents-category-engineering')).toHaveCSS('flex-shrink', '0');
+      await expect(page.getByTestId('agents-category-engineering')).toHaveCSS('border-top-style', 'solid');
+      await expect(page.getByTestId('agents-scene-market').locator('..')).toHaveCSS('border-top-style', 'solid');
 
       await page.getByTestId('agents-category-engineering').click();
       await expect(page.getByTestId('agents-market-section-engineering')).toBeVisible();

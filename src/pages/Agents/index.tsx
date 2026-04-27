@@ -247,14 +247,14 @@ export function Agents() {
             <p className="max-w-2xl text-[15px] font-medium leading-6 text-foreground/65 md:text-[16px]">{t('subtitle')}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-            <div className="flex rounded-full bg-muted/60 p-1">
+            <div className="inline-flex w-fit items-center rounded-full border border-black/10 bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.04]">
               <button
                 type="button"
                 data-testid="agents-scene-market"
                 aria-pressed={scene === 'market'}
                 onClick={() => setScene('market')}
                 className={cn(
-                  'rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
+                  'rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors',
                   scene === 'market'
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
@@ -268,7 +268,7 @@ export function Agents() {
                 aria-pressed={scene === 'manage'}
                 onClick={() => setScene('manage')}
                 className={cn(
-                  'rounded-full px-4 py-2 text-[13px] font-semibold transition-colors',
+                  'rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors',
                   scene === 'manage'
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground',
@@ -280,7 +280,7 @@ export function Agents() {
             <Button
               variant="outline"
               onClick={handleRefresh}
-              className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground transition-colors"
+              className="h-10 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground transition-colors"
             >
               <RefreshCw className={cn('h-3.5 w-3.5 mr-2', isUsingStableValue && 'animate-spin')} />
               {t('refresh')}
@@ -288,7 +288,7 @@ export function Agents() {
             <Button
               data-testid="agents-add-agent"
               onClick={() => setShowAddDialog(true)}
-              className="h-9 text-[13px] font-medium rounded-full px-4 shadow-none"
+              className="h-10 text-[13px] font-medium rounded-full px-4 shadow-none"
             >
               <Plus className="h-3.5 w-3.5 mr-2" />
               {t('addAgent')}
@@ -591,7 +591,7 @@ function AgentMarket({
       <div className="flex items-center gap-2">
         <nav
           ref={categoryScrollRef}
-          className="flex min-w-0 flex-1 gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] md:gap-3 [&::-webkit-scrollbar]:hidden"
+          className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label={t('market.catalog')}
           onScroll={updateCategoryScrollState}
           style={{ msOverflowStyle: 'none' }}
@@ -605,10 +605,10 @@ function AgentMarket({
                 data-testid={`agents-category-${category.id}`}
                 onClick={() => setActiveCategoryId(category.id)}
                 className={cn(
-                  'shrink-0 rounded-full px-4 py-2 text-[13px] font-medium leading-none transition-colors md:px-5 md:text-[14px]',
+                  'shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors',
                   isActive
-                    ? 'bg-muted text-foreground shadow-none'
-                    : 'text-foreground/65 hover:bg-muted/60 hover:text-foreground',
+                    ? 'border-foreground/15 bg-foreground text-background'
+                    : 'border-black/10 bg-transparent text-muted-foreground hover:text-foreground dark:border-white/10',
                 )}
               >
                 {t(`categories.${category.id}`, category.name)}

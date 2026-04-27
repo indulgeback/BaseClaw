@@ -2,7 +2,7 @@
  * Skills Page
  * Browse and manage AI skills
  */
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   Search,
   Puzzle,
@@ -18,9 +18,10 @@ import {
   FileCode,
   Globe,
   Copy,
-  Sparkles,
   Flame,
   Heart,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -456,6 +457,9 @@ export function Skills() {
 
   const [scene, setScene] = useState<'market' | 'manage'>('market');
   const [activeCategoryId, setActiveCategoryId] = useState(marketCatalog.categories[0]?.id ?? '');
+  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const [canScrollCategoriesLeft, setCanScrollCategoriesLeft] = useState(false);
+  const [canScrollCategoriesRight, setCanScrollCategoriesRight] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [installQuery, setInstallQuery] = useState('');
   const [installSheetOpen, setInstallSheetOpen] = useState(false);
@@ -679,6 +683,39 @@ export function Skills() {
 
   const activeCategory = marketCatalog.categories.find((category) => category.id === activeCategoryId) ?? marketCatalog.categories[0];
 
+  const updateCategoryScrollState = useCallback(() => {
+    const node = categoryScrollRef.current;
+    if (!node) {
+      setCanScrollCategoriesLeft(false);
+      setCanScrollCategoriesRight(false);
+      return;
+    }
+
+    const maxScrollLeft = Math.max(node.scrollWidth - node.clientWidth, 0);
+    setCanScrollCategoriesLeft(node.scrollLeft > 4);
+    setCanScrollCategoriesRight(node.scrollLeft < maxScrollLeft - 4);
+  }, []);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(updateCategoryScrollState);
+    const handleResize = () => updateCategoryScrollState();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [marketCatalog.categories, updateCategoryScrollState]);
+
+  const scrollCategoriesBy = useCallback((direction: 'left' | 'right') => {
+    const node = categoryScrollRef.current;
+    if (!node) return;
+    const delta = Math.max(node.clientWidth * 0.6, 160);
+    node.scrollBy({
+      left: direction === 'left' ? -delta : delta,
+      behavior: 'smooth',
+    });
+  }, []);
+
   return (
     <div className="flex flex-col -m-6 dark:bg-background h-[calc(100vh-2.5rem)] overflow-hidden" data-testid="skills-page">
       <div className="w-full max-w-6xl mx-auto flex flex-col h-full p-8 md:p-10 pt-12 md:pt-16">
@@ -691,10 +728,6 @@ export function Skills() {
               <p className="max-w-3xl text-[15px] font-medium leading-6 text-foreground/65 md:text-[16px]">
                 {t('subtitle')}
               </p>
-              <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3 py-1 text-[12px] font-medium text-foreground/65 dark:border-white/10 dark:bg-white/[0.04]">
-                <Sparkles className="h-3.5 w-3.5" />
-                {t('market.sourceNotice')}
-              </div>
             </div>
 
             <div className="inline-flex w-fit items-center rounded-full border border-black/10 bg-black/[0.03] p-1 dark:border-white/10 dark:bg-white/[0.04]">
@@ -733,15 +766,22 @@ export function Skills() {
         <div className="mt-6 min-h-0 flex-1 overflow-hidden">
           {scene === 'market' ? (
             <div className="flex h-full flex-col gap-6 overflow-hidden" data-testid="skills-market">
-              <div className="shrink-0 overflow-x-auto pb-1">
-                <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
+                <nav
+                  ref={categoryScrollRef}
+                  className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  aria-label={t('market.catalog')}
+                  onScroll={updateCategoryScrollState}
+                  style={{ msOverflowStyle: 'none' }}
+                >
                   {marketCatalog.categories.map((category: SkillMarketCategory) => (
                     <button
                       key={category.id}
+                      type="button"
                       data-testid={`skills-category-${category.id}`}
                       onClick={() => setActiveCategoryId(category.id)}
                       className={cn(
-                        'rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors',
+                        'shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors',
                         activeCategory?.id === category.id
                           ? 'border-foreground/15 bg-foreground text-background'
                           : 'border-black/10 bg-transparent text-muted-foreground hover:text-foreground dark:border-white/10',
@@ -750,6 +790,32 @@ export function Skills() {
                       {t(`categories.${category.id}`, { defaultValue: category.name })} ({category.count})
                     </button>
                   ))}
+                </nav>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    data-testid="skills-categories-scroll-left"
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={() => scrollCategoriesBy('left')}
+                    disabled={!canScrollCategoriesLeft}
+                    aria-label={t('common:actions.previous')}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    data-testid="skills-categories-scroll-right"
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={() => scrollCategoriesBy('right')}
+                    disabled={!canScrollCategoriesRight}
+                    aria-label={t('common:actions.next')}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 
@@ -839,15 +905,18 @@ export function Skills() {
             </div>
           ) : (
             <div className="flex h-full flex-col gap-4" data-testid="skills-manage">
-              <div className="flex flex-col gap-4 border-b border-black/10 pb-4 dark:border-white/10 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                  <div className="relative flex items-center rounded-full border border-black/10 bg-black/[0.03] px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="flex flex-col gap-3 border-b border-black/10 pb-4 dark:border-white/10">
+                <div
+                  data-testid="skills-manage-actions-row"
+                  className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="relative flex min-w-0 items-center rounded-full border border-black/10 bg-black/[0.03] px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.04] md:w-[260px]">
                     <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <input
                       placeholder={t('search')}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="ml-2 w-32 bg-transparent text-[13px] text-foreground outline-none placeholder:text-foreground/50 md:w-44"
+                      className="ml-2 min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-foreground/50"
                     />
                     {searchQuery && (
                       <button type="button" onClick={() => setSearchQuery('')} className="ml-1 shrink-0 text-foreground/50 hover:text-foreground">
@@ -856,82 +925,86 @@ export function Skills() {
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 text-[13px]">
-                    <button
-                      onClick={() => setSelectedSource('all')}
-                      className={cn('rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'all' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void bulkToggleVisible(true)}
+                      className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
                     >
-                      {t('filter.all', { count: sourceStats.all })}
-                    </button>
-                    <button
-                      onClick={() => setSelectedSource('bundled')}
-                      className={cn('rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'bundled' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
+                      {t('actions.enableVisible')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void bulkToggleVisible(false)}
+                      className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
                     >
-                      {t('filter.bundled', { count: sourceStats.bundled })}
-                    </button>
-                    <button
-                      onClick={() => setSelectedSource('market-preset')}
-                      className={cn('rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'market-preset' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
+                      {t('actions.disableVisible')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleOpenSkillsFolder}
+                      className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
                     >
-                      {t('filter.builtInMarket', { count: sourceStats.marketPreset })}
-                    </button>
-                    <button
-                      onClick={() => setSelectedSource('clawhub')}
-                      className={cn('rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'clawhub' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
+                      <FolderOpen className="mr-1.5 h-3.5 w-3.5" />
+                      {t('openFolder')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setInstallQuery('');
+                        setInstallSheetOpen(true);
+                      }}
+                      data-testid="skills-open-install-drawer"
+                      className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
                     >
-                      {t('filter.clawhub', { count: sourceStats.clawhub })}
-                    </button>
+                      {t('actions.installSkill')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => void fetchSkills()}
+                      disabled={!isGatewayRunning}
+                      className="h-8 w-8 rounded-full border-black/10 bg-transparent shadow-none dark:border-white/10"
+                      title={t('refresh')}
+                    >
+                      <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void bulkToggleVisible(true)}
-                    className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
+                <div
+                  data-testid="skills-manage-category-row"
+                  className="flex items-center gap-2 overflow-x-auto pb-1 text-[13px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  style={{ msOverflowStyle: 'none' }}
+                >
+                  <button
+                    onClick={() => setSelectedSource('all')}
+                    className={cn('shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'all' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
                   >
-                    {t('actions.enableVisible')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void bulkToggleVisible(false)}
-                    className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
+                    {t('filter.all', { count: sourceStats.all })}
+                  </button>
+                  <button
+                    onClick={() => setSelectedSource('bundled')}
+                    className={cn('shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'bundled' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
                   >
-                    {t('actions.disableVisible')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleOpenSkillsFolder}
-                    className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
+                    {t('filter.bundled', { count: sourceStats.bundled })}
+                  </button>
+                  <button
+                    onClick={() => setSelectedSource('market-preset')}
+                    className={cn('shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'market-preset' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
                   >
-                    <FolderOpen className="mr-1.5 h-3.5 w-3.5" />
-                    {t('openFolder')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setInstallQuery('');
-                      setInstallSheetOpen(true);
-                    }}
-                    data-testid="skills-open-install-drawer"
-                    className="h-8 rounded-full border-black/10 bg-transparent px-3 text-[12px] shadow-none dark:border-white/10"
+                    {t('filter.builtInMarket', { count: sourceStats.marketPreset })}
+                  </button>
+                  <button
+                    onClick={() => setSelectedSource('clawhub')}
+                    className={cn('shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 font-medium transition-colors', selectedSource === 'clawhub' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 text-muted-foreground hover:text-foreground dark:bg-white/5')}
                   >
-                    {t('actions.installSkill')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => void fetchSkills()}
-                    disabled={!isGatewayRunning}
-                    className="h-8 w-8 rounded-full border-black/10 bg-transparent shadow-none dark:border-white/10"
-                    title={t('refresh')}
-                  >
-                    <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-                  </Button>
+                    {t('filter.clawhub', { count: sourceStats.clawhub })}
+                  </button>
                 </div>
               </div>
 

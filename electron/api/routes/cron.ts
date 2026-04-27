@@ -95,6 +95,10 @@ function normalizeTimestampMs(value: unknown): number | undefined {
   return undefined;
 }
 
+function readNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
 function formatDuration(durationMs: number | undefined): string | null {
   if (!durationMs || !Number.isFinite(durationMs)) return null;
   if (durationMs < 1000) return `${Math.round(durationMs)}ms`;
@@ -402,12 +406,54 @@ function transformCronJob(job: GatewayCronJob) {
     delivery,
     target,
     enabled: job.enabled,
-    createdAt: new Date(job.createdAtMs).toISOString(),
-    updatedAt: new Date(job.updatedAtMs).toISOString(),
+    createdAt: new Date(readNumber(job.createdAtMs) ?? readNumber(job.updatedAtMs) ?? Date.now()).toISOString(),
+    updatedAt: new Date(readNumber(job.updatedAtMs) ?? readNumber(job.createdAtMs) ?? Date.now()).toISOString(),
     lastRun,
     nextRun,
     agentId,
   };
+}
+
+async function readCronJobsFallback(): Promise<GatewayCronJob[]> {
+  const cronDir = join(getOpenClawConfigDir(), 'cron');
+  const raw = await readFile(join(cronDir, 'jobs.json'), 'utf-8')
+    .catch(() => readFile(join(cronDir, 'cron.json'), 'utf-8'));
+  const parsed = JSON.parse(raw) as unknown;
+  const jobs = Array.isArray(parsed)
+    ? parsed
+    : (
+      parsed && typeof parsed === 'object' && Array.isArray((parsed as { jobs?: unknown }).jobs)
+        ? (parsed as { jobs: unknown[] }).jobs
+        : []
+    );
+
+  const stateRaw = await readFile(join(cronDir, 'jobs-state.json'), 'utf-8').catch(() => '');
+  let stateByJobId: Record<string, { updatedAtMs?: number; state?: GatewayCronJob['state'] }> = {};
+  if (stateRaw.trim()) {
+    try {
+      const stateParsed = JSON.parse(stateRaw) as { jobs?: unknown };
+      if (stateParsed.jobs && typeof stateParsed.jobs === 'object' && !Array.isArray(stateParsed.jobs)) {
+        stateByJobId = stateParsed.jobs as typeof stateByJobId;
+      }
+    } catch {
+      stateByJobId = {};
+    }
+  }
+
+  return jobs
+    .filter((job): job is GatewayCronJob => Boolean(job) && typeof job === 'object' && typeof (job as { id?: unknown }).id === 'string')
+    .map((job) => {
+      const stateEntry = stateByJobId[job.id];
+      if (!stateEntry) return job;
+      return {
+        ...job,
+        updatedAtMs: readNumber(job.updatedAtMs) ?? readNumber(stateEntry.updatedAtMs) ?? job.createdAtMs,
+        state: {
+          ...(job.state || {}),
+          ...(stateEntry.state || {}),
+        },
+      };
+    });
 }
 
 export async function handleCronRoutes(
@@ -476,13 +522,9 @@ export async function handleCronRoutes(
           console.debug(`  - name: "${job.name}", agentId: "${jobAgentId || '(undefined)'}", ${deliveryInfo}, sessionTarget: "${job.sessionTarget || '(none)'}", payload.kind: "${job.payload?.kind || '(none)'}"`);
         }
       } catch {
-        // Fallback: read cron.json directly when Gateway RPC fails/times out.
+        // Fallback: read persisted cron jobs directly when Gateway RPC fails/times out.
         try {
-          const cronJsonPath = join(getOpenClawConfigDir(), 'cron', 'cron.json');
-          const raw = await readFile(cronJsonPath, 'utf-8');
-          const parsed = JSON.parse(raw);
-          const fileJobs = Array.isArray(parsed) ? parsed : (parsed?.jobs ?? []);
-          jobs = fileJobs as GatewayCronJob[];
+          jobs = await readCronJobsFallback();
           usedFallback = true;
         } catch {
           // No fallback data available either

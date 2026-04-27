@@ -16,7 +16,7 @@
         "all": "すべて ({{count}})",
         "builtIn": "内蔵 ({{count}})",
         "bundled": "同梱スキル ({{count}})",
-        "builtInMarket": "内蔵マーケット ({{count}})",
+        "builtInMarket": "マーケットスキル ({{count}})",
         "clawhub": "ClawHub 追加 ({{count}})",
         "marketplace": "マーケットプレイス ({{count}})"
     },
@@ -69,7 +69,7 @@
             "bundled": "内蔵",
             "managed": "管理ディレクトリ",
             "clawhub": "ClawHub から追加",
-            "marketPreset": "内蔵マーケット",
+            "marketPreset": "マーケットスキル",
             "workspace": "ワークスペース",
             "extra": "追加ディレクトリ",
             "agentsPersonal": "個人 .agents",

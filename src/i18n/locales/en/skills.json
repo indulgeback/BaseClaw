@@ -16,7 +16,7 @@
         "all": "All ({{count}})",
         "builtIn": "Built-in ({{count}})",
         "bundled": "Bundled ({{count}})",
-        "builtInMarket": "Built-in Market ({{count}})",
+        "builtInMarket": "Market Skills ({{count}})",
         "clawhub": "ClawHub ({{count}})",
         "marketplace": "Marketplace ({{count}})"
     },
@@ -69,7 +69,7 @@
         "bundled": "Bundled",
         "managed": "Managed",
         "clawhub": "Installed from ClawHub",
-        "marketPreset": "Built-in Market",
+        "marketPreset": "Market Skills",
         "workspace": "Workspace",
             "extra": "Extra dirs",
             "agentsPersonal": "Personal .agents",

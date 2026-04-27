@@ -16,7 +16,7 @@
         "all": "全部 ({{count}})",
         "builtIn": "内置 ({{count}})",
         "bundled": "随包技能 ({{count}})",
-        "builtInMarket": "内置市场 ({{count}})",
+        "builtInMarket": "市场技能 ({{count}})",
         "clawhub": "ClawHub 安装 ({{count}})",
         "marketplace": "市场 ({{count}})"
     },
@@ -69,7 +69,7 @@
             "bundled": "内置",
             "managed": "托管目录",
             "clawhub": "来自 ClawHub",
-            "marketPreset": "内置市场",
+            "marketPreset": "市场技能",
             "workspace": "工作区",
             "extra": "额外目录",
             "agentsPersonal": "个人 .agents",

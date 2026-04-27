@@ -389,13 +389,9 @@ async function installSkillFromSource(
     slug: string,
     source: PreinstalledMarker['source'],
     version: string,
+    sourceRoot: string,
     categoryId?: string,
 ): Promise<void> {
-    const sourceRoot = resolvePreinstalledSkillsSourceRoot();
-    if (!sourceRoot) {
-        throw new Error('Preinstalled skills source root not found');
-    }
-
     const sourceDir = join(sourceRoot, slug);
     const sourceManifest = join(sourceDir, 'SKILL.md');
     if (!existsSync(sourceManifest)) {
@@ -441,7 +437,7 @@ export async function installSkillPreset(templateId: string, categoryId: string)
         || (spec.version || 'bundled').trim()
         || 'bundled';
 
-    await installSkillFromSource(templateId, 'clawx-market-preset', version, categoryId);
+    await installSkillFromSource(templateId, 'clawx-market-preset', version, sourceRoot, categoryId);
 }
 
 /**

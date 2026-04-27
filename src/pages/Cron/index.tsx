@@ -886,12 +886,11 @@ export function Cron() {
     }
   }, []);
 
-  // Fetch jobs on mount
+  // Fetch jobs on mount. The Host API can fall back to persisted cron files
+  // when Gateway is still starting or temporarily unavailable.
   useEffect(() => {
-    if (isGatewayRunning) {
-      fetchJobs();
-    }
-  }, [fetchJobs, isGatewayRunning]);
+    fetchJobs();
+  }, [fetchJobs]);
 
   useEffect(() => {
     void fetchConfiguredChannels();
