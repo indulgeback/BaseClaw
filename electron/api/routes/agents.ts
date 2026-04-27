@@ -118,14 +118,33 @@ export async function handleAgentRoutes(
 
   if (url.pathname === '/api/agents' && req.method === 'POST') {
     try {
-      const body = await parseJsonBody<{ name: string; inheritWorkspace?: boolean }>(req);
-      const snapshot = await createAgent(body.name, { inheritWorkspace: body.inheritWorkspace });
+      const body = await parseJsonBody<{
+        name: string;
+        inheritWorkspace?: boolean;
+        description?: string;
+        instructions?: string;
+        modelRef?: string | null;
+        skillIds?: string[];
+      }>(req);
+      const snapshot = await createAgent(body.name, {
+        inheritWorkspace: body.inheritWorkspace,
+        description: body.description,
+        instructions: body.instructions,
+        modelRef: body.modelRef,
+        skillIds: body.skillIds,
+      });
       // Sync provider API keys to the new agent's auth-profiles.json so the
       // embedded runner can authenticate with LLM providers when messages
       // arrive via channel bots (e.g. Feishu). Without this, the copied
       // auth-profiles.json may contain a stale key → 401 from the LLM.
-      syncAllProviderAuthToRuntime().catch((err) => {
-        console.warn('[agents] Failed to sync provider auth after agent creation:', err);
+      const createdAgent = snapshot.agents[snapshot.agents.length - 1];
+      Promise.all([
+        syncAllProviderAuthToRuntime(),
+        body.modelRef && createdAgent
+          ? syncAgentModelOverrideToRuntime(createdAgent.id)
+          : Promise.resolve(),
+      ]).catch((err) => {
+        console.warn('[agents] Failed to sync provider runtime after agent creation:', err);
       });
       scheduleGatewayReload(ctx, 'create-agent');
       sendJson(res, 200, { success: true, ...snapshot });

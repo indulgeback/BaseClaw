@@ -1,12 +1,17 @@
-import { access, copyFile, mkdir, readdir, readFile, rm } from 'fs/promises';
+import { access, copyFile, mkdir, readdir, readFile, rm, writeFile } from 'fs/promises';
 import { constants } from 'fs';
 import { join, normalize } from 'path';
 import { deleteAgentChannelAccounts, listConfiguredChannels, readOpenClawConfig, writeOpenClawConfig } from './channel-config';
 import type { OpenClawConfig } from './channel-config';
 import { withConfigLock } from './config-mutex';
-import { expandPath, getOpenClawConfigDir } from './paths';
+import { expandPath, getClawXConfigDir, getOpenClawConfigDir } from './paths';
 import * as logger from './logger';
 import { toUiChannelType } from './channel-alias';
+import {
+  BUNDLED_AGENCY_AGENTS,
+  BUNDLED_AGENCY_AGENTS_VERSION,
+  type BundledAgencyAgentDefinition,
+} from './bundled-agents';
 
 const MAIN_AGENT_ID = 'main';
 const MAIN_AGENT_NAME = 'Main Agent';
@@ -67,10 +72,18 @@ interface ChannelSectionConfig extends Record<string, unknown> {
   enabled?: boolean;
 }
 
+interface SkillEntryConfig extends Record<string, unknown> {
+  enabled?: boolean;
+}
+
 interface AgentConfigDocument extends Record<string, unknown> {
   agents?: AgentsConfig;
   bindings?: BindingConfig[];
   channels?: Record<string, ChannelSectionConfig>;
+  skills?: {
+    entries?: Record<string, SkillEntryConfig>;
+    [key: string]: unknown;
+  };
   session?: {
     mainKey?: string;
     [key: string]: unknown;
@@ -100,6 +113,14 @@ export interface AgentsSnapshot {
   configuredChannelTypes: string[];
   channelOwners: Record<string, string>;
   channelAccountOwners: Record<string, string>;
+}
+
+export interface CreateAgentOptions {
+  inheritWorkspace?: boolean;
+  description?: string;
+  instructions?: string;
+  modelRef?: string | null;
+  skillIds?: string[];
 }
 
 function resolveModelRef(model: unknown): string | null {
@@ -161,6 +182,30 @@ async function ensureDir(path: string): Promise<void> {
   }
 }
 
+async function writeFileIfMissing(path: string, content: string): Promise<void> {
+  if (await fileExists(path)) return;
+  await writeFile(path, content, 'utf8');
+}
+
+function normalizeOptionalAgentText(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value
+    .replace(/\r\n?/g, '\n')
+    .replace(/\n{4,}/g, '\n\n\n')
+    .trim();
+  if (!normalized) return undefined;
+  return normalized.length > maxLength ? normalized.slice(0, maxLength).trim() : normalized;
+}
+
+function normalizeSkillIds(skillIds: unknown): string[] {
+  if (!Array.isArray(skillIds)) return [];
+  return [...new Set(skillIds
+    .filter((skillId): skillId is string => typeof skillId === 'string')
+    .map((skillId) => skillId.trim())
+    .filter(Boolean))]
+    .slice(0, 50);
+}
+
 function getDefaultWorkspacePath(config: AgentConfigDocument): string {
   const defaults = (config.agents && typeof config.agents === 'object'
     ? (config.agents as AgentsConfig).defaults
@@ -172,6 +217,40 @@ function getDefaultWorkspacePath(config: AgentConfigDocument): string {
 
 function getDefaultAgentDirPath(agentId: string): string {
   return `~/.openclaw/agents/${agentId}/agent`;
+}
+
+function getBundledAgencyWorkspacePath(agentId: string): string {
+  return `~/.openclaw/agency-agents/${agentId}`;
+}
+
+function createBundledAgencyAgentEntry(definition: BundledAgencyAgentDefinition): AgentListEntry {
+  return {
+    id: definition.id,
+    name: definition.id,
+    workspace: getBundledAgencyWorkspacePath(definition.id),
+    agentDir: getDefaultAgentDirPath(definition.id),
+  };
+}
+
+async function readBundledAgencyAgentsVersion(): Promise<number> {
+  const markerPath = join(getClawXConfigDir(), 'bundled-agency-agents.json');
+  try {
+    const raw = await readFile(markerPath, 'utf8');
+    const parsed = JSON.parse(raw) as { version?: unknown };
+    return typeof parsed.version === 'number' ? parsed.version : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function writeBundledAgencyAgentsVersion(version: number): Promise<void> {
+  const markerDir = getClawXConfigDir();
+  await ensureDir(markerDir);
+  await writeFile(
+    join(markerDir, 'bundled-agency-agents.json'),
+    `${JSON.stringify({ version }, null, 2)}\n`,
+    'utf8',
+  );
 }
 
 function createImplicitMainEntry(config: AgentConfigDocument): AgentListEntry {
@@ -502,10 +581,93 @@ async function copyRuntimeFiles(sourceAgentDir: string, targetAgentDir: string):
   }
 }
 
+function buildCustomAgentMarkdown(agent: AgentListEntry, options: CreateAgentOptions): string {
+  const title = agent.name || agent.id;
+  const description = normalizeOptionalAgentText(options.description, 800)
+    || `A custom digital employee named ${title}.`;
+  const instructions = normalizeOptionalAgentText(options.instructions, 12000)
+    || [
+      '## Role',
+      `You are ${title}, a custom digital employee created by the user.`,
+      '',
+      '## Responsibilities',
+      '- Understand the user goal, context, constraints, and expected output.',
+      '- Break complex work into clear steps and produce directly usable results.',
+      '- Ask for missing critical information before making high-impact assumptions.',
+    ].join('\n');
+
+  return [
+    `# ${title} Personality`,
+    '',
+    `You are **${title}**, a custom ClawDesk digital employee.`,
+    '',
+    '## Core Mission',
+    description,
+    '',
+    '## Role Definition and Strategy',
+    instructions,
+    '',
+    '## Communication Style',
+    '- Start by clarifying the user goal, context, constraints, and desired output.',
+    '- Prefer concrete outputs: plans, checklists, tables, drafts, briefs, or next actions.',
+    '- Keep responses concise, structured, and directly useful.',
+    '- Continue from user feedback and revise the plan until it can be acted on.',
+  ].join('\n');
+}
+
+function buildCustomAgentToolsMarkdown(options: CreateAgentOptions): string {
+  const skillIds = normalizeSkillIds(options.skillIds);
+  const selectedSkills = skillIds.length
+    ? [
+      '## Selected OpenClaw Skills',
+      '',
+      'This agent should use these OpenClaw skills when they are relevant:',
+      ...skillIds.map((skillId) => `- ${skillId}`),
+      '',
+    ]
+    : [];
+
+  return [
+    '# Tools',
+    '',
+    'Use available ClawDesk and OpenClaw tools when they are relevant. Ask before taking irreversible actions.',
+    '',
+    ...selectedSkills,
+  ].join('\n').trim() + '\n';
+}
+
+async function writeCustomAgentWorkspaceFiles(
+  workspaceDir: string,
+  agent: AgentListEntry,
+  options: CreateAgentOptions,
+): Promise<void> {
+  const title = agent.name || agent.id;
+  const description = normalizeOptionalAgentText(options.description, 800)
+    || `A custom digital employee named ${title}.`;
+  const markdown = `${buildCustomAgentMarkdown(agent, options)}\n`;
+
+  await writeFile(join(workspaceDir, 'IDENTITY.md'), `# ${title}\n${description}\n`, 'utf8');
+  await writeFile(join(workspaceDir, 'AGENTS.md'), markdown, 'utf8');
+  await writeFile(join(workspaceDir, 'SOUL.md'), markdown, 'utf8');
+  await writeFile(join(workspaceDir, 'TOOLS.md'), buildCustomAgentToolsMarkdown(options), 'utf8');
+  await writeFileIfMissing(
+    join(workspaceDir, 'USER.md'),
+    '# User Context\n\nNo user-specific context has been provided yet.\n',
+  );
+  await writeFileIfMissing(
+    join(workspaceDir, 'HEARTBEAT.md'),
+    '# Heartbeat\n\nNo proactive heartbeat tasks are configured for this agent.\n',
+  );
+  await writeFileIfMissing(
+    join(workspaceDir, 'BOOT.md'),
+    '# Boot\n\nLoad AGENTS.md, SOUL.md, IDENTITY.md, USER.md, and TOOLS.md before starting work.\n',
+  );
+}
+
 async function provisionAgentFilesystem(
   config: AgentConfigDocument,
   agent: AgentListEntry,
-  options?: { inheritWorkspace?: boolean },
+  options?: CreateAgentOptions,
 ): Promise<void> {
   const { entries } = normalizeAgentsConfig(config);
   const mainEntry = entries.find((entry) => entry.id === MAIN_AGENT_ID) ?? createImplicitMainEntry(config);
@@ -526,9 +688,117 @@ async function provisionAgentFilesystem(
   if (options?.inheritWorkspace && targetWorkspace !== sourceWorkspace) {
     await copyBootstrapFiles(sourceWorkspace, targetWorkspace);
   }
+  if (options?.description || options?.instructions) {
+    await writeCustomAgentWorkspaceFiles(targetWorkspace, agent, options);
+  }
   if (targetAgentDir !== sourceAgentDir) {
     await copyRuntimeFiles(sourceAgentDir, targetAgentDir);
   }
+}
+
+function buildBundledAgencyAgentMarkdown(definition: BundledAgencyAgentDefinition): string {
+  const capabilityLines = definition.capabilities
+    .map((capability) => `- ${capability}`)
+    .join('\n');
+  const guardrailLines = definition.guardrails?.length
+    ? `\n\n## Guardrails\n${definition.guardrails.map((guardrail) => `- ${guardrail}`).join('\n')}`
+    : '';
+
+  return [
+    `# ${definition.title} Personality`,
+    '',
+    `You are **${definition.title}**, a built-in ClawX digital employee that ${definition.expertise}`,
+    '',
+    '## Core Mission',
+    definition.description,
+    '',
+    '## Core Capabilities',
+    capabilityLines,
+    '',
+    '## Communication Style',
+    '- Start by clarifying the user\'s goal, context, constraints, and desired output.',
+    '- Prefer concrete outputs: plans, checklists, tables, drafts, briefs, or next actions.',
+    '- Keep responses concise, structured, and directly useful.',
+    '- Ask for missing critical inputs before making high-impact assumptions.',
+    guardrailLines.trimStart(),
+  ].filter(Boolean).join('\n');
+}
+
+async function ensureBundledAgencyAgentWorkspace(definition: BundledAgencyAgentDefinition): Promise<void> {
+  const workspaceDir = expandPath(getBundledAgencyWorkspacePath(definition.id));
+  await ensureDir(workspaceDir);
+  await writeFileIfMissing(
+    join(workspaceDir, 'IDENTITY.md'),
+    `# ${definition.title}\n${definition.description}\n`,
+  );
+  const markdown = `${buildBundledAgencyAgentMarkdown(definition)}\n`;
+  await writeFileIfMissing(join(workspaceDir, 'AGENTS.md'), markdown);
+  await writeFileIfMissing(join(workspaceDir, 'SOUL.md'), markdown);
+  await writeFileIfMissing(
+    join(workspaceDir, 'TOOLS.md'),
+    '# Tools\n\nUse available ClawX and OpenClaw tools when they are relevant. Ask before taking irreversible actions.\n',
+  );
+  await writeFileIfMissing(
+    join(workspaceDir, 'USER.md'),
+    '# User Context\n\nNo user-specific context has been provided yet.\n',
+  );
+  await writeFileIfMissing(
+    join(workspaceDir, 'HEARTBEAT.md'),
+    '# Heartbeat\n\nNo proactive heartbeat tasks are configured for this agent.\n',
+  );
+  await writeFileIfMissing(
+    join(workspaceDir, 'BOOT.md'),
+    '# Boot\n\nLoad AGENTS.md, SOUL.md, IDENTITY.md, USER.md, and TOOLS.md before starting work.\n',
+  );
+}
+
+async function ensureBundledAgencyAgentsInstalled(config: AgentConfigDocument): Promise<boolean> {
+  const { agentsConfig, entries, syntheticMain } = normalizeAgentsConfig(config);
+  const installedVersion = await readBundledAgencyAgentsVersion();
+  const existingIds = new Set(entries.map((entry) => entry.id));
+
+  await Promise.all(
+    BUNDLED_AGENCY_AGENTS
+      .filter((definition) => existingIds.has(definition.id))
+      .map((definition) => ensureBundledAgencyAgentWorkspace(definition)),
+  );
+
+  if (installedVersion >= BUNDLED_AGENCY_AGENTS_VERSION) {
+    return false;
+  }
+
+  const nextEntries = syntheticMain ? [createImplicitMainEntry(config)] : [...entries];
+  const newDefinitions = BUNDLED_AGENCY_AGENTS.filter((definition) => !existingIds.has(definition.id));
+
+  for (const definition of newDefinitions) {
+    const entry = createBundledAgencyAgentEntry(definition);
+    nextEntries.push(entry);
+    existingIds.add(entry.id);
+    await provisionAgentFilesystem(config, entry);
+    await ensureBundledAgencyAgentWorkspace(definition);
+  }
+
+  config.agents = {
+    ...agentsConfig,
+    list: nextEntries,
+  };
+  await writeBundledAgencyAgentsVersion(BUNDLED_AGENCY_AGENTS_VERSION);
+
+  return newDefinitions.length > 0 || installedVersion !== BUNDLED_AGENCY_AGENTS_VERSION;
+}
+
+async function readConfigWithBundledAgencyAgents(): Promise<AgentConfigDocument> {
+  return withConfigLock(async () => {
+    const config = await readOpenClawConfig() as AgentConfigDocument;
+    const changed = await ensureBundledAgencyAgentsInstalled(config);
+    if (changed) {
+      await writeOpenClawConfig(config);
+      logger.info('Installed bundled agency agents', {
+        version: BUNDLED_AGENCY_AGENTS_VERSION,
+      });
+    }
+    return config;
+  });
 }
 
 export function resolveAccountIdForAgent(agentId: string): string {
@@ -643,7 +913,7 @@ async function buildSnapshotFromConfig(config: AgentConfigDocument, preloadedCha
 }
 
 export async function listAgentsSnapshot(): Promise<AgentsSnapshot> {
-  const config = await readOpenClawConfig() as AgentConfigDocument;
+  const config = await readConfigWithBundledAgencyAgents();
   return buildSnapshotFromConfig(config);
 }
 
@@ -679,12 +949,14 @@ export async function resolveAgentIdFromChannel(channel: string, accountId?: str
 
 export async function createAgent(
   name: string,
-  options?: { inheritWorkspace?: boolean },
+  options: CreateAgentOptions = {},
 ): Promise<AgentsSnapshot> {
   return withConfigLock(async () => {
     const config = await readOpenClawConfig() as AgentConfigDocument;
     const { agentsConfig, entries, syntheticMain } = normalizeAgentsConfig(config);
     const normalizedName = normalizeAgentName(name);
+    const normalizedModelRef = normalizeOptionalAgentText(options.modelRef, 300);
+    const selectedSkillIds = normalizeSkillIds(options.skillIds);
     const existingIds = new Set(entries.map((entry) => entry.id));
     const diskIds = await listExistingAgentIdsOnDisk();
     let nextId = slugifyAgentId(normalizedName);
@@ -702,6 +974,12 @@ export async function createAgent(
       workspace: `~/.openclaw/workspace-${nextId}`,
       agentDir: getDefaultAgentDirPath(nextId),
     };
+    if (normalizedModelRef) {
+      if (!isValidModelRef(normalizedModelRef)) {
+        throw new Error('modelRef must be in "provider/model" format');
+      }
+      newAgent.model = { primary: normalizedModelRef };
+    }
 
     if (!nextEntries.some((entry) => entry.id === MAIN_AGENT_ID) && syntheticMain) {
       nextEntries.unshift(createImplicitMainEntry(config));
@@ -712,10 +990,31 @@ export async function createAgent(
       ...agentsConfig,
       list: nextEntries,
     };
+    if (selectedSkillIds.length > 0) {
+      if (!config.skills) {
+        config.skills = {};
+      }
+      if (!config.skills.entries) {
+        config.skills.entries = {};
+      }
+      for (const skillId of selectedSkillIds) {
+        config.skills.entries[skillId] = {
+          ...(config.skills.entries[skillId] || {}),
+          enabled: true,
+        };
+      }
+    }
 
-    await provisionAgentFilesystem(config, newAgent, { inheritWorkspace: options?.inheritWorkspace });
+    await provisionAgentFilesystem(config, newAgent, options);
     await writeOpenClawConfig(config);
-    logger.info('Created agent config entry', { agentId: nextId, inheritWorkspace: !!options?.inheritWorkspace });
+    logger.info('Created agent config entry', {
+      agentId: nextId,
+      inheritWorkspace: !!options.inheritWorkspace,
+      hasDescription: Boolean(options.description),
+      hasInstructions: Boolean(options.instructions),
+      hasModelOverride: Boolean(normalizedModelRef),
+      selectedSkillCount: selectedSkillIds.length,
+    });
     return buildSnapshotFromConfig(config);
   });
 }

@@ -49,9 +49,17 @@ vi.mock('@/stores/chat/helpers', () => ({
   toMs: (...args: unknown[]) => toMs(...args as Parameters<typeof toMs>),
 }));
 
+type ChatLikeMessage = {
+  role: string;
+  timestamp?: number;
+  content?: unknown;
+  _attachedFiles?: unknown[];
+  _localKind?: 'agent-intro';
+};
+
 type ChatLikeState = {
   currentSessionKey: string;
-  messages: Array<{ role: string; timestamp?: number; content?: unknown; _attachedFiles?: unknown[] }>;
+  messages: ChatLikeMessage[];
   loading: boolean;
   error: string | null;
   sending: boolean;
@@ -366,6 +374,30 @@ describe('chat history actions', () => {
       'Hello',
       'Real response',
     ]);
+  });
+
+  it('skips history loading for local-only agent intro sessions', async () => {
+    const { createHistoryActions } = await import('@/stores/chat/history-actions');
+    const h = makeHarness({
+      currentSessionKey: 'agent:trend-researcher:session-1',
+      messages: [
+        {
+          role: 'assistant',
+          content: '我是趋势研究员，可以帮你发现市场信号。',
+          timestamp: 1773281732,
+          _localKind: 'agent-intro',
+        },
+      ],
+    });
+    const actions = createHistoryActions(h.set as never, h.get as never);
+
+    await actions.loadHistory();
+
+    expect(invokeIpcMock).not.toHaveBeenCalled();
+    expect(h.read().messages.map((message) => message.content)).toEqual([
+      '我是趋势研究员，可以帮你发现市场信号。',
+    ]);
+    expect(h.read().loading).toBe(false);
   });
 
   it('filters out NO_REPLY assistant messages', async () => {

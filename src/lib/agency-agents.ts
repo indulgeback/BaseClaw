@@ -5,6 +5,14 @@ export interface AgencyAgentCategory {
 
 export const AGENCY_AGENT_CATEGORIES: readonly AgencyAgentCategory[] = [
   {
+    id: 'efficiency',
+    agentIds: ['ppt-generator', 'data-analyst', 'stock-intelligence', 'meeting-notes', 'daily-briefing', 'content-summarizer', 'email-secretary'],
+  },
+  {
+    id: 'life',
+    agentIds: ['life-companion', 'wardrobe-advisor', 'career-analyst', 'travel-planner', 'pet-care-manager', 'family-calendar-manager'],
+  },
+  {
     id: 'academic',
     agentIds: ['anthropologist', 'geographer', 'historian', 'narratologist', 'psychologist'],
   },

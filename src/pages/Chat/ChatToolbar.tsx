@@ -12,17 +12,25 @@ import { useAgentsStore } from '@/stores/agents';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 
+function getAgentIdFromSessionKey(sessionKey: string): string | null {
+  if (!sessionKey.startsWith('agent:')) return null;
+  const [, agentId] = sessionKey.split(':');
+  return agentId || null;
+}
+
 export function ChatToolbar() {
   const refresh = useChatStore((s) => s.refresh);
   const loading = useChatStore((s) => s.loading);
   const showThinking = useChatStore((s) => s.showThinking);
   const toggleThinking = useChatStore((s) => s.toggleThinking);
   const currentAgentId = useChatStore((s) => s.currentAgentId);
+  const currentSessionKey = useChatStore((s) => s.currentSessionKey);
   const agents = useAgentsStore((s) => s.agents);
   const { t } = useTranslation('chat');
+  const effectiveAgentId = getAgentIdFromSessionKey(currentSessionKey) ?? currentAgentId;
   const currentAgentName = useMemo(
-    () => (agents ?? []).find((agent) => agent.id === currentAgentId)?.name ?? currentAgentId,
-    [agents, currentAgentId],
+    () => (agents ?? []).find((agent) => agent.id === effectiveAgentId)?.name ?? effectiveAgentId,
+    [agents, effectiveAgentId],
   );
 
   return (

@@ -10,8 +10,9 @@ const fetchAgentsMock = vi.fn();
 const updateAgentMock = vi.fn();
 const updateAgentModelMock = vi.fn();
 const refreshProviderSnapshotMock = vi.fn();
+const fetchSkillsMock = vi.fn();
 
-const { gatewayState, agentsState, providersState } = vi.hoisted(() => ({
+const { gatewayState, agentsState, providersState, skillsState, createAgentMock, deleteAgentMock } = vi.hoisted(() => ({
   gatewayState: {
     status: { state: 'running', port: 18789 },
   },
@@ -27,6 +28,12 @@ const { gatewayState, agentsState, providersState } = vi.hoisted(() => ({
     vendors: [] as Array<Record<string, unknown>>,
     defaultAccountId: '' as string,
   },
+  skillsState: {
+    skills: [] as Array<Record<string, unknown>>,
+    loading: false,
+  },
+  createAgentMock: vi.fn(),
+  deleteAgentMock: vi.fn(),
 }));
 
 vi.mock('@/stores/gateway', () => ({
@@ -38,16 +45,16 @@ vi.mock('@/stores/agents', () => ({
     fetchAgents: typeof fetchAgentsMock;
     updateAgent: typeof updateAgentMock;
     updateAgentModel: typeof updateAgentModelMock;
-    createAgent: ReturnType<typeof vi.fn>;
-    deleteAgent: ReturnType<typeof vi.fn>;
+    createAgent: typeof createAgentMock;
+    deleteAgent: typeof deleteAgentMock;
   }) => unknown) => {
     const state = {
       ...agentsState,
       fetchAgents: fetchAgentsMock,
       updateAgent: updateAgentMock,
       updateAgentModel: updateAgentModelMock,
-      createAgent: vi.fn(),
-      deleteAgent: vi.fn(),
+      createAgent: createAgentMock,
+      deleteAgent: deleteAgentMock,
     };
     return typeof selector === 'function' ? selector(state) : state;
   },
@@ -60,6 +67,18 @@ vi.mock('@/stores/providers', () => ({
     const state = {
       ...providersState,
       refreshProviderSnapshot: refreshProviderSnapshotMock,
+    };
+    return selector(state);
+  },
+}));
+
+vi.mock('@/stores/skills', () => ({
+  useSkillsStore: (selector: (state: typeof skillsState & {
+    fetchSkills: typeof fetchSkillsMock;
+  }) => unknown) => {
+    const state = {
+      ...skillsState,
+      fetchSkills: fetchSkillsMock,
     };
     return selector(state);
   },
@@ -114,9 +133,14 @@ describe('Agents page status refresh', () => {
     providersState.statuses = [];
     providersState.vendors = [];
     providersState.defaultAccountId = '';
+    skillsState.skills = [];
+    skillsState.loading = false;
     fetchAgentsMock.mockResolvedValue(undefined);
+    fetchSkillsMock.mockResolvedValue(undefined);
     updateAgentMock.mockResolvedValue(undefined);
     updateAgentModelMock.mockResolvedValue(undefined);
+    createAgentMock.mockResolvedValue(undefined);
+    deleteAgentMock.mockResolvedValue(undefined);
     refreshProviderSnapshotMock.mockResolvedValue(undefined);
     hostApiFetchMock.mockResolvedValue({
       success: true,
@@ -261,6 +285,116 @@ describe('Agents page status refresh', () => {
 
     expect(screen.getByText('Anthropologist')).toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('shows only user-created agents in the My Employees filter', async () => {
+    agentsState.agents = [
+      {
+        id: 'main',
+        name: 'Main Agent',
+        isDefault: true,
+        modelDisplay: 'gpt-5',
+        modelRef: 'openai/gpt-5',
+        overrideModelRef: null,
+        inheritedModel: true,
+        workspace: '~/.openclaw/workspace',
+        agentDir: '~/.openclaw/agents/main/agent',
+        mainSessionKey: 'agent:main:main',
+        channelTypes: [],
+      },
+      {
+        id: 'anthropologist',
+        name: 'Anthropologist',
+        isDefault: false,
+        modelDisplay: 'gpt-5',
+        modelRef: 'openai/gpt-5',
+        overrideModelRef: null,
+        inheritedModel: true,
+        workspace: '~/.openclaw/agency-agents/anthropologist',
+        agentDir: '~/.openclaw/agents/anthropologist/agent',
+        mainSessionKey: 'agent:anthropologist:main',
+        channelTypes: [],
+      },
+      {
+        id: 'custom-sales-helper',
+        name: 'Custom Sales Helper',
+        description: 'Helps with personal sales follow-up.',
+        isDefault: false,
+        modelDisplay: 'gpt-5',
+        modelRef: 'openai/gpt-5',
+        overrideModelRef: null,
+        inheritedModel: true,
+        workspace: '~/.openclaw/agents/custom-sales-helper/workspace',
+        agentDir: '~/.openclaw/agents/custom-sales-helper/agent',
+        mainSessionKey: 'agent:custom-sales-helper:main',
+        channelTypes: [],
+      },
+    ];
+
+    renderAgents();
+
+    expect(await screen.findByText('Anthropologist')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'agency.mine' }));
+
+    expect(screen.getByText('Custom Sales Helper')).toBeInTheDocument();
+    expect(screen.getByText('Helps with personal sales follow-up.')).toBeInTheDocument();
+    expect(screen.queryByText('Anthropologist')).not.toBeInTheDocument();
+    expect(screen.queryByText('Main Agent')).not.toBeInTheDocument();
+  });
+
+  it('creates a custom digital employee from the expanded dialog', async () => {
+    skillsState.skills = [
+      {
+        id: 'web-search',
+        name: 'Web Search',
+        description: 'Search the web.',
+        enabled: false,
+        isCore: false,
+      },
+      {
+        id: 'core-runtime',
+        name: 'Core Runtime',
+        description: 'Always available.',
+        enabled: true,
+        isCore: true,
+      },
+    ];
+
+    renderAgents();
+
+    await waitFor(() => {
+      expect(fetchAgentsMock).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'addAgent' }));
+
+    const createButton = screen.getByRole('button', { name: 'createDialog.createButton' });
+    expect(createButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/createDialog.nameLabel/), {
+      target: { value: 'Research Helper' },
+    });
+    fireEvent.change(screen.getByLabelText(/createDialog.shortDescriptionLabel/), {
+      target: { value: 'Finds and summarizes research signals.' },
+    });
+    fireEvent.change(screen.getByLabelText(/createDialog.instructionsLabel/), {
+      target: { value: '## Role\n- Research topics carefully.\n## Style\n- Be concise.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'createDialog.skillsLabel' }));
+    fireEvent.click(screen.getByRole('button', { name: /Web Search/ }));
+
+    expect(createButton).toBeEnabled();
+    fireEvent.click(createButton);
+
+    await waitFor(() => {
+      expect(createAgentMock).toHaveBeenCalledWith('Research Helper', expect.objectContaining({
+        inheritWorkspace: false,
+        description: 'Finds and summarizes research signals.',
+        instructions: '## Role\n- Research topics carefully.\n## Style\n- Be concise.',
+        modelRef: null,
+        skillIds: ['web-search'],
+      }));
+    });
   });
 
   it('keeps the blocking spinner during the initial load before any stable snapshot exists', async () => {

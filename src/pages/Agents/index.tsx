@@ -1,17 +1,73 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Bot, Check, Plus, RefreshCw, Settings2, Trash2, X } from 'lucide-react';
+import {
+  AlertCircle,
+  BarChart3,
+  BookOpen,
+  Bot,
+  Brain,
+  Briefcase,
+  Bug,
+  CalendarDays,
+  Calculator,
+  Camera,
+  ChartLine,
+  Check,
+  ChevronDown,
+  ClipboardList,
+  Database,
+  DollarSign,
+  FileText,
+  Gauge,
+  Globe2,
+  Handshake,
+  Headphones,
+  Heart,
+  Image,
+  LayoutTemplate,
+  Mail,
+  MapPinned,
+  Megaphone,
+  MousePointerClick,
+  Package,
+  Palette,
+  PawPrint,
+  PenTool,
+  PieChart,
+  Plane,
+  Plus,
+  Presentation,
+  ReceiptText,
+  RefreshCw,
+  Rocket,
+  Scale,
+  Search,
+  Settings2,
+  ShieldCheck,
+  Shirt,
+  ShoppingCart,
+  Sparkles,
+  Target,
+  TestTube2,
+  Trash2,
+  TrendingUp,
+  Users,
+  Video,
+  Wrench,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Switch } from '@/components/ui/switch';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAgentsStore } from '@/stores/agents';
 import { useGatewayStore } from '@/stores/gateway';
 import { useProviderStore } from '@/stores/providers';
+import { useSkillsStore } from '@/stores/skills';
 import { useChatStore, type RawMessage } from '@/stores/chat';
 import { hostApiFetch } from '@/lib/host-api';
 import { subscribeHostEvent } from '@/lib/host-events';
@@ -57,6 +113,8 @@ interface RuntimeProviderOption {
   configuredModelId?: string;
 }
 
+type AgentsViewMode = 'agency' | 'mine';
+
 function getLocalizedAgentPresentation(
   agent: AgentSummary,
   t: TFunction<'agents'>,
@@ -82,6 +140,81 @@ function getLocalizedAgentPresentation(
     description,
     displayName: localizedName || agent.name,
   };
+}
+
+const AGENT_ICON_RULES: Array<[RegExp, LucideIcon]> = [
+  [/ppt|presentation|slide/i, Presentation],
+  [/data|database|analysis|analytics|analyst/i, Database],
+  [/stock|trend|growth|market|intelligence/i, TrendingUp],
+  [/meeting|notes|project|workflow|manager/i, ClipboardList],
+  [/daily|briefing|news/i, FileText],
+  [/content|summary|summarizer|book|co-author|narratologist|historian/i, BookOpen],
+  [/email|mail/i, Mail],
+  [/life|companion|psychologist/i, Heart],
+  [/wardrobe|stylist|shirt|clothes|outfit/i, Shirt],
+  [/career|recruit|job|sales|proposal/i, Briefcase],
+  [/travel|trip/i, Plane],
+  [/pet|care|zoo/i, PawPrint],
+  [/calendar|schedule|cron/i, CalendarDays],
+  [/anthropologist|community|inclusive|audience/i, Users],
+  [/geographer|localization|cross-border|china/i, MapPinned],
+  [/brain|strategy|researcher|search|seo|zhihu|baidu/i, Search],
+  [/brand|guardian|compliance|legal|tax|audit/i, ShieldCheck],
+  [/image|visual|photo|prompt/i, Image],
+  [/ui|ux|interface|design/i, LayoutTemplate],
+  [/creative|whimsy|storyteller/i, Sparkles],
+  [/bookkeeper|controller|account|payable|fp-a/i, Calculator],
+  [/finance|budget|cash|payment/i, DollarSign],
+  [/contract|law/i, Scale],
+  [/marketing|social|media|douyin|tiktok|weibo|xiaohongshu|linkedin|twitter|instagram|reddit|bilibili|podcast/i, Megaphone],
+  [/commerce|e-commerce|store|shop|app-store/i, ShoppingCart],
+  [/video|livestream|short-video/i, Video],
+  [/support|customer|review|message/i, Headphones],
+  [/paid|ad-|ppc|programmatic|campaign/i, Target],
+  [/api|tester|qa|test|evidence|reality/i, TestTube2],
+  [/performance|benchmark|optimizer/i, Gauge],
+  [/tool|ops/i, Wrench],
+  [/model/i, Brain],
+  [/product|produce|inventory|package/i, Package],
+  [/audience|lead/i, Handshake],
+  [/chart|dashboard|graph|report/i, ChartLine],
+  [/metrics|measurement/i, BarChart3],
+  [/global|world/i, Globe2],
+  [/invoice|receipt/i, ReceiptText],
+  [/launch|rocket/i, Rocket],
+  [/camera/i, Camera],
+  [/bug|debug/i, Bug],
+  [/experiment|research/i, PieChart],
+  [/copy|writer|author/i, PenTool],
+  [/automation|click/i, MousePointerClick],
+  [/default|main/i, Bot],
+];
+
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+  efficiency: Gauge,
+  life: Heart,
+  academic: BookOpen,
+  design: Palette,
+  finance: DollarSign,
+  marketing: Megaphone,
+  'paid-media': Target,
+  product: Package,
+  'project-management': ClipboardList,
+  sales: Briefcase,
+  specialized: ShieldCheck,
+  support: Headphones,
+  testing: TestTube2,
+};
+
+function getAgentIcon(agent: AgentSummary): LucideIcon {
+  const haystack = `${agent.id} ${agent.name} ${agent.description || ''}`;
+  for (const [pattern, Icon] of AGENT_ICON_RULES) {
+    if (pattern.test(haystack)) {
+      return Icon;
+    }
+  }
+  const category = getAgencyAgentCategory(agent.id);
+  return category ? (CATEGORY_ICON_MAP[category.id] || Bot) : Bot;
 }
 
 function buildAgentIntroMessage(
@@ -175,6 +308,7 @@ export function Agents() {
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
   const [agentToDelete, setAgentToDelete] = useState<AgentSummary | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<AgentsViewMode>('agency');
 
   const fetchChannelAccounts = useCallback(async () => {
     try {
@@ -230,15 +364,24 @@ export function Agents() {
     () => visibleAgents.filter((agent) => getAgencyAgentCategory(agent.id)),
     [visibleAgents],
   );
+  const customAgents = useMemo(
+    () => visibleAgents.filter((agent) => !agent.isDefault && !getAgencyAgentCategory(agent.id)),
+    [visibleAgents],
+  );
   const selectedCategory = selectedCategoryId === 'all'
     ? null
     : AGENCY_AGENT_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? null;
   const displayedAgencyAgents = useMemo(
-    () => selectedCategory
-      ? agencyAgents.filter((agent) => getAgencyAgentCategory(agent.id)?.id === selectedCategory.id)
-      : agencyAgents,
-    [agencyAgents, selectedCategory],
+    () => {
+      if (viewMode === 'mine') return customAgents;
+      if (selectedCategory) {
+        return agencyAgents.filter((agent) => getAgencyAgentCategory(agent.id)?.id === selectedCategory.id);
+      }
+      return agencyAgents;
+    },
+    [agencyAgents, customAgents, selectedCategory, viewMode],
   );
+  const isShowingMyEmployees = viewMode === 'mine';
   const isUsingStableValue = loading && hasCompletedInitialLoad;
   const handleRefresh = () => {
     void Promise.all([fetchAgents(), fetchChannelAccounts()]);
@@ -281,6 +424,42 @@ export function Agents() {
             <p className="max-w-2xl text-[17px] text-foreground/70 font-medium">{t('subtitle')}</p>
           </div>
           <div className="flex shrink-0 items-center gap-3 md:mt-2">
+            <div
+              className="relative flex h-11 rounded-full bg-black/5 p-1 text-[14px] font-semibold text-foreground/70 dark:bg-white/10"
+              role="tablist"
+              aria-label={t('agency.viewToggleLabel')}
+            >
+              <span
+                className={cn(
+                  'absolute top-1 h-9 rounded-full bg-black shadow-sm transition-all duration-200 dark:bg-white',
+                  viewMode === 'agency' ? 'left-1 w-[78px]' : 'left-[82px] w-[96px]',
+                )}
+              />
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewMode === 'agency'}
+                onClick={() => setViewMode('agency')}
+                className={cn(
+                  'relative z-10 h-9 w-[78px] rounded-full transition-colors',
+                  viewMode === 'agency' ? 'text-white dark:text-black' : 'text-foreground/70 hover:text-foreground',
+                )}
+              >
+                {t('agency.recommended')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={viewMode === 'mine'}
+                onClick={() => setViewMode('mine')}
+                className={cn(
+                  'relative z-10 h-9 w-[96px] rounded-full transition-colors',
+                  viewMode === 'mine' ? 'text-white dark:text-black' : 'text-foreground/70 hover:text-foreground',
+                )}
+              >
+                {t('agency.mine')}
+              </button>
+            </div>
             <Button
               variant="outline"
               onClick={handleRefresh}
@@ -317,50 +496,64 @@ export function Agents() {
           </div>
         )}
 
-        <div className="mb-4 space-y-4">
+        <div className={cn('mb-4 space-y-4', viewMode === 'mine' && 'hidden')}>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setSelectedCategoryId('all')}
               className={cn(
-                  'h-9 rounded-full px-4 text-[13px] font-semibold transition-colors',
-                  selectedCategoryId === 'all'
-                    ? 'bg-black text-white dark:bg-white dark:text-black'
-                    : 'bg-black/5 text-foreground/70 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10'
-                )}
+                'h-9 rounded-full px-4 text-[13px] font-semibold transition-colors',
+                selectedCategoryId === 'all'
+                  ? 'bg-black text-white dark:bg-white dark:text-black'
+                  : 'bg-black/5 text-foreground/70 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10',
+              )}
             >
               {t('agency.all')}
             </button>
             {AGENCY_AGENT_CATEGORIES.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setSelectedCategoryId(category.id)}
-                  className={cn(
-                      'h-9 rounded-full px-4 text-[13px] font-semibold transition-colors',
-                      selectedCategoryId === category.id
-                        ? 'bg-black text-white dark:bg-white dark:text-black'
-                        : 'bg-black/5 text-foreground/70 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10'
-                    )}
-                >
-                  {t(`agencyCategories.${category.id}.label`)}
-                </button>
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setSelectedCategoryId(category.id)}
+                className={cn(
+                  'h-9 rounded-full px-4 text-[13px] font-semibold transition-colors',
+                  selectedCategoryId === category.id
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-black/5 text-foreground/70 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10',
+                )}
+              >
+                {t(`agencyCategories.${category.id}.label`)}
+              </button>
             ))}
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-2 pb-10 min-h-0 -mr-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {displayedAgencyAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                onOpenSettings={() => setActiveAgentId(agent.id)}
-                onDelete={() => setAgentToDelete(agent)}
-                onUse={() => handleUseAgent(agent)}
-              />
-            ))}
-          </div>
+          {displayedAgencyAgents.length === 0 && isShowingMyEmployees ? (
+            <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[28px] border border-dashed border-black/15 dark:border-white/15 bg-white dark:bg-card px-6 text-center">
+              <h2 className="text-[18px] font-semibold text-foreground">{t('agency.mineEmptyTitle')}</h2>
+              <p className="mt-2 max-w-md text-[14px] leading-6 text-foreground/60">{t('agency.mineEmptyDescription')}</p>
+              <Button
+                onClick={() => setShowAddDialog(true)}
+                className="mt-5 h-9 rounded-full px-5 text-[13px] font-medium shadow-none"
+              >
+                <Plus className="h-3.5 w-3.5 mr-2" />
+                {t('addAgent')}
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {displayedAgencyAgents.map((agent) => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onOpenSettings={() => setActiveAgentId(agent.id)}
+                  onDelete={() => setAgentToDelete(agent)}
+                  onUse={() => handleUseAgent(agent)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -427,6 +620,7 @@ function AgentCard({
     t,
     i18n.resolvedLanguage || i18n.language || '',
   );
+  const agentIcon = createElement(getAgentIcon(agent), { className: 'h-[22px] w-[22px]' });
 
   return (
     <div
@@ -439,7 +633,7 @@ function AgentCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-4 min-w-0">
             <div className="h-12 w-12 shrink-0 flex items-center justify-center text-foreground bg-black/5 dark:bg-white/[0.08] rounded-full shadow-sm">
-              <Bot className="h-[22px] w-[22px]" />
+              {agentIcon}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
@@ -501,10 +695,18 @@ function AgentCard({
     </div>
   );
 }
-
 const inputClasses = 'h-[44px] rounded-xl font-mono text-[13px] bg-white dark:bg-muted border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground placeholder:text-foreground/40';
 const selectClasses = 'h-[44px] w-full rounded-xl font-mono text-[13px] bg-white dark:bg-muted border border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground px-3';
 const labelClasses = 'text-[14px] text-foreground/80 font-bold';
+const createControlClasses = 'w-full rounded-xl border border-black/10 dark:border-white/10 bg-[#f7f7f7] dark:bg-muted/80 px-3 text-[14px] text-foreground placeholder:text-muted-foreground/65 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/10 dark:focus-visible:ring-white/20 focus-visible:border-black/20 dark:focus-visible:border-white/20';
+
+interface AddAgentCreateOptions {
+  inheritWorkspace?: boolean;
+  description: string;
+  instructions: string;
+  modelRef: string | null;
+  skillIds: string[];
+}
 
 function ChannelLogo({ type }: { type: ChannelType }) {
   switch (type) {
@@ -534,18 +736,122 @@ function AddAgentDialog({
   onCreate,
 }: {
   onClose: () => void;
-  onCreate: (name: string, options: { inheritWorkspace: boolean }) => Promise<void>;
+  onCreate: (name: string, options: AddAgentCreateOptions) => Promise<void>;
 }) {
   const { t } = useTranslation('agents');
+  const defaultModelRef = useAgentsStore((state) => state.defaultModelRef);
+  const providerAccounts = useProviderStore((state) => state.accounts);
+  const providerStatuses = useProviderStore((state) => state.statuses);
+  const providerVendors = useProviderStore((state) => state.vendors);
+  const providerDefaultAccountId = useProviderStore((state) => state.defaultAccountId);
+  const skills = useSkillsStore((state) => state.skills);
+  const skillsLoading = useSkillsStore((state) => state.loading);
+  const fetchSkills = useSkillsStore((state) => state.fetchSkills);
   const [name, setName] = useState('');
-  const [inheritWorkspace, setInheritWorkspace] = useState(false);
+  const [description, setDescription] = useState('');
+  const [instructions, setInstructions] = useState('');
+  const [selectedModelRef, setSelectedModelRef] = useState('');
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [skillsOpen, setSkillsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const maxNameLength = 15;
+  const maxDescriptionLength = 100;
+
+  useEffect(() => {
+    void fetchSkills();
+  }, [fetchSkills]);
+
+  const runtimeProviderOptions = useMemo<RuntimeProviderOption[]>(() => {
+    const vendorMap = new Map<string, ProviderVendorInfo>(providerVendors.map((vendor) => [vendor.id, vendor]));
+    const statusById = new Map<string, ProviderWithKeyInfo>(providerStatuses.map((status) => [status.id, status]));
+    const entries = providerAccounts
+      .filter((account) => account.enabled && hasConfiguredProviderCredentials(account, statusById))
+      .sort((left, right) => {
+        if (left.id === providerDefaultAccountId) return -1;
+        if (right.id === providerDefaultAccountId) return 1;
+        return right.updatedAt.localeCompare(left.updatedAt);
+      });
+
+    return entries.map((account) => {
+      const runtimeProviderKey = resolveRuntimeProviderKey(account);
+      const vendor = vendorMap.get(account.vendorId);
+      const configuredModelId = account.model
+        ? (account.model.startsWith(`${runtimeProviderKey}/`)
+          ? account.model.slice(runtimeProviderKey.length + 1)
+          : account.model)
+        : vendor?.modelIdPlaceholder;
+
+      return {
+        runtimeProviderKey,
+        accountId: account.id,
+        label: `${account.label} (${vendor?.name || account.vendorId})`,
+        modelIdPlaceholder: vendor?.modelIdPlaceholder,
+        configuredModelId,
+      };
+    });
+  }, [providerAccounts, providerDefaultAccountId, providerStatuses, providerVendors]);
+
+  const modelOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [];
+    if (defaultModelRef) {
+      const defaultParsed = splitModelRef(defaultModelRef);
+      options.push({
+        value: defaultModelRef,
+        label: t('createDialog.defaultModelOption', {
+          model: defaultParsed?.modelId || defaultModelRef,
+        }),
+      });
+    }
+
+    for (const provider of runtimeProviderOptions) {
+      const modelId = provider.configuredModelId || provider.modelIdPlaceholder;
+      if (!modelId) continue;
+      const value = `${provider.runtimeProviderKey}/${modelId}`;
+      if (options.some((option) => option.value === value)) continue;
+      options.push({
+        value,
+        label: `${modelId} · ${provider.label}`,
+      });
+    }
+
+    if (options.length === 0) {
+      options.push({ value: '', label: t('createDialog.systemDefaultModel') });
+    }
+    return options;
+  }, [defaultModelRef, runtimeProviderOptions, t]);
+
+  const effectiveSelectedModelRef = selectedModelRef || modelOptions[0]?.value || '';
+  const canCreate = Boolean(name.trim() && description.trim() && instructions.trim());
+  const selectableSkills = useMemo(() => (
+    skills
+      .filter((skill) => !skill.isCore)
+      .sort((left, right) => left.name.localeCompare(right.name))
+  ), [skills]);
+  const selectedSkillNames = selectedSkillIds
+    .map((skillId) => selectableSkills.find((skill) => skill.id === skillId)?.name || skillId)
+    .filter(Boolean);
+
+  const toggleSkill = (skillId: string) => {
+    setSelectedSkillIds((current) => (
+      current.includes(skillId)
+        ? current.filter((id) => id !== skillId)
+        : [...current, skillId]
+    ));
+  };
 
   const handleSubmit = async () => {
-    if (!name.trim()) return;
+    if (!canCreate) return;
     setSaving(true);
     try {
-      await onCreate(name.trim(), { inheritWorkspace });
+      await onCreate(name.trim(), {
+        inheritWorkspace: false,
+        description: description.trim(),
+        instructions: instructions.trim(),
+        modelRef: effectiveSelectedModelRef && effectiveSelectedModelRef !== defaultModelRef
+          ? effectiveSelectedModelRef
+          : null,
+        skillIds: selectedSkillIds,
+      });
     } catch (error) {
       toast.error(t('toast.agentCreateFailed', { error: String(error) }));
       setSaving(false);
@@ -556,49 +862,176 @@ function AddAgentDialog({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl bg-white dark:bg-card overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-2xl font-serif font-normal tracking-tight">
-            {t('createDialog.title')}
-          </CardTitle>
-          <CardDescription className="text-[15px] mt-1 text-foreground/70">
-            {t('createDialog.description')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 pt-4 p-6">
-          <div className="space-y-2.5">
-            <Label htmlFor="agent-name" className={labelClasses}>{t('createDialog.nameLabel')}</Label>
-            <Input
-              id="agent-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t('createDialog.namePlaceholder')}
-              className={inputClasses}
-            />
+      <Card className="w-full max-w-xl max-h-[90vh] overflow-hidden rounded-2xl border-0 bg-white shadow-2xl dark:bg-card">
+        <CardContent className="max-h-[90vh] overflow-y-auto p-5 sm:p-6">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <h2 className="text-[20px] font-bold tracking-tight text-foreground">
+              {t('createDialog.title')}
+            </h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 rounded-full text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+              aria-label={t('common:actions.close')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="inherit-workspace" className={labelClasses}>{t('createDialog.inheritWorkspaceLabel')}</Label>
-              <p className="text-[13px] text-foreground/60">{t('createDialog.inheritWorkspaceDescription')}</p>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="agent-name" className="text-[13px] font-bold text-foreground/75">
+                {t('createDialog.nameLabel')} <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="agent-name"
+                  value={name}
+                  maxLength={maxNameLength}
+                  onChange={(event) => setName(event.target.value.slice(0, maxNameLength))}
+                  placeholder={t('createDialog.namePlaceholder')}
+                  className={cn(createControlClasses, 'h-11 pr-16')}
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-muted-foreground">
+                  {name.length} / {maxNameLength}
+                </span>
+              </div>
             </div>
-            <Switch
-              id="inherit-workspace"
-              checked={inheritWorkspace}
-              onCheckedChange={setInheritWorkspace}
-            />
+
+            <div className="space-y-2">
+              <Label htmlFor="agent-description" className="text-[13px] font-bold text-foreground/75">
+                {t('createDialog.shortDescriptionLabel')} <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <textarea
+                  id="agent-description"
+                  value={description}
+                  maxLength={maxDescriptionLength}
+                  onChange={(event) => setDescription(event.target.value.slice(0, maxDescriptionLength))}
+                  placeholder={t('createDialog.shortDescriptionPlaceholder')}
+                  className={cn(createControlClasses, 'min-h-16 resize-none py-2.5 pr-16 leading-6')}
+                />
+                <span className="pointer-events-none absolute bottom-2.5 right-3 text-[12px] text-muted-foreground">
+                  {description.length} / {maxDescriptionLength}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="agent-instructions" className="text-[13px] font-bold text-foreground/75">
+                {t('createDialog.instructionsLabel')} <span className="text-red-500">*</span>
+              </Label>
+              <textarea
+                id="agent-instructions"
+                value={instructions}
+                onChange={(event) => setInstructions(event.target.value)}
+                placeholder={t('createDialog.instructionsPlaceholder')}
+                className={cn(createControlClasses, 'min-h-28 resize-none py-3 leading-6')}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="agent-model" className="text-[13px] font-bold text-foreground/75">
+                {t('createDialog.modelLabel')} <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <select
+                  id="agent-model"
+                  value={effectiveSelectedModelRef}
+                  onChange={(event) => setSelectedModelRef(event.target.value)}
+                  className={cn(createControlClasses, 'h-11 appearance-none pr-10')}
+                >
+                  {modelOptions.map((option) => (
+                    <option key={option.value || 'default'} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="agent-skills" className="text-[13px] font-bold text-foreground/75">
+                {t('createDialog.skillsLabel')}
+              </Label>
+              <div className="relative">
+                <button
+                  type="button"
+                  id="agent-skills"
+                  onClick={() => setSkillsOpen((open) => !open)}
+                  className={cn(
+                    createControlClasses,
+                    'flex h-11 items-center justify-between gap-3 pr-10 text-left',
+                    selectedSkillIds.length === 0 && 'text-muted-foreground',
+                  )}
+                  aria-expanded={skillsOpen}
+                >
+                  <span className="truncate">
+                    {selectedSkillIds.length > 0
+                      ? t('createDialog.skillsSelected', { count: selectedSkillIds.length, names: selectedSkillNames.join(', ') })
+                      : t('createDialog.skillsPlaceholder')}
+                  </span>
+                </button>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                {skillsOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-10 max-h-56 overflow-y-auto rounded-xl border border-black/10 bg-white p-2 shadow-lg dark:border-white/10 dark:bg-card">
+                    {skillsLoading ? (
+                      <div className="px-3 py-2 text-[13px] text-muted-foreground">
+                        {t('createDialog.skillsLoading')}
+                      </div>
+                    ) : selectableSkills.length === 0 ? (
+                      <div className="px-3 py-2 text-[13px] text-muted-foreground">
+                        {t('createDialog.skillsEmpty')}
+                      </div>
+                    ) : (
+                      selectableSkills.map((skill) => {
+                        const checked = selectedSkillIds.includes(skill.id);
+                        return (
+                          <button
+                            key={skill.id}
+                            type="button"
+                            onClick={() => toggleSkill(skill.id)}
+                            className="flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                          >
+                            <span className={cn(
+                              'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-black/20 dark:border-white/20',
+                              checked && 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
+                            )}>
+                              {checked && <Check className="h-3 w-3" />}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block truncate text-[13px] font-semibold text-foreground">
+                                {skill.name}
+                              </span>
+                              <span className="block truncate text-[12px] text-muted-foreground">
+                                {skill.description || skill.id}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
             <Button
               variant="outline"
               onClick={onClose}
-              className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+              className="h-11 rounded-xl border-black/15 bg-white text-[14px] font-bold text-foreground shadow-none hover:bg-black/5 dark:border-white/15 dark:bg-card dark:hover:bg-white/10"
             >
               {t('common:actions.cancel')}
             </Button>
             <Button
               onClick={() => void handleSubmit()}
-              disabled={saving || !name.trim()}
-              className="h-9 text-[13px] font-medium rounded-full px-4 shadow-none"
+              disabled={saving || !canCreate}
+              className="h-11 rounded-xl bg-black text-[14px] font-bold text-white shadow-none hover:bg-black/90 disabled:bg-muted-foreground/60 disabled:text-white dark:bg-white dark:text-black dark:hover:bg-white/90 dark:disabled:bg-white/30 dark:disabled:text-white/60"
             >
               {saving ? (
                 <>
@@ -606,7 +1039,7 @@ function AddAgentDialog({
                   {t('creating')}
                 </>
               ) : (
-                t('common:actions.save')
+                t('createDialog.createButton')
               )}
             </Button>
           </div>

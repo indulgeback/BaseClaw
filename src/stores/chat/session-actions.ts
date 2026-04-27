@@ -27,7 +27,7 @@ function resolveCanonicalPrefixForAgent(agentId: string | undefined | null): str
   if (!agentId) return null;
   const normalizedAgentId = normalizeAgentId(agentId);
   const summary = useAgentsStore.getState().agents.find((agent) => agent.id === normalizedAgentId);
-  if (summary?.mainSessionKey) {
+  if (summary?.mainSessionKey && getAgentIdFromSessionKey(summary.mainSessionKey) === normalizedAgentId) {
     return getCanonicalPrefixFromSessionKey(summary.mainSessionKey);
   }
   return `agent:${normalizedAgentId}`;
@@ -59,6 +59,21 @@ function parseSessionUpdatedAtMs(value: unknown): number | undefined {
     }
   }
   return undefined;
+}
+
+function mergeSessionActivity(
+  current: Record<string, number>,
+  updates: Record<string, number>,
+): Record<string, number> {
+  const next = { ...current };
+  for (const [key, value] of Object.entries(updates)) {
+    if (!Number.isFinite(value)) continue;
+    const existing = next[key];
+    if (typeof existing !== 'number' || !Number.isFinite(existing) || value > existing) {
+      next[key] = value;
+    }
+  }
+  return next;
 }
 
 export function createSessionActions(
@@ -107,6 +122,9 @@ export function createSessionActions(
           });
 
           const { currentSessionKey } = get();
+          const protectedLocalIntroSessionKey = hasOnlyLocalIntroMessages(get().messages)
+            ? currentSessionKey
+            : null;
           let nextSessionKey = currentSessionKey || DEFAULT_SESSION_KEY;
           if (!nextSessionKey.startsWith('agent:')) {
             const canonicalMatch = canonicalBySuffix.get(nextSessionKey);
@@ -120,6 +138,9 @@ export function createSessionActions(
             if (!isNewEmptySession) {
               nextSessionKey = dedupedSessions[0].key;
             }
+          }
+          if (protectedLocalIntroSessionKey) {
+            nextSessionKey = protectedLocalIntroSessionKey;
           }
 
           const sessionsWithCurrent = !dedupedSessions.find((s) => s.key === nextSessionKey) && nextSessionKey
@@ -139,10 +160,7 @@ export function createSessionActions(
             sessions: sessionsWithCurrent,
             currentSessionKey: nextSessionKey,
             currentAgentId: getAgentIdFromSessionKey(nextSessionKey),
-            sessionLastActivity: {
-              ...state.sessionLastActivity,
-              ...discoveredActivity,
-            },
+            sessionLastActivity: mergeSessionActivity(state.sessionLastActivity, discoveredActivity),
           }));
 
           if (currentSessionKey !== nextSessionKey) {
@@ -153,7 +171,13 @@ export function createSessionActions(
           // Concurrency-limited to avoid flooding the gateway with parallel RPCs.
           // By the time this runs, the gateway should already be fully ready (Sidebar
           // gates on gatewayReady), so no startup-retry loop is needed.
-          const sessionsToLabel = sessionsWithCurrent.filter((s) => !s.key.endsWith(':main'));
+          const shouldSkipCurrentLocalIntroLabel = hasOnlyLocalIntroMessages(get().messages);
+          const { sessionLabels, sessionLastActivity } = get();
+          const sessionsToLabel = sessionsWithCurrent.filter((s) => (
+            !s.key.endsWith(':main')
+            && !(shouldSkipCurrentLocalIntroLabel && s.key === nextSessionKey)
+            && (!sessionLabels[s.key] || !sessionLastActivity[s.key])
+          ));
           if (sessionsToLabel.length > 0) {
             void (async () => {
               for (let i = 0; i < sessionsToLabel.length; i += LABEL_FETCH_CONCURRENCY) {
@@ -180,7 +204,10 @@ export function createSessionActions(
                           }
                         }
                         if (lastMsg?.timestamp) {
-                          next.sessionLastActivity = { ...s.sessionLastActivity, [session.key]: toMs(lastMsg.timestamp) };
+                          next.sessionLastActivity = mergeSessionActivity(
+                            s.sessionLastActivity,
+                            { [session.key]: toMs(lastMsg.timestamp) },
+                          );
                         }
                         return next;
                       });

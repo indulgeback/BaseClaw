@@ -187,4 +187,88 @@ describe('chat target routing', () => {
     expect(payload.message).toBe('Process the attached file(s).');
     expect(payload.media[0]?.filePath).toBe('/tmp/design.png');
   });
+
+  it('creates new agent sessions from the clicked agent id when metadata points at main', async () => {
+    agentsState.agents = agentsState.agents.map((agent) => (
+      agent.id === 'research'
+        ? { ...agent, mainSessionKey: 'agent:main:main' }
+        : agent
+    ));
+    const { useChatStore } = await import('@/stores/chat');
+
+    useChatStore.setState({
+      currentSessionKey: 'agent:main:main',
+      currentAgentId: 'main',
+      sessions: [{ key: 'agent:main:main' }],
+      messages: [{ role: 'assistant', content: 'Existing main history' }],
+      sessionLabels: {},
+      sessionLastActivity: {},
+      sending: false,
+      activeRunId: null,
+      streamingText: '',
+      streamingMessage: null,
+      streamingTools: [],
+      pendingFinal: false,
+      lastUserMessageAt: null,
+      pendingToolImages: [],
+      error: null,
+      loading: false,
+      thinkingLevel: null,
+      showThinking: true,
+    });
+
+    useChatStore.getState().newSession('research');
+
+    const state = useChatStore.getState();
+    expect(state.currentSessionKey).toBe('agent:research:session-1773230400000');
+    expect(state.currentAgentId).toBe('research');
+    expect(state.currentSessionKey).not.toContain('agent:main:');
+  });
+
+  it('keeps the local agent intro session when sessions refresh returns only main', async () => {
+    const { useChatStore } = await import('@/stores/chat');
+    useChatStore.setState({
+      currentSessionKey: 'agent:research:session-1773230400000',
+      currentAgentId: 'research',
+      sessions: [{ key: 'agent:research:session-1773230400000' }],
+      messages: [
+        {
+          role: 'assistant',
+          content: 'Research intro',
+          _localKind: 'agent-intro',
+        },
+      ],
+      sessionLabels: {},
+      sessionLastActivity: { 'agent:research:session-1773230400000': 1773230400000 },
+      sending: false,
+      activeRunId: null,
+      streamingText: '',
+      streamingMessage: null,
+      streamingTools: [],
+      pendingFinal: false,
+      lastUserMessageAt: null,
+      pendingToolImages: [],
+      error: null,
+      loading: false,
+      thinkingLevel: null,
+      showThinking: true,
+    });
+    gatewayRpcMock.mockImplementation(async (method: string) => {
+      if (method === 'sessions.list') {
+        return { sessions: [{ key: 'agent:main:main', displayName: 'Main Agent' }] };
+      }
+      if (method === 'chat.history') {
+        throw new Error('local intro session should not load history');
+      }
+      throw new Error(`Unexpected gateway RPC: ${method}`);
+    });
+
+    await useChatStore.getState().loadSessions();
+
+    const state = useChatStore.getState();
+    expect(state.currentSessionKey).toBe('agent:research:session-1773230400000');
+    expect(state.currentAgentId).toBe('research');
+    expect(state.sessions.some((session) => session.key === 'agent:research:session-1773230400000')).toBe(true);
+    expect(gatewayRpcMock).toHaveBeenCalledTimes(1);
+  });
 });

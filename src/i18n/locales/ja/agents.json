@@ -14,6 +14,11 @@
     "creating": "作成中...",
     "agency": {
         "all": "すべて",
+        "mine": "自分の従業員",
+        "recommended": "おすすめ",
+        "viewToggleLabel": "従業員ビューを切り替え",
+        "mineEmptyTitle": "自分の従業員はまだありません",
+        "mineEmptyDescription": "Agent を追加して、自分専用のデジタル従業員を作成してください。",
         "allTitle": "Agency Agents",
         "allDescription": "{{count}} 件の専門 Agent を {{categories}} カテゴリに整理",
         "systemTitle": "システム",
@@ -32,6 +37,14 @@
         "trend-researcher": "私は トレンドリサーチャー（trend-researcher）です。\nプロダクトトレンドと市場インテリジェンスの分析担当です。\n\n支援できること：\n1. 検索、SNS、競合、投資、レポートからトレンド信号を見つけます。\n2. 市場規模、ユーザー層、競争環境を分析します。\n3. 機会の強さ、参入タイミング、リスクを判断します。\n4. ロードマップ、優先度、検証案に落とし込みます。\n\n業界、プロダクト方向、競合、対象ユーザーを送ってください。調査を始めます。"
     },
     "agencyCategories": {
+        "efficiency": {
+            "label": "効率",
+            "description": "業務効率化、分析、要約、会議、メール運用"
+        },
+        "life": {
+            "label": "生活",
+            "description": "日常サポート、服装、キャリア、旅行、ペット、家族予定"
+        },
         "academic": {
             "label": "学術",
             "description": "研究、人文、分析に特化した専門家"
@@ -77,13 +90,39 @@
             "description": "品質検証、性能、API、証拠収集"
         }
     },
+    "agencyAgentDescriptions": {
+        "ppt-generator": "アイデア、資料、目的を明確な資料構成、スライド題名、発表メモに整理します。",
+        "data-analyst": "表や指標を明確な発見、グラフ案、ビジネス提案に変換します。",
+        "stock-intelligence": "株式シグナル、企業ニュース、リスクを調査しやすい情報ブリーフに整理します。",
+        "meeting-notes": "会議メモを決定事項、アクション、担当者、フォロー文に整理します。",
+        "daily-briefing": "ニュース、タスク、優先事項を明確な日次ブリーフに圧縮します。",
+        "content-summarizer": "長い文書、記事、メディアを要点、フレーム、再利用できるメモに要約します。",
+        "email-secretary": "返信の下書き、メールスレッドの整理、次のアクション化を支援します。",
+        "life-companion": "日々の選択、習慣、計画、まだ整理できていない小さな決定を一緒に考えます。",
+        "wardrobe-advisor": "場面、天気、手持ち服、好みに合わせて実用的なコーデを提案します。",
+        "career-analyst": "履歴書、求人、面接戦略、キャリア上の重要な選択を分析します。",
+        "travel-planner": "日程、予算、目的地、旅行スタイルから実行しやすい旅程を作ります。",
+        "pet-care-manager": "ペットの食事、ケア、用品、行動メモ、獣医への質問を整理します。",
+        "family-calendar-manager": "家族予定、家事、リマインダー、予約、定期ルーティンを調整します。"
+    },
     "createDialog": {
-        "title": "Agent を追加",
-        "description": "名前だけで新しい Agent を作成できます。メイン Agent のワークスペース初期ファイルを引き継ぐかどうかも選択できます。",
-        "nameLabel": "Agent 名",
-        "namePlaceholder": "Coding Helper",
-        "inheritWorkspaceLabel": "メイン Agent のワークスペースを引き継ぐ",
-        "inheritWorkspaceDescription": "SOUL.md、AGENTS.md などの初期ファイルをコピーします"
+        "title": "デジタル従業員を作成",
+        "description": "専用のデジタル従業員を作成し、役割、戦略、出力スタイルを定義します。",
+        "nameLabel": "デジタル従業員名",
+        "namePlaceholder": "デジタル従業員に名前を付ける",
+        "shortDescriptionLabel": "一文の説明",
+        "shortDescriptionPlaceholder": "中核機能を簡潔に説明してください。例：広告企画、製品プロモーション、キャンペーン告知向けのマーケティングコピーとブランドコンテンツを作成します。",
+        "instructionsLabel": "役割定義と戦略",
+        "instructionsPlaceholder": "このデジタル従業員の実行方法を、役割、責任範囲、処理手順、出力スタイル、守るべきルールとして記述してください。例：\n## 役割\n- あなたはシニアコピー戦略担当として、ユーザーの目的を説得力と転換力のあるマーケティングコピーに変換します。\n## 責任\n- 対象読者と伝達目的を分析し、主要な訴求点を抽出して、各シーン向けの高品質なコピーを作成する。\n## ルール\n- 文案内の情報は事実確認してから使用する。\n## スタイル\n- 簡潔で説得力があり、誇張のない表現にする。",
+        "modelLabel": "モデルを選択",
+        "defaultModelOption": "{{model}}（デフォルト）",
+        "systemDefaultModel": "デフォルトモデル",
+        "skillsLabel": "スキル（任意）",
+        "skillsPlaceholder": "スキルを選択",
+        "createButton": "作成",
+        "skillsSelected": "{{count}} 個のスキルを選択：{{names}}",
+        "skillsLoading": "スキルを読み込み中...",
+        "skillsEmpty": "選択可能な OpenClaw スキルがありません"
     },
     "deleteDialog": {
         "title": "Agent を削除",
@@ -140,6 +179,19 @@
         "channelRemoveFailed": "Channel の削除に失敗しました: {{error}}"
     },
     "agencyAgentNames": {
+        "ppt-generator": "PPT 生成担当",
+        "data-analyst": "データ分析担当",
+        "stock-intelligence": "株式情報担当",
+        "meeting-notes": "議事録担当",
+        "daily-briefing": "日次情報担当",
+        "content-summarizer": "コンテンツ要約担当",
+        "email-secretary": "メール秘書",
+        "life-companion": "生活コンパニオン",
+        "wardrobe-advisor": "服装アドバイザー",
+        "career-analyst": "転職分析担当",
+        "travel-planner": "旅行プランナー",
+        "pet-care-manager": "ペット管理担当",
+        "family-calendar-manager": "家族カレンダー管理",
         "anthropologist": "人類学者",
         "geographer": "地理学者",
         "historian": "歴史家",

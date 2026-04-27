@@ -192,4 +192,61 @@ describe('chat session actions', () => {
     expect(h.read().sessionLastActivity['agent:main:cron:job-1']).toBe(1773281731621);
     expect(h.read().sessions.find((session) => session.key === 'agent:main:cron:job-1')?.updatedAt).toBe(1773281731621);
   });
+
+  it('does not downgrade existing session activity or refetch complete sidebar entries', async () => {
+    const { createSessionActions } = await import('@/stores/chat/session-actions');
+    const h = makeHarness({
+      currentSessionKey: 'agent:main:main',
+      sessions: [{ key: 'agent:main:main' }, { key: 'agent:foo:session-a' }],
+      sessionLabels: { 'agent:foo:session-a': 'Existing title' },
+      sessionLastActivity: { 'agent:foo:session-a': 1773281731621 },
+    });
+    const actions = createSessionActions(h.set as never, h.get as never);
+
+    invokeIpcMock.mockResolvedValueOnce({
+      success: true,
+      result: {
+        sessions: [
+          { key: 'agent:main:main', displayName: 'Main' },
+          {
+            key: 'agent:foo:session-a',
+            displayName: 'Foo',
+            updatedAt: 1773281700000,
+          },
+        ],
+      },
+    });
+
+    await actions.loadSessions();
+
+    expect(h.read().sessionLastActivity['agent:foo:session-a']).toBe(1773281731621);
+    expect(invokeIpcMock).toHaveBeenCalledTimes(1);
+    expect(invokeIpcMock).toHaveBeenCalledWith('gateway:rpc', 'sessions.list', {});
+  });
+
+  it('does not prefetch labels for the current local-only agent intro session', async () => {
+    const { createSessionActions } = await import('@/stores/chat/session-actions');
+    const h = makeHarness({
+      currentSessionKey: 'agent:trend-researcher:session-1',
+      sessions: [{ key: 'agent:trend-researcher:session-1' }],
+      messages: [{ role: 'assistant', content: 'Intro', _localKind: 'agent-intro' }],
+      sessionLastActivity: { 'agent:trend-researcher:session-1': 1711111111111 },
+    });
+    const actions = createSessionActions(h.set as never, h.get as never);
+
+    invokeIpcMock.mockResolvedValueOnce({
+      success: true,
+      result: {
+        sessions: [
+          { key: 'agent:main:main', displayName: 'Main' },
+          { key: 'agent:trend-researcher:session-1', displayName: 'trend-researcher' },
+        ],
+      },
+    });
+
+    await actions.loadSessions();
+
+    expect(invokeIpcMock).toHaveBeenCalledTimes(1);
+    expect(invokeIpcMock).toHaveBeenCalledWith('gateway:rpc', 'sessions.list', {});
+  });
 });

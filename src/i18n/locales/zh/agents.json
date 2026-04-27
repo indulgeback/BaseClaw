@@ -14,6 +14,11 @@
     "creating": "创建中...",
     "agency": {
         "all": "全部",
+        "mine": "我的员工",
+        "recommended": "推荐",
+        "viewToggleLabel": "切换员工视图",
+        "mineEmptyTitle": "还没有自己的员工",
+        "mineEmptyDescription": "点击添加 Agent，创建一个只属于你的数字员工。",
         "allTitle": "Agency Agents",
         "allDescription": "{{count}} 个专业 Agent，按 {{categories}} 个分类整理",
         "systemTitle": "系统",
@@ -32,6 +37,14 @@
         "trend-researcher": "我是 趋势研究员（trend-researcher）。\n你的产品趋势与市场情报分析师。\n\n我能为你做什么：\n1. 从搜索、社媒、竞品、投融资和报告中发现趋势信号。\n2. 分析市场规模、用户分群和竞争格局。\n3. 判断机会强度、进入时机和潜在风险。\n4. 输出产品路线图、功能优先级和验证清单建议。\n\n把行业、产品方向、竞品或目标用户发给我，我会开始研究。"
     },
     "agencyCategories": {
+        "efficiency": {
+            "label": "效率",
+            "description": "办公提效、分析、总结、会议和邮件处理"
+        },
+        "life": {
+            "label": "生活",
+            "description": "日常陪伴、穿搭、求职、旅行、宠物和家庭安排"
+        },
         "academic": {
             "label": "学术",
             "description": "研究、人文与分析型专家"
@@ -78,6 +91,19 @@
         }
     },
     "agencyAgentDescriptions": {
+        "ppt-generator": "把想法、资料和目标整理成清晰的 PPT 结构、页标题和演讲备注。",
+        "data-analyst": "把表格和指标转成清晰发现、图表思路和业务建议。",
+        "stock-intelligence": "整理股票信号、公司新闻和风险，形成可研究的情报简报。",
+        "meeting-notes": "把会议记录整理成决议、行动项、负责人和跟进消息。",
+        "daily-briefing": "把新闻、任务和优先级压缩成一份清晰的每日简报。",
+        "content-summarizer": "把长文档、文章和音视频内容提炼成要点、框架和可复用笔记。",
+        "email-secretary": "帮你起草回复、梳理邮件线程，并把消息转成下一步行动。",
+        "life-companion": "陪你梳理日常选择、习惯、计划和需要慢慢想清楚的小事。",
+        "wardrobe-advisor": "根据场合、天气、衣橱和风格偏好，给出可直接穿的搭配方案。",
+        "career-analyst": "分析简历、岗位、面试策略和职业选择里的关键取舍。",
+        "travel-planner": "根据日期、预算、目的地和旅行风格，规划可执行的行程。",
+        "pet-care-manager": "整理宠物喂养、护理、用品、行为记录和就医问题清单。",
+        "family-calendar-manager": "协调家庭日程、家务、提醒、预约和周期性安排。",
         "anthropologist": "没有一种文化是随机的，每一种实践都是对一个你尚未看见的问题的解法。",
         "geographer": "地理塑造命运，你身处何处决定你会成为谁。",
         "historian": "历史不会简单重复，但总会押韵，而我熟悉每一段韵脚。",
@@ -209,12 +235,23 @@
         "workflow-optimizer": "找到瓶颈，修复流程，然后自动化剩下的部分。"
     },
     "createDialog": {
-        "title": "添加 Agent",
-        "description": "输入名称即可创建新 Agent，可选择是否继承主 Agent 的工作区引导文件。",
-        "nameLabel": "Agent 名称",
-        "namePlaceholder": "Coding Helper",
-        "inheritWorkspaceLabel": "继承主 Agent 工作区",
-        "inheritWorkspaceDescription": "从主 Agent 复制 SOUL.md、AGENTS.md 等引导文件"
+        "title": "创建数字员工",
+        "description": "创建一个只属于你的数字员工，并定义它的职责、策略和输出方式。",
+        "nameLabel": "数字员工名称",
+        "namePlaceholder": "给你的数字员工起个名字",
+        "shortDescriptionLabel": "一句话简述",
+        "shortDescriptionPlaceholder": "请简要描述该数字员工的核心功能。示例：负责生成营销文案与品牌传播内容，适用于广告创意、产品推广、活动宣传等场景",
+        "instructionsLabel": "角色定义与策略",
+        "instructionsPlaceholder": "请描述该数字员工的执行方式，例如角色设定、职责范围、处理步骤、输出风格及需遵守的规则等。示例：\n## 角色\n- 你是一名资深文案策划，负责根据用户需求输出具有吸引力和转化力的营销文案。\n## 职责\n- 分析目标受众与传播目的，提炼核心卖点，独立撰写全场景高水准文案。\n## 规则\n- 所有文案中涉及的信息均需核实，确保真实可信。\n## 风格\n- 语言需简洁有感染力，避免空洞或夸大表达。",
+        "modelLabel": "选择模型",
+        "defaultModelOption": "{{model}}（默认）",
+        "systemDefaultModel": "默认模型",
+        "skillsLabel": "技能（可选）",
+        "skillsPlaceholder": "点击选择技能",
+        "createButton": "创建",
+        "skillsSelected": "已选择 {{count}} 个技能：{{names}}",
+        "skillsLoading": "正在加载技能...",
+        "skillsEmpty": "暂无可选择的 OpenClaw 技能"
     },
     "deleteDialog": {
         "title": "删除 Agent",
@@ -271,6 +308,19 @@
         "channelRemoveFailed": "移除频道失败：{{error}}"
     },
     "agencyAgentNames": {
+        "ppt-generator": "PPT 生成官",
+        "data-analyst": "数据分析官",
+        "stock-intelligence": "股票情报官",
+        "meeting-notes": "会议纪要官",
+        "daily-briefing": "每日情报官",
+        "content-summarizer": "内容总结官",
+        "email-secretary": "邮件秘书",
+        "life-companion": "生活陪伴助手",
+        "wardrobe-advisor": "穿衣顾问",
+        "career-analyst": "求职分析官",
+        "travel-planner": "旅行规划官",
+        "pet-care-manager": "宠物管家",
+        "family-calendar-manager": "家庭日历管家",
         "anthropologist": "人类学家",
         "geographer": "地理学家",
         "historian": "历史学家",

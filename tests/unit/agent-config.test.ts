@@ -41,6 +41,17 @@ async function readOpenClawJson(): Promise<Record<string, unknown>> {
   return JSON.parse(content) as Record<string, unknown>;
 }
 
+async function writeBundledAgentMarker(version: number): Promise<void> {
+  const clawxDir = join(testHome, '.clawx');
+  await mkdir(clawxDir, { recursive: true });
+  await writeFile(join(clawxDir, 'bundled-agency-agents.json'), JSON.stringify({ version }), 'utf8');
+}
+
+async function readBundledAgentMarker(): Promise<Record<string, unknown>> {
+  const content = await readFile(join(testHome, '.clawx', 'bundled-agency-agents.json'), 'utf8');
+  return JSON.parse(content) as Record<string, unknown>;
+}
+
 describe('agent config lifecycle', () => {
   beforeEach(async () => {
     vi.resetModules();
@@ -250,6 +261,41 @@ describe('agent config lifecycle', () => {
     await expect(updateAgentModel('main', 'invalid-model-ref')).rejects.toThrow(
       'modelRef must be in "provider/model" format',
     );
+  });
+
+  it('enables selected skills and writes them into a custom agent workspace', async () => {
+    await writeOpenClawJson({
+      agents: {
+        list: [{ id: 'main', name: 'Main', default: true }],
+      },
+      skills: {
+        entries: {
+          'web-search': { enabled: false, apiKey: 'keep-me' },
+        },
+      },
+    });
+
+    const { createAgent } = await import('@electron/utils/agent-config');
+
+    await createAgent('Research Helper', {
+      description: 'Finds useful research signals.',
+      instructions: '## Role\n- Research carefully.',
+      skillIds: ['web-search'],
+    });
+
+    const config = await readOpenClawJson();
+    const skills = config.skills as { entries: Record<string, { enabled?: boolean; apiKey?: string }> };
+    expect(skills.entries['web-search']).toMatchObject({
+      enabled: true,
+      apiKey: 'keep-me',
+    });
+
+    const tools = await readFile(
+      join(testHome, '.openclaw', 'workspace-research-helper', 'TOOLS.md'),
+      'utf8',
+    );
+    expect(tools).toContain('Selected OpenClaw Skills');
+    expect(tools).toContain('- web-search');
   });
 
   it('deletes the config entry, bindings, runtime directory, and managed workspace for a removed agent', async () => {
@@ -542,6 +588,52 @@ describe('agent config lifecycle', () => {
     const snapshot = await listAgentsSnapshot();
     expect(snapshot.channelAccountOwners['feishu:default']).toBeUndefined();
     expect(snapshot.channelAccountOwners['telegram:default']).toBe('main');
+  });
+
+  it('installs packaged efficiency and life agents on first snapshot load', async () => {
+    await writeOpenClawJson({
+      agents: {
+        list: [{ id: 'main', name: 'Main', default: true }],
+      },
+    });
+
+    const { listAgentsSnapshot } = await import('@electron/utils/agent-config');
+
+    const snapshot = await listAgentsSnapshot();
+    const agentIds = snapshot.agents.map((agent) => agent.id);
+    expect(agentIds).toEqual(expect.arrayContaining([
+      'ppt-generator',
+      'email-secretary',
+      'life-companion',
+      'family-calendar-manager',
+    ]));
+
+    const config = await readOpenClawJson();
+    expect(config.clawx).toBeUndefined();
+    const marker = await readBundledAgentMarker();
+    expect(marker.version).toBe(1);
+    const entries = (config.agents as { list: Array<{ id: string; workspace?: string }> }).list;
+    expect(entries.find((entry) => entry.id === 'ppt-generator')?.workspace)
+      .toBe('~/.openclaw/agency-agents/ppt-generator');
+
+    const identity = await readFile(join(testHome, '.openclaw', 'agency-agents', 'ppt-generator', 'IDENTITY.md'), 'utf8');
+    expect(identity).toContain('Turns messy ideas into clear slide narratives');
+  });
+
+  it('does not restore deleted packaged agents after the bundle version was installed', async () => {
+    await writeBundledAgentMarker(1);
+    await writeOpenClawJson({
+      agents: {
+        list: [{ id: 'main', name: 'Main', default: true }],
+      },
+    });
+
+    const { listAgentsSnapshot } = await import('@electron/utils/agent-config');
+
+    const snapshot = await listAgentsSnapshot();
+    const agentIds = snapshot.agents.map((agent) => agent.id);
+    expect(agentIds).not.toContain('ppt-generator');
+    expect(agentIds).not.toContain('life-companion');
   });
 
   it('avoids numeric-only ids when creating agents from CJK names', async () => {

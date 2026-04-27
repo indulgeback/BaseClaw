@@ -13,7 +13,6 @@ import { hostApiFetch } from '@/lib/host-api';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { ExecutionGraphCard } from './ExecutionGraphCard';
 import { ChatToolbar } from './ChatToolbar';
 import { extractImages, extractText, extractThinking, extractToolUse } from './message-utils';
 import { deriveTaskSteps, parseSubagentCompletionInfo } from './task-visualization';
@@ -243,6 +242,8 @@ export function Chat() {
               ) : (
                 <>
                   {messages.map((msg, idx) => {
+                    if (subagentCompletionInfos[idx]) return null;
+
                     const suppressToolCards = userRunCards.some((card) =>
                       idx > card.triggerIndex && idx <= card.segmentEnd,
                     );
@@ -259,30 +260,6 @@ export function Chat() {
                         suppressToolCards={suppressToolCards}
                         suppressProcessAttachments={suppressToolCards}
                       />
-                      {userRunCards
-                        .filter((card) => card.triggerIndex === idx)
-                        .map((card) => (
-                          <ExecutionGraphCard
-                            key={`graph-${idx}`}
-                            agentLabel={card.agentLabel}
-                            sessionLabel={card.sessionLabel}
-                            steps={card.steps}
-                            active={card.active}
-                            onJumpToTrigger={() => {
-                              document.getElementById(`chat-message-${card.triggerIndex}`)?.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                              });
-                            }}
-                            onJumpToReply={() => {
-                              if (card.replyIndex == null) return;
-                              document.getElementById(`chat-message-${card.replyIndex}`)?.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center',
-                              });
-                            }}
-                          />
-                        ))}
                     </div>
                     );
                   })}

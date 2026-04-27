@@ -658,6 +658,21 @@ function parseSessionUpdatedAtMs(value: unknown): number | undefined {
   return undefined;
 }
 
+function mergeSessionActivity(
+  current: Record<string, number>,
+  updates: Record<string, number>,
+): Record<string, number> {
+  const next = { ...current };
+  for (const [key, value] of Object.entries(updates)) {
+    if (!Number.isFinite(value)) continue;
+    const existing = next[key];
+    if (typeof existing !== 'number' || !Number.isFinite(existing) || value > existing) {
+      next[key] = value;
+    }
+  }
+  return next;
+}
+
 async function loadCronFallbackMessages(sessionKey: string, limit = 200): Promise<RawMessage[]> {
   if (!isCronSessionKey(sessionKey)) return [];
   try {
@@ -683,7 +698,10 @@ function resolveMainSessionKeyForAgent(agentId: string | undefined | null): stri
   if (!agentId) return null;
   const normalizedAgentId = normalizeAgentId(agentId);
   const summary = useAgentsStore.getState().agents.find((agent) => agent.id === normalizedAgentId);
-  return summary?.mainSessionKey || buildFallbackMainSessionKey(normalizedAgentId);
+  if (summary?.mainSessionKey && getAgentIdFromSessionKey(summary.mainSessionKey) === normalizedAgentId) {
+    return summary.mainSessionKey;
+  }
+  return buildFallbackMainSessionKey(normalizedAgentId);
 }
 
 function ensureSessionEntry(sessions: ChatSession[], sessionKey: string): ChatSession[] {
@@ -1111,6 +1129,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           });
 
           const { currentSessionKey, sessions: localSessions } = get();
+          const protectedLocalIntroSessionKey = hasOnlyLocalIntroMessages(get().messages)
+            ? currentSessionKey
+            : null;
           let nextSessionKey = currentSessionKey || DEFAULT_SESSION_KEY;
           if (!nextSessionKey.startsWith('agent:')) {
             const canonicalMatch = canonicalBySuffix.get(nextSessionKey);
@@ -1125,6 +1146,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
             if (!hasLocalPendingSession) {
               nextSessionKey = dedupedSessions[0].key;
             }
+          }
+          if (protectedLocalIntroSessionKey) {
+            nextSessionKey = protectedLocalIntroSessionKey;
           }
 
           const sessionsWithCurrent = !dedupedSessions.find((s) => s.key === nextSessionKey) && nextSessionKey
@@ -1144,10 +1168,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             sessions: sessionsWithCurrent,
             currentSessionKey: nextSessionKey,
             currentAgentId: getAgentIdFromSessionKey(nextSessionKey),
-            sessionLastActivity: {
-              ...state.sessionLastActivity,
-              ...discoveredActivity,
-            },
+            sessionLastActivity: mergeSessionActivity(state.sessionLastActivity, discoveredActivity),
           }));
 
           if (currentSessionKey !== nextSessionKey) {
@@ -1156,7 +1177,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
           // Background: fetch first user message for every non-main session to populate labels upfront.
           // Retries on "gateway startup" errors since the gateway may still be initializing.
-          const sessionsToLabel = sessionsWithCurrent.filter((s) => !s.key.endsWith(':main'));
+          const shouldSkipCurrentLocalIntroLabel = hasOnlyLocalIntroMessages(get().messages);
+          const { sessionLabels, sessionLastActivity } = get();
+          const sessionsToLabel = sessionsWithCurrent.filter((s) => (
+            !s.key.endsWith(':main')
+            && !(shouldSkipCurrentLocalIntroLabel && s.key === nextSessionKey)
+            && (!sessionLabels[s.key] || !sessionLastActivity[s.key])
+          ));
           if (sessionsToLabel.length > 0) {
             const LABEL_RETRY_DELAYS = [2_000, 5_000, 10_000];
             void (async () => {
@@ -1183,7 +1210,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
                           }
                         }
                         if (lastMsg?.timestamp) {
-                          next.sessionLastActivity = { ...s.sessionLastActivity, [session.key]: toMs(lastMsg.timestamp) };
+                          next.sessionLastActivity = mergeSessionActivity(
+                            s.sessionLastActivity,
+                            { [session.key]: toMs(lastMsg.timestamp) },
+                          );
                         }
                         return next;
                       });
@@ -1367,6 +1397,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   loadHistory: async (quiet = false) => {
     const { currentSessionKey } = get();
+    if (hasOnlyLocalIntroMessages(get().messages)) {
+      set({ loading: false, error: null });
+      return;
+    }
     const isInitialForegroundLoad = !quiet && !_foregroundHistoryLoadSeen.has(currentSessionKey);
     const historyTimeoutOverride = getStartupHistoryTimeoutOverride(isInitialForegroundLoad);
     const existingLoad = _historyLoadInFlight.get(currentSessionKey);
@@ -1440,12 +1474,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Restore file attachments for user/assistant messages (from cache + text patterns)
       const enrichedMessages = enrichWithCachedImages(filteredMessages);
 
-      // Preserve local-only agent intro messages while history hydration catches up.
-      const localIntroMessages = get().messages.filter((message) => message._localKind === 'agent-intro');
+      // Keep a freshly-created Agent intro isolated from gateway history. The
+      // backend may briefly answer with the previous session's transcript while
+      // the new session is still local-only, which would surface stale tool cards.
+      const currentMessages = get().messages;
+      const localIntroMessages = currentMessages.filter((message) => message._localKind === 'agent-intro');
+      const hasOnlyLocalIntro = hasOnlyLocalIntroMessages(currentMessages);
       // Preserve the optimistic user message during an active send.
       // The Gateway may not include the user's message in chat.history
       // until the run completes, causing it to flash out of the UI.
-      let finalMessages = localIntroMessages.length > 0
+      let finalMessages = hasOnlyLocalIntro
+        ? localIntroMessages
+        : localIntroMessages.length > 0
         ? [...localIntroMessages, ...enrichedMessages]
         : enrichedMessages;
       const userMsgAt = get().lastUserMessageAt;

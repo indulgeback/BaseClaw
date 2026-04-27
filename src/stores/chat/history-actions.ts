@@ -25,6 +25,10 @@ import type { ChatGet, ChatSet, SessionHistoryActions } from './store-api';
 
 const foregroundHistoryLoadSeen = new Set<string>();
 
+function hasOnlyLocalIntroMessages(messages: RawMessage[]): boolean {
+  return messages.length > 0 && messages.every((message) => message._localKind === 'agent-intro');
+}
+
 async function loadCronFallbackMessages(sessionKey: string, limit = 200): Promise<RawMessage[]> {
   if (!isCronSessionKey(sessionKey)) return [];
   try {
@@ -45,6 +49,10 @@ export function createHistoryActions(
   return {
     loadHistory: async (quiet = false) => {
       const { currentSessionKey } = get();
+      if (hasOnlyLocalIntroMessages(get().messages)) {
+        set({ loading: false, error: null });
+        return;
+      }
       const isInitialForegroundLoad = !quiet && !foregroundHistoryLoadSeen.has(currentSessionKey);
       const historyTimeoutOverride = getStartupHistoryTimeoutOverride(isInitialForegroundLoad);
       if (!quiet) set({ loading: true, error: null });
@@ -94,12 +102,18 @@ export function createHistoryActions(
         // Restore file attachments for user/assistant messages (from cache + text patterns)
         const enrichedMessages = enrichWithCachedImages(filteredMessages);
 
-        // Preserve local-only agent intro messages while history hydration catches up.
-        const localIntroMessages = get().messages.filter((message) => message._localKind === 'agent-intro');
+        // Keep a freshly-created Agent intro isolated from gateway history. The
+        // backend may briefly answer with the previous session's transcript while
+        // the new session is still local-only, which would surface stale tool cards.
+        const currentMessages = get().messages;
+        const localIntroMessages = currentMessages.filter((message) => message._localKind === 'agent-intro');
+        const hasOnlyLocalIntro = hasOnlyLocalIntroMessages(currentMessages);
         // Preserve the optimistic user message during an active send.
         // The Gateway may not include the user's message in chat.history
         // until the run completes, causing it to flash out of the UI.
-        let finalMessages = localIntroMessages.length > 0
+        let finalMessages = hasOnlyLocalIntro
+          ? localIntroMessages
+          : localIntroMessages.length > 0
           ? [...localIntroMessages, ...enrichedMessages]
           : enrichedMessages;
         const userMsgAt = get().lastUserMessageAt;

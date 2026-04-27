@@ -29,7 +29,10 @@ function resolveMainSessionKeyForAgent(agentId: string | undefined | null): stri
   if (!agentId) return null;
   const normalizedAgentId = normalizeAgentId(agentId);
   const summary = useAgentsStore.getState().agents.find((agent) => agent.id === normalizedAgentId);
-  return summary?.mainSessionKey || buildFallbackMainSessionKey(normalizedAgentId);
+  if (summary?.mainSessionKey && getAgentIdFromSessionKey(summary.mainSessionKey) === normalizedAgentId) {
+    return summary.mainSessionKey;
+  }
+  return buildFallbackMainSessionKey(normalizedAgentId);
 }
 
 function ensureSessionEntry(sessions: ChatSession[], sessionKey: string): ChatSession[] {

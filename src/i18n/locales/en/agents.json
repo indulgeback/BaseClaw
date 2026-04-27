@@ -14,6 +14,11 @@
     "creating": "Creating...",
     "agency": {
         "all": "All",
+        "mine": "My Employees",
+        "recommended": "Recommended",
+        "viewToggleLabel": "Switch employee view",
+        "mineEmptyTitle": "No personal employees yet",
+        "mineEmptyDescription": "Add an Agent to create a digital employee of your own.",
         "allTitle": "Agency Agents",
         "allDescription": "{{count}} specialist agents organized into {{categories}} categories",
         "systemTitle": "System",
@@ -32,6 +37,14 @@
         "trend-researcher": "I'm Trend Researcher (trend-researcher).\nYour product trend and market intelligence analyst.\n\nWhat I can do for you:\n1. Find trend signals from search, social, competitors, funding, and reports.\n2. Analyze market size, user segments, and competitive landscape.\n3. Judge opportunity strength, timing, and risks.\n4. Turn findings into roadmap, priority, and validation recommendations.\n\nSend me an industry, product direction, competitor, or audience and I'll start researching."
     },
     "agencyCategories": {
+        "efficiency": {
+            "label": "Efficiency",
+            "description": "Work acceleration, analysis, summaries, meetings, and email operations"
+        },
+        "life": {
+            "label": "Life",
+            "description": "Daily support, wardrobe, career, travel, pets, and family planning"
+        },
         "academic": {
             "label": "Academic",
             "description": "Research, humanities, and analytical specialists"
@@ -77,13 +90,39 @@
             "description": "Quality validation, performance, APIs, and evidence collection"
         }
     },
+    "agencyAgentDescriptions": {
+        "ppt-generator": "Turns ideas, materials, and goals into clear deck structures, slide titles, and speaker notes.",
+        "data-analyst": "Turns tables and metrics into clear findings, chart ideas, and business recommendations.",
+        "stock-intelligence": "Organizes stock signals, company news, and risks into research-ready intelligence briefs.",
+        "meeting-notes": "Turns meeting notes into decisions, action items, owners, and follow-up messages.",
+        "daily-briefing": "Condenses news, tasks, and priorities into a clear daily briefing.",
+        "content-summarizer": "Distills long documents, articles, and media into takeaways, frameworks, and reusable notes.",
+        "email-secretary": "Drafts replies, summarizes email threads, and turns messages into next actions.",
+        "life-companion": "Helps you think through daily choices, habits, plans, and small unresolved decisions.",
+        "wardrobe-advisor": "Builds practical outfit ideas from your occasion, weather, wardrobe, and style preferences.",
+        "career-analyst": "Analyzes resumes, roles, interview strategy, and key career tradeoffs.",
+        "travel-planner": "Plans realistic trips from your dates, budget, destination, and travel style.",
+        "pet-care-manager": "Organizes pet feeding, care, supplies, behavior notes, and vet questions.",
+        "family-calendar-manager": "Coordinates family schedules, chores, reminders, appointments, and recurring routines."
+    },
     "createDialog": {
-        "title": "Add Agent",
-        "description": "Create a new agent by name. You can optionally inherit the main agent's workspace bootstrap files.",
-        "nameLabel": "Agent Name",
-        "namePlaceholder": "Coding Helper",
-        "inheritWorkspaceLabel": "Inherit main agent workspace",
-        "inheritWorkspaceDescription": "Copy SOUL.md, AGENTS.md, etc. from the main agent"
+        "title": "Create Digital Employee",
+        "description": "Create a digital employee and define its responsibilities, strategy, and output style.",
+        "nameLabel": "Digital employee name",
+        "namePlaceholder": "Name your digital employee",
+        "shortDescriptionLabel": "One-line description",
+        "shortDescriptionPlaceholder": "Briefly describe the core capability. Example: creates marketing copy and brand content for ad concepts, product launches, and campaign promotion.",
+        "instructionsLabel": "Role definition and strategy",
+        "instructionsPlaceholder": "Describe how this digital employee should work, including role, responsibilities, process, output style, and rules. Example:\n## Role\n- You are a senior copy strategist who turns user goals into persuasive, conversion-focused marketing copy.\n## Responsibilities\n- Analyze the target audience and communication goal, extract key selling points, and write high-quality copy across scenarios.\n## Rules\n- Verify factual claims before using them.\n## Style\n- Keep language concise, persuasive, and free of empty hype.",
+        "modelLabel": "Select model",
+        "defaultModelOption": "{{model}} (default)",
+        "systemDefaultModel": "Default model",
+        "skillsLabel": "Skills (optional)",
+        "skillsPlaceholder": "Select skills",
+        "createButton": "Create",
+        "skillsSelected": "{{count}} skills selected: {{names}}",
+        "skillsLoading": "Loading skills...",
+        "skillsEmpty": "No OpenClaw skills available"
     },
     "deleteDialog": {
         "title": "Delete Agent",
@@ -140,6 +179,19 @@
         "channelRemoveFailed": "Failed to remove channel: {{error}}"
     },
     "agencyAgentNames": {
+        "ppt-generator": "PPT Generator",
+        "data-analyst": "Data Analyst",
+        "stock-intelligence": "Stock Intelligence",
+        "meeting-notes": "Meeting Notes",
+        "daily-briefing": "Daily Briefing",
+        "content-summarizer": "Content Summarizer",
+        "email-secretary": "Email Secretary",
+        "life-companion": "Life Companion",
+        "wardrobe-advisor": "Wardrobe Advisor",
+        "career-analyst": "Career Analyst",
+        "travel-planner": "Travel Planner",
+        "pet-care-manager": "Pet Care Manager",
+        "family-calendar-manager": "Family Calendar Manager",
         "anthropologist": "Anthropologist",
         "geographer": "️ Geographer",
         "historian": "Historian",

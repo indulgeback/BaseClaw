@@ -149,7 +149,7 @@ const childTranscriptMessages = [
 ];
 
 test.describe('ClawX chat execution graph', () => {
-  test('renders internal yield status and linked subagent branch from mocked IPC', async ({ launchElectronApp }) => {
+  test('keeps execution graph and internal process details hidden from chat transcript', async ({ launchElectronApp }) => {
     const app = await launchElectronApp({ skipSetup: true });
 
     try {
@@ -221,15 +221,13 @@ test.describe('ClawX chat execution graph', () => {
         }
       }
       await expect(page.getByTestId('main-layout')).toBeVisible();
-      await expect(page.getByTestId('chat-execution-graph')).toBeVisible({ timeout: 30_000 });
-      await expect(
-        page.locator('[data-testid="chat-execution-graph"] [data-testid="chat-execution-step"]').getByText('sessions_yield', { exact: true }),
-      ).toBeVisible();
-      await expect(page.getByText('coder subagent')).toBeVisible();
-      await expect(
-        page.locator('[data-testid="chat-execution-graph"] [data-testid="chat-execution-step"]').getByText('exec', { exact: true }),
-      ).toBeVisible();
-      await expect(page.locator('[data-testid="chat-execution-graph"]').getByText('我让 coder 去拆 ~/Velaria 当前未提交改动的核心块了，等它回来我直接给你结论。')).toBeVisible();
+      await expect(page.getByText('我让 coder 分析完了，下面是结论。')).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId('chat-execution-graph')).toHaveCount(0);
+      await expect(page.getByText('sessions_yield', { exact: true })).toHaveCount(0);
+      await expect(page.getByText('coder subagent')).toHaveCount(0);
+      await expect(page.getByText('exec', { exact: true })).toHaveCount(0);
+      await expect(page.getByText('[Internal task completion event]')).toHaveCount(0);
+      await expect(page.getByText('我让 coder 去拆 ~/Velaria 当前未提交改动的核心块了，等它回来我直接给你结论。')).toHaveCount(0);
       await expect(page.getByText('CHECKLIST.md')).toHaveCount(0);
     } finally {
       await closeElectronApp(app);
