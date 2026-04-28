@@ -103,7 +103,7 @@ When you target another agent with `@agent`, SpriteClaw switches into that agent
 Each agent can also override its own `provider/model` runtime setting; agents without overrides continue inheriting the global default model.
 
 ### 🗂️ Built-In Agents Market
-The Agents page opens to an offline market of 184 templates from the pinned The Agency / `msitarzewski/agency-agents` snapshot (`783f6a7`). Templates are grouped into 14 top-level categories, installed without runtime GitHub access, and converted into OpenClaw workspace files (`SOUL.md`, `AGENTS.md`, `IDENTITY.md`) only when you add one.
+The Agents page opens to an offline market of 203 templates from pinned community snapshots: The Agency / `msitarzewski/agency-agents` (`783f6a7`), a curated Life category from `mergisi/awesome-openclaw-agents` (`64055d5`), and a curated Social Fun category inspired by open-source travel, astrology, tarot, MBTI, and companion agents. Templates are grouped into 16 top-level categories, installed without runtime GitHub access, and converted into OpenClaw workspace files (`SOUL.md`, `AGENTS.md`, `IDENTITY.md`) only when you add one.
 The Manage view keeps the existing agent controls, lets you edit those workspace files, and can jump directly into chat for any installed agent.
 
 ### 📡 Multi-Channel Management

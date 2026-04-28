@@ -1,9 +1,19 @@
 {
-  "sourceRepo": "msitarzewski/agency-agents",
+  "sourceRepo": "multi-source",
   "sourceCommit": "783f6a72bfd7f3135700ac273c619d92821b419a",
   "sourceCommitShort": "783f6a7",
-  "generatedAt": "2026-04-23T11:39:11.987Z",
+  "generatedAt": "2026-04-28T12:04:12.940Z",
   "categories": [
+    {
+      "id": "life",
+      "name": "Life",
+      "count": 12
+    },
+    {
+      "id": "social-fun",
+      "name": "Social Fun",
+      "count": 7
+    },
     {
       "id": "academic",
       "name": "Academic",
@@ -5962,6 +5972,671 @@
       "sourcePath": "testing/testing-workflow-optimizer.md",
       "emoji": "⚡",
       "vibe": "Finds the bottleneck, fixes the process, automates the rest."
+    },
+    {
+      "id": "daily-planner",
+      "templateId": "daily-planner",
+      "name": "Daily Planner",
+      "description": "Plans the day around priorities, routines, tasks, reminders, and realistic time blocks.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "planning",
+        "routines",
+        "tasks"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/daily-planner/SOUL.md",
+      "emoji": "📅"
+    },
+    {
+      "id": "family-coordinator",
+      "templateId": "family-coordinator",
+      "name": "Family Coordinator",
+      "description": "Coordinates family schedules, errands, reminders, household logistics, and shared responsibilities.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "family",
+        "household",
+        "coordination"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/family-coordinator/SOUL.md",
+      "emoji": "🏠"
+    },
+    {
+      "id": "fitness-coach",
+      "templateId": "fitness-coach",
+      "name": "Fitness Coach",
+      "description": "Helps plan workouts, track consistency, and adapt fitness routines to everyday constraints.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "fitness",
+        "habits",
+        "wellness"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/fitness-coach/SOUL.md",
+      "emoji": "💪"
+    },
+    {
+      "id": "home-automation",
+      "templateId": "home-automation",
+      "name": "Home Automation",
+      "description": "Helps manage smart-home routines, device checks, automation ideas, and household workflows.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "home",
+        "automation",
+        "routines"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/home-automation/SOUL.md",
+      "emoji": "🏡"
+    },
+    {
+      "id": "journal-prompter",
+      "templateId": "journal-prompter",
+      "name": "Journal Prompter",
+      "description": "Guides reflective journaling, mood check-ins, gratitude notes, and personal retrospectives.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "journaling",
+        "reflection",
+        "self-care"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/journal-prompter/SOUL.md",
+      "emoji": "📓"
+    },
+    {
+      "id": "reading-digest",
+      "templateId": "reading-digest",
+      "name": "Reading Digest",
+      "description": "Summarizes reading notes, extracts takeaways, and turns saved material into useful digests.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "reading",
+        "notes",
+        "learning"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/reading-digest/SOUL.md",
+      "emoji": "📚"
+    },
+    {
+      "id": "travel-planner",
+      "templateId": "travel-planner",
+      "name": "Travel Planner",
+      "description": "Builds trip plans, itineraries, packing lists, local research, and travel checklists.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "travel",
+        "itinerary",
+        "planning"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/personal/travel-planner/SOUL.md",
+      "emoji": "✈️"
+    },
+    {
+      "id": "focus-timer",
+      "templateId": "focus-timer",
+      "name": "Focus Timer",
+      "description": "Structures deep-work sessions, breaks, accountability check-ins, and focus recovery plans.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "focus",
+        "deep-work",
+        "habits"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/productivity/focus-timer/SOUL.md",
+      "emoji": "⏱️"
+    },
+    {
+      "id": "habit-tracker",
+      "templateId": "habit-tracker",
+      "name": "Habit Tracker",
+      "description": "Tracks daily habits, streaks, accountability prompts, and small behavior-change routines.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "habits",
+        "streaks",
+        "routines"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/productivity/habit-tracker/SOUL.md",
+      "emoji": "✅"
+    },
+    {
+      "id": "meal-planner",
+      "templateId": "meal-planner",
+      "name": "Meal Planner",
+      "description": "Plans meals, grocery lists, simple nutrition routines, and weekly food preparation.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "meals",
+        "groceries",
+        "wellness"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/healthcare/meal-planner/SOUL.md",
+      "emoji": "🥗"
+    },
+    {
+      "id": "wellness-coach",
+      "templateId": "wellness-coach",
+      "name": "Wellness Coach",
+      "description": "Supports everyday wellness routines, gentle check-ins, recovery habits, and self-care planning.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "wellness",
+        "self-care",
+        "routines"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/healthcare/wellness-coach/SOUL.md",
+      "emoji": "🌿"
+    },
+    {
+      "id": "workout-tracker",
+      "templateId": "workout-tracker",
+      "name": "Workout Tracker",
+      "description": "Tracks workouts, progress, consistency, goals, and routine adjustments over time.",
+      "categoryId": "life",
+      "category": "Life",
+      "version": "64055d5",
+      "badge": "Imported",
+      "status": "stable",
+      "tags": [
+        "workouts",
+        "fitness",
+        "tracking"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Original persona and behavior template."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes, boundaries, and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, summary, and lifestyle tags."
+        }
+      ],
+      "sourceRepo": "mergisi/awesome-openclaw-agents",
+      "sourceCommit": "64055d5b6e9adaa9fa91889db7b6385ba81bb232",
+      "sourcePath": "agents/healthcare/workout-tracker/SOUL.md",
+      "emoji": "🏋️"
+    },
+    {
+      "id": "lazy-trip-planner",
+      "templateId": "lazy-trip-planner",
+      "name": "Lazy Trip Planner",
+      "description": "Turns vague travel wishes into low-effort itineraries, packing lists, local ideas, and relaxed decision options.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "235eddd",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "travel",
+        "itinerary",
+        "social"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "kbhujbal/Multi-Agent-AI-Travel-Advisor",
+      "sourceCommit": "235edddcefeb9200ba9aa5a716fcc1158fb19b61",
+      "sourcePath": "README.md",
+      "emoji": "🧳"
+    },
+    {
+      "id": "tarot-lounge",
+      "templateId": "tarot-lounge",
+      "name": "Tarot Lounge",
+      "description": "Creates playful tarot-style readings for reflection, party games, journaling prompts, and social icebreakers.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "8d81036",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "tarot",
+        "reflection",
+        "party"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "ArdaGnsrn/tarot-ai",
+      "sourceCommit": "8d8103691fd62316c50b474cbff3a411685784aa",
+      "sourcePath": "README.md",
+      "emoji": "🔮"
+    },
+    {
+      "id": "daily-astrology",
+      "templateId": "daily-astrology",
+      "name": "Daily Astrology",
+      "description": "Offers light daily horoscope, transit-inspired prompts, date-night vibes, and social conversation starters.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "a03dbd3",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "astrology",
+        "horoscope",
+        "reflection"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "maye08/celestchart-astrology-skills",
+      "sourceCommit": "a03dbd355d1e95d15d835705a0234088502c8798",
+      "sourcePath": "SKILL.md",
+      "emoji": "🌙"
+    },
+    {
+      "id": "bazi-culture-reading",
+      "templateId": "bazi-culture-reading",
+      "name": "Bazi Culture Reading",
+      "description": "Frames BaZi-style personality and timing themes as cultural reflection, journaling material, and conversation fuel.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "4b50725",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "bazi",
+        "culture",
+        "reflection"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "jiangkun7788-dotcom/AI-Bazi-Agent",
+      "sourceCommit": "4b50725a707ea682def9ffd5aaf74d24a4d69c6e",
+      "sourcePath": "SKILL.md",
+      "emoji": "🧭"
+    },
+    {
+      "id": "mbti-matchmaker",
+      "templateId": "mbti-matchmaker",
+      "name": "MBTI Matchmaker",
+      "description": "Turns MBTI-style personality types into playful compatibility notes, dating prompts, and communication tips.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "0ff6775",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "mbti",
+        "compatibility",
+        "dating"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "opendilab/PsyDI",
+      "sourceCommit": "0ff6775b27972aabf1ae510f777d947468e890f1",
+      "sourcePath": "README.md",
+      "emoji": "🧩"
+    },
+    {
+      "id": "late-night-companion",
+      "templateId": "late-night-companion",
+      "name": "Late Night Companion",
+      "description": "Provides gentle late-night conversation, cozy reflection, low-pressure check-ins, and grounding prompts.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "f061110",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "companion",
+        "chat",
+        "reflection"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "v2rockets/Loyal-Elephie",
+      "sourceCommit": "f0611104cb1b551db3d73dc190802bf7298b6908",
+      "sourcePath": "README.md",
+      "emoji": "💬"
+    },
+    {
+      "id": "personality-mirror",
+      "templateId": "personality-mirror",
+      "name": "Personality Mirror",
+      "description": "Reflects user preferences, communication style, social patterns, and personality themes for fun self-discovery.",
+      "categoryId": "social-fun",
+      "category": "Social Fun",
+      "version": "0ff6775",
+      "badge": "Curated",
+      "status": "stable",
+      "tags": [
+        "personality",
+        "self-discovery",
+        "social"
+      ],
+      "modelRef": null,
+      "previewFiles": [
+        {
+          "fileKey": "SOUL.md",
+          "description": "Persona, social style, capabilities, and safety boundary."
+        },
+        {
+          "fileKey": "AGENTS.md",
+          "description": "OpenClaw operating notes and source attribution."
+        },
+        {
+          "fileKey": "IDENTITY.md",
+          "description": "Name, emoji, summary, and entertainment tags."
+        }
+      ],
+      "sourceRepo": "opendilab/PsyDI",
+      "sourceCommit": "0ff6775b27972aabf1ae510f777d947468e890f1",
+      "sourcePath": "README.md",
+      "emoji": "🪞"
     }
   ]
 }

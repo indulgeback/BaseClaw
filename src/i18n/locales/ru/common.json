@@ -4,7 +4,7 @@
         "newChat": "Новый чат",
         "cronTasks": "Расписание",
         "skills": "Навыки",
-        "agents": "Агенты",
+        "agents": "Партнёры",
         "channels": "Каналы",
         "dashboard": "Панель",
         "settings": "Настройки",
@@ -12,6 +12,18 @@
         "models": "Модели",
         "deleteSessionConfirm": "Вы уверены, что хотите удалить сессию \"{{label}}\"?",
         "openClawPage": "Страница OpenClaw"
+    },
+    "conversationPanel": {
+        "myPartners": "Мои партнёры",
+        "searchPlaceholder": "Поиск",
+        "createPartner": "Создать партнёра",
+        "customPartner": "Свой партнёр",
+        "chooseFromMarket": "Выбрать из маркета",
+        "comingSoon": "Скоро",
+        "defaultBadge": "по умолчанию",
+        "sessionCount": "Чатов: {{count}}",
+        "collapseGroup": "Свернуть группу",
+        "expandGroup": "Развернуть группу"
     },
     "actions": {
         "save": "Сохранить",

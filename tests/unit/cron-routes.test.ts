@@ -87,6 +87,79 @@ describe('handleCronRoutes', () => {
     );
   });
 
+  it('merges persisted non-main agent jobs when gateway returns a partial cron list', async () => {
+    const cronDir = join(testOpenClawConfigDir, 'cron');
+    mkdirSync(cronDir, { recursive: true });
+    writeFileSync(join(cronDir, 'jobs.json'), JSON.stringify({
+      version: 1,
+      jobs: [
+        {
+          id: 'job-main',
+          agentId: 'main',
+          name: 'Gateway main job',
+          enabled: true,
+          createdAtMs: 1000,
+          updatedAtMs: 1000,
+          schedule: { kind: 'cron', expr: '0 8 * * *' },
+          payload: { kind: 'agentTurn', message: 'Main task' },
+          state: {},
+        },
+        {
+          id: 'job-research',
+          agentId: 'research',
+          name: 'Research job',
+          enabled: true,
+          createdAtMs: 2000,
+          updatedAtMs: 2000,
+          schedule: { kind: 'cron', expr: '0 9 * * *' },
+          payload: { kind: 'agentTurn', message: 'Research task' },
+          state: {},
+        },
+      ],
+    }), 'utf8');
+
+    const rpc = vi.fn().mockResolvedValue({
+      jobs: [{
+        id: 'job-main',
+        name: 'Gateway main job',
+        enabled: true,
+        createdAtMs: 1000,
+        updatedAtMs: 3000,
+        schedule: { kind: 'cron', expr: '0 8 * * *' },
+        payload: { kind: 'agentTurn', message: 'Main task from gateway' },
+        state: {},
+      }],
+    });
+
+    const { handleCronRoutes } = await import('@electron/api/routes/cron');
+    const handled = await handleCronRoutes(
+      { method: 'GET' } as IncomingMessage,
+      {} as ServerResponse,
+      new URL('http://127.0.0.1:13210/api/cron/jobs'),
+      {
+        gatewayManager: { rpc },
+      } as never,
+    );
+
+    expect(handled).toBe(true);
+    expect(sendJsonMock).toHaveBeenCalledWith(
+      expect.anything(),
+      200,
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'job-main',
+          agentId: 'main',
+          message: 'Main task from gateway',
+        }),
+        expect.objectContaining({
+          id: 'job-research',
+          agentId: 'research',
+          message: 'Research task',
+        }),
+      ]),
+    );
+  });
+
   it('creates cron jobs with external delivery configuration', async () => {
     parseJsonBodyMock.mockResolvedValue({
       name: 'Weather delivery',

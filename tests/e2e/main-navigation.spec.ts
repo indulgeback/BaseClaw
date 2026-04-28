@@ -52,6 +52,91 @@ function buildAgentsPageHostApiMocks(agent: { id: string; name: string; override
   };
 }
 
+function buildConversationHostApiMocks() {
+  return {
+    [stableStringify(['/api/gateway/status', 'GET'])]: hostApiOk({
+      state: 'running',
+      port: 18789,
+      pid: 12345,
+      gatewayReady: true,
+      connectedAt: Date.now(),
+    }),
+    [stableStringify(['/api/agents', 'GET'])]: hostApiOk({
+      success: true,
+      agents: [
+        {
+          id: 'main',
+          name: 'Main Agent',
+          isDefault: true,
+          modelDisplay: 'GPT-5',
+          modelRef: 'openai/gpt-5',
+          inheritedModel: false,
+          workspace: '/tmp/main',
+          agentDir: '/tmp/main/.agent',
+          mainSessionKey: 'agent:main:main',
+          channelTypes: [],
+        },
+        {
+          id: 'builder',
+          name: 'World Builder',
+          isDefault: false,
+          modelDisplay: 'GPT-5',
+          modelRef: 'openai/gpt-5',
+          inheritedModel: false,
+          workspace: '/tmp/builder',
+          agentDir: '/tmp/builder/.agent',
+          mainSessionKey: 'agent:builder:main',
+          channelTypes: [],
+        },
+      ],
+      defaultAgentId: 'main',
+      defaultModelRef: 'openai/gpt-5',
+      configuredChannelTypes: [],
+      channelOwners: {},
+      channelAccountOwners: {},
+    }),
+  };
+}
+
+function buildConversationGatewayRpcMocks() {
+  return {
+    [stableStringify(['sessions.list', {}])]: {
+      success: true,
+      result: {
+        sessions: [
+          {
+            key: 'agent:main:main',
+            displayName: 'Default planning thread',
+            updatedAt: Date.now(),
+          },
+          {
+            key: 'agent:builder:main',
+            displayName: 'World Builder home',
+            updatedAt: Date.now() - 1_000,
+          },
+          {
+            key: 'agent:builder:castle',
+            displayName: 'This is a deliberately long castle building conversation that should overflow the list row width',
+            updatedAt: Date.now() - 2_000,
+          },
+        ],
+      },
+    },
+    [stableStringify(['chat.history', { sessionKey: 'agent:main:main', limit: 200 }])]: {
+      success: true,
+      result: { messages: [] },
+    },
+    [stableStringify(['chat.history', { sessionKey: 'agent:builder:main', limit: 200 }])]: {
+      success: true,
+      result: { messages: [] },
+    },
+    [stableStringify(['chat.history', { sessionKey: 'agent:builder:castle', limit: 200 }])]: {
+      success: true,
+      result: { messages: [] },
+    },
+  };
+}
+
 test.describe('ClawX main navigation without setup flow', () => {
   test('navigates between core pages with setup bypassed', async ({ launchElectronApp }) => {
     const app = await launchElectronApp({ skipSetup: true });
@@ -61,12 +146,17 @@ test.describe('ClawX main navigation without setup flow', () => {
 
       await expect(page.getByTestId('main-layout')).toBeVisible();
 
-      await page.getByTestId('sidebar-nav-models').click();
-      await expect(page.getByTestId('models-page')).toBeVisible();
-      await expect(page.getByTestId('models-page-title')).toBeVisible();
+      await page.getByTestId('sidebar-nav-chat').click();
+      await expect(page.getByTestId('conversation-list-pane')).toBeVisible();
 
       await page.getByTestId('sidebar-nav-agents').click();
       await expect(page.getByTestId('agents-page')).toBeVisible();
+
+      await page.getByTestId('sidebar-nav-cron').click();
+      await expect(page.getByTestId('cron-page')).toBeVisible();
+
+      await page.getByTestId('sidebar-nav-skills').click();
+      await expect(page.getByTestId('skills-page')).toBeVisible();
 
       await page.getByTestId('sidebar-nav-channels').click();
       await expect(page.getByTestId('channels-page')).toBeVisible();
@@ -75,7 +165,7 @@ test.describe('ClawX main navigation without setup flow', () => {
     }
   });
 
-  test('collapses and restores the redesigned sidebar navigation', async ({ launchElectronApp }) => {
+  test('renders compact icon-only navigation with active states and tooltips', async ({ launchElectronApp }) => {
     const app = await launchElectronApp({ skipSetup: true });
 
     try {
@@ -83,76 +173,152 @@ test.describe('ClawX main navigation without setup flow', () => {
 
       await expect(page.getByTestId('main-layout')).toBeVisible();
       const sidebar = page.getByTestId('sidebar');
-      const toggle = page.getByRole('button', { name: 'Collapse sidebar' });
-      const newChatButton = page.getByTestId('sidebar-new-chat');
+      const chatLink = page.getByTestId('sidebar-nav-chat');
+      const skillsLink = page.getByTestId('sidebar-nav-skills');
+      const agentsLink = page.getByTestId('sidebar-nav-agents');
       const settingsLink = page.getByTestId('sidebar-nav-settings');
-      const settingsTooltipTrigger = page.getByTestId('sidebar-nav-settings-tooltip-trigger');
       const devConsoleButton = page.getByTestId('sidebar-open-dev-console');
 
-      await expect(sidebar).toHaveClass(/w-\[268px\]/);
-      await expect(newChatButton).not.toHaveText('');
+      await expect(sidebar).toHaveClass(/w-\[72px\]/);
+      await expect(page.getByTestId('sidebar-new-chat')).toHaveCount(0);
+      await expect(chatLink).toHaveText('');
+      await expect(skillsLink).toHaveText('');
+      await expect(agentsLink).toHaveText('');
       await expect(settingsLink).toHaveText('');
       await expect(devConsoleButton).toHaveText('');
+      await expect(chatLink).toHaveAttribute('aria-current', 'page');
 
-      const footerLayout = await page.evaluate(() => {
+      const sidebarLayout = await page.evaluate(() => {
         const sidebarBox = document.querySelector('[data-testid="sidebar"]')?.getBoundingClientRect();
-        const settingsBox = document.querySelector('[data-testid="sidebar-nav-settings"]')?.getBoundingClientRect();
-        const devConsoleBox = document.querySelector('[data-testid="sidebar-open-dev-console"]')?.getBoundingClientRect();
+        const chatBox = document.querySelector('[data-testid="sidebar-nav-chat"]')?.getBoundingClientRect();
+        const skillsBox = document.querySelector('[data-testid="sidebar-nav-skills"]')?.getBoundingClientRect();
 
-        if (!sidebarBox || !settingsBox || !devConsoleBox) {
-          throw new Error('Sidebar footer controls were not rendered');
+        if (!sidebarBox || !chatBox || !skillsBox) {
+          throw new Error('Sidebar controls were not rendered');
         }
 
         return {
-          sameRow: Math.abs(settingsBox.top - devConsoleBox.top) < 2,
-          devConsoleRightGap: sidebarBox.right - devConsoleBox.right,
-          settingsBeforeDevConsole: settingsBox.right <= devConsoleBox.left,
+          chatCentered: Math.abs((chatBox.left + chatBox.width / 2) - (sidebarBox.left + sidebarBox.width / 2)) < 2,
+          skillsBelowChat: skillsBox.top > chatBox.bottom,
         };
       });
 
-      expect(footerLayout.sameRow).toBe(true);
-      expect(footerLayout.devConsoleRightGap).toBeLessThanOrEqual(14);
-      expect(footerLayout.settingsBeforeDevConsole).toBe(true);
+      expect(sidebarLayout.chatCentered).toBe(true);
+      expect(sidebarLayout.skillsBelowChat).toBe(true);
 
-      const settingsLabel = await settingsLink.getAttribute('aria-label');
-      await settingsTooltipTrigger.hover();
-      await expect(page.getByRole('tooltip')).toContainText(settingsLabel ?? '');
+      await agentsLink.click();
+      await expect(page.getByTestId('agents-page')).toBeVisible();
+      await expect(agentsLink).toHaveAttribute('aria-current', 'page');
+      await expect(chatLink).not.toHaveAttribute('aria-current', 'page');
+
+      const chatLabel = await chatLink.getAttribute('aria-label');
+      await chatLink.hover();
+      await expect(page.getByRole('tooltip')).toContainText(chatLabel ?? '');
 
       await page.keyboard.press('Escape');
       await page.mouse.move(0, 0);
       await expect(page.getByRole('tooltip')).toBeHidden();
-      const devConsoleLabel = await devConsoleButton.getAttribute('aria-label');
-      await devConsoleButton.hover();
-      await expect(page.getByRole('tooltip')).toContainText(devConsoleLabel ?? '');
 
-      await toggle.click();
-      await expect(sidebar).toHaveClass(/w-\[68px\]/);
-      await expect(page.getByRole('button', { name: 'Expand sidebar' })).toBeVisible();
-      await expect(newChatButton).toHaveText('');
-      await expect(settingsLink).toHaveText('');
-      await expect(devConsoleButton).toHaveText('');
+      const agentsLabel = await agentsLink.getAttribute('aria-label');
+      await agentsLink.hover();
+      await expect(page.getByRole('tooltip')).toContainText(agentsLabel ?? '');
+    } finally {
+      await closeElectronApp(app);
+    }
+  });
 
-      const collapsedFooterLayout = await page.evaluate(() => {
-        const settingsBox = document.querySelector('[data-testid="sidebar-nav-settings"]')?.getBoundingClientRect();
-        const devConsoleBox = document.querySelector('[data-testid="sidebar-open-dev-console"]')?.getBoundingClientRect();
+  test('groups conversations by collapsible agent sections and supports search, resize, menu, and tooltips', async ({ launchElectronApp }) => {
+    const app = await launchElectronApp({ skipSetup: true });
+    const longSessionLabel = 'This is a deliberately long castle building conversation that should overflow the list row width';
 
-        if (!settingsBox || !devConsoleBox) {
-          throw new Error('Sidebar footer controls were not rendered');
-        }
-
-        return {
-          sameColumn: Math.abs(settingsBox.left - devConsoleBox.left) < 2,
-          devConsoleBelowSettings: devConsoleBox.top >= settingsBox.bottom,
-        };
+    try {
+      await installIpcMocks(app, {
+        gatewayStatus: { state: 'running', port: 18789, pid: 12345, gatewayReady: true, connectedAt: Date.now() },
+        gatewayRpc: buildConversationGatewayRpcMocks(),
+        hostApi: buildConversationHostApiMocks(),
       });
 
-      expect(collapsedFooterLayout.sameColumn).toBe(true);
-      expect(collapsedFooterLayout.devConsoleBelowSettings).toBe(true);
+      const page = await getStableWindow(app);
 
-      await page.getByRole('button', { name: 'Expand sidebar' }).click();
-      await expect(sidebar).toHaveClass(/w-\[268px\]/);
-      await page.getByTestId('sidebar-nav-models').click();
-      await expect(page.getByTestId('models-page')).toBeVisible();
+      await expect(page.getByTestId('main-layout')).toBeVisible();
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win?.webContents.send('gateway:status-changed', {
+          state: 'running',
+          port: 18789,
+          pid: 12345,
+          gatewayReady: true,
+          connectedAt: Date.now(),
+        });
+      });
+
+      await expect(page.getByTestId('conversation-list-pane')).toBeVisible();
+      await expect(page.getByTestId('conversation-agent-group-main')).toContainText('Main Agent');
+      await expect(page.getByTestId('conversation-agent-group-builder')).toContainText('World Builder');
+      await expect(page.getByTestId('conversation-agent-group-builder')).toContainText('2');
+
+      const sessionItem = page.getByTestId('conversation-session-agent:builder:castle');
+      await expect(sessionItem).toBeVisible();
+
+      const labelIsTruncated = await sessionItem.evaluate((node, expectedLabel) => {
+        const spans = Array.from(node.querySelectorAll('span'));
+        const label = spans.find((span) => span.textContent === expectedLabel);
+        if (!label) return false;
+        return label.scrollWidth > label.clientWidth;
+      }, longSessionLabel);
+      expect(labelIsTruncated).toBe(true);
+
+      await sessionItem.hover();
+      const tooltip = page.getByRole('tooltip').filter({ hasText: longSessionLabel });
+      await expect(tooltip).toBeVisible();
+
+      const tooltipLayer = await tooltip.evaluate((node) => ({
+        zIndex: (() => {
+          let current: Element | null = node;
+          while (current && current !== document.body) {
+            const zIndex = Number(getComputedStyle(current).zIndex);
+            if (Number.isFinite(zIndex)) return zIndex;
+            current = current.parentElement;
+          }
+          return Number.NaN;
+        })(),
+        outsideSidebar: !node.closest('[data-testid="sidebar"]'),
+      }));
+      expect(tooltipLayer.outsideSidebar).toBe(true);
+      expect(Number(tooltipLayer.zIndex)).toBeGreaterThan(50);
+
+      await page.keyboard.press('Escape');
+      await page.mouse.move(0, 0);
+
+      await page.getByTestId('conversation-agent-toggle-builder').click();
+      await expect(page.getByTestId('conversation-session-agent:builder:castle')).toHaveCount(0);
+
+      await page.getByTestId('conversation-search').fill('castle');
+      await expect(page.getByTestId('conversation-session-agent:builder:castle')).toBeVisible();
+
+      await page.getByTestId('conversation-search').fill('');
+      await expect(page.getByTestId('conversation-session-agent:builder:castle')).toHaveCount(0);
+      await page.getByTestId('conversation-agent-toggle-builder').click();
+      await expect(page.getByTestId('conversation-session-agent:builder:castle')).toBeVisible();
+
+      const pane = page.getByTestId('conversation-list-pane');
+      const initialWidth = await pane.evaluate((node) => node.getBoundingClientRect().width);
+      const resizerBox = await page.getByTestId('conversation-pane-resizer').boundingBox();
+      if (!resizerBox) throw new Error('Conversation pane resizer was not rendered');
+      await page.mouse.move(resizerBox.x + resizerBox.width / 2, resizerBox.y + resizerBox.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(resizerBox.x + resizerBox.width / 2 + 260, resizerBox.y + resizerBox.height / 2);
+      await page.mouse.up();
+      const grownWidth = await pane.evaluate((node) => node.getBoundingClientRect().width);
+      expect(grownWidth).toBeGreaterThan(initialWidth);
+      expect(grownWidth).toBeLessThanOrEqual(460);
+
+      await page.getByTestId('conversation-create-partner').click();
+      await expect(page.getByTestId('conversation-create-menu')).toBeVisible();
+      await expect(page.getByTestId('conversation-create-custom')).toBeDisabled();
+      await page.getByTestId('conversation-create-market').click();
+      await expect(page.getByTestId('agents-page')).toBeVisible();
+      await expect(page.getByTestId('agents-market')).toBeVisible();
     } finally {
       await closeElectronApp(app);
     }

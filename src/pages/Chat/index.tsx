@@ -4,7 +4,7 @@
  * via gateway:rpc IPC. Session selector, thinking toggle, and refresh
  * are in the toolbar; messages render with markdown + streaming.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { useChatStore, type RawMessage } from '@/stores/chat';
 import { useGatewayStore } from '@/stores/gateway';
@@ -15,6 +15,7 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ExecutionGraphCard } from './ExecutionGraphCard';
 import { ChatToolbar } from './ChatToolbar';
+import { ConversationListPane } from './ConversationListPane';
 import { extractImages, extractText, extractThinking, extractToolUse, stripProcessMessagePrefix } from './message-utils';
 import { deriveTaskSteps, findReplyMessageIndex, parseSubagentCompletionInfo, type TaskStep } from './task-visualization';
 import { useTranslation } from 'react-i18next';
@@ -57,6 +58,8 @@ function getPrimaryMessageStepTexts(steps: TaskStep[]): string[] {
 // steps without tripping React's set-state-in-effect lint rule.
 const graphStepCacheStore = new Map<string, Record<string, GraphStepCacheEntry>>();
 const streamingTimestampStore = new Map<string, number>();
+const CONVERSATION_PANE_MIN_WIDTH = 260;
+const CONVERSATION_PANE_MAX_WIDTH = 460;
 
 export function Chat() {
   const { t } = useTranslation('chat');
@@ -76,6 +79,8 @@ export function Chat() {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const abortRun = useChatStore((s) => s.abortRun);
   const clearError = useChatStore((s) => s.clearError);
+  const loadSessions = useChatStore((s) => s.loadSessions);
+  const loadHistory = useChatStore((s) => s.loadHistory);
   const fetchAgents = useAgentsStore((s) => s.fetchAgents);
   const agents = useAgentsStore((s) => s.agents);
 
@@ -109,9 +114,11 @@ export function Chat() {
   // remount and reset. `undefined` values mean "user hasn't toggled, let the
   // card pick a default from its own `active` prop."
   const [graphExpandedOverrides, setGraphExpandedOverrides] = useState<Record<string, boolean>>({});
+  const [conversationPaneWidth, setConversationPaneWidth] = useState(320);
   const graphStepCache: Record<string, GraphStepCacheEntry> = graphStepCacheStore.get(currentSessionKey) ?? {};
   const minLoading = useMinLoading(loading && messages.length > 0);
   const { contentRef, scrollRef } = useStickToBottomInstant(currentSessionKey);
+  const isGatewayReady = isGatewayRunning && gatewayStatus.gatewayReady !== false;
 
   useEffect(() => {
     setSpriteCharacterId(spriteCharacterId);
@@ -148,6 +155,42 @@ export function Chat() {
   useEffect(() => {
     void fetchAgents();
   }, [fetchAgents]);
+
+  useEffect(() => {
+    if (!isGatewayReady) return;
+    let cancelled = false;
+    const hasExistingMessages = useChatStore.getState().messages.length > 0;
+    (async () => {
+      await loadSessions();
+      if (cancelled) return;
+      await loadHistory(hasExistingMessages);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isGatewayReady, loadHistory, loadSessions]);
+
+  const handleConversationPaneResizeStart = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = conversationPaneWidth;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const nextWidth = Math.min(
+        CONVERSATION_PANE_MAX_WIDTH,
+        Math.max(CONVERSATION_PANE_MIN_WIDTH, startWidth + moveEvent.clientX - startX),
+      );
+      setConversationPaneWidth(nextWidth);
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  }, [conversationPaneWidth]);
 
   useEffect(() => {
     const completions = messages
@@ -554,7 +597,7 @@ export function Chat() {
       keys.add(runKey);
     }
     return keys;
-  }, [currentSessionKey, messages, replyTextOverrides, userRunCards]);
+  }, [currentSessionKey, messages, userRunCards]);
 
   useEffect(() => {
     if (userRunCards.length === 0) return;
@@ -607,23 +650,33 @@ export function Chat() {
   }, [userRunCards, messages, currentSessionKey]);
 
   return (
-    <div className={cn("relative flex min-h-0 flex-col -m-6 transition-colors duration-500 dark:bg-background")} style={{ height: 'calc(100vh - 2.5rem)' }}>
-      {/* Toolbar */}
-      <div className="flex shrink-0 items-center justify-end px-4 py-2">
-        <ChatToolbar />
-      </div>
+    <div className="relative -m-6 flex min-h-0 transition-colors duration-500 dark:bg-background" style={{ height: 'calc(100vh - 2.5rem)' }}>
+      <ConversationListPane width={conversationPaneWidth} />
+      <button
+        type="button"
+        data-testid="conversation-pane-resizer"
+        aria-label="Resize conversation list"
+        onPointerDown={handleConversationPaneResizeStart}
+        className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent"
+      />
 
-      {/* Messages Area */}
-      <div className="min-h-0 flex-1 overflow-hidden px-4 py-4">
-        <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-4 lg:flex-row lg:items-stretch">
-          <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-            <div
-              ref={contentRef}
-              className={cn(
-                "space-y-4 transition-all duration-300",
-                isEmpty ? "mx-auto w-full max-w-3xl" : "mx-auto w-full max-w-4xl",
-              )}
-            >
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* Toolbar */}
+        <div className="flex shrink-0 items-center justify-end px-4 py-2">
+          <ChatToolbar />
+        </div>
+
+        {/* Messages Area */}
+        <div className="min-h-0 flex-1 overflow-hidden px-4 py-4">
+          <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col gap-4 lg:flex-row lg:items-stretch">
+            <div ref={scrollRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+              <div
+                ref={contentRef}
+                className={cn(
+                  "space-y-4 transition-all duration-300",
+                  isEmpty ? "mx-auto w-full max-w-3xl" : "mx-auto w-full max-w-4xl",
+                )}
+              >
               {isEmpty ? (
                 <WelcomeScreen />
               ) : (
@@ -733,48 +786,48 @@ export function Chat() {
                   )}
                 </>
               )}
+              </div>
             </div>
           </div>
-
         </div>
+
+        {/* Error bar */}
+        {error && (
+          <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <p className="text-sm text-destructive flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </p>
+              <button
+                onClick={clearError}
+                className="text-xs text-destructive/60 hover:text-destructive underline"
+              >
+                {t('common:actions.dismiss')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Input Area */}
+        <ChatInput
+          onSend={handleSendMessage}
+          onStop={abortRun}
+          disabled={!isGatewayRunning}
+          sending={sending || hasActiveExecutionGraph}
+          isEmpty={isEmpty}
+          onPresenceChange={setComposerPresence}
+        />
+
+        {/* Transparent loading overlay */}
+        {minLoading && !sending && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/20 backdrop-blur-[1px] rounded-xl pointer-events-auto">
+            <div className="bg-background shadow-lg rounded-full p-2.5 border border-border">
+              <LoadingSpinner size="md" />
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Error bar */}
-      {error && (
-        <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <p className="text-sm text-destructive flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              {error}
-            </p>
-            <button
-              onClick={clearError}
-              className="text-xs text-destructive/60 hover:text-destructive underline"
-            >
-              {t('common:actions.dismiss')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Input Area */}
-      <ChatInput
-        onSend={handleSendMessage}
-        onStop={abortRun}
-        disabled={!isGatewayRunning}
-        sending={sending || hasActiveExecutionGraph}
-        isEmpty={isEmpty}
-        onPresenceChange={setComposerPresence}
-      />
-
-      {/* Transparent loading overlay */}
-      {minLoading && !sending && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/20 backdrop-blur-[1px] rounded-xl pointer-events-auto">
-          <div className="bg-background shadow-lg rounded-full p-2.5 border border-border">
-            <LoadingSpinner size="md" />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@
         "newChat": "New Chat",
         "cronTasks": "Cron Tasks",
         "skills": "Skills",
-        "agents": "Agents",
+        "agents": "Partners",
         "channels": "Channels",
         "dashboard": "Dashboard",
         "settings": "Settings",
@@ -12,6 +12,18 @@
         "models": "Models",
         "deleteSessionConfirm": "Are you sure you want to delete session \"{{label}}\"?",
         "openClawPage": "OpenClaw Page"
+    },
+    "conversationPanel": {
+        "myPartners": "My Partners",
+        "searchPlaceholder": "Search",
+        "createPartner": "Create Partner",
+        "customPartner": "Custom Partner",
+        "chooseFromMarket": "Choose from Market",
+        "comingSoon": "Coming soon",
+        "defaultBadge": "default",
+        "sessionCount": "{{count}} chats",
+        "collapseGroup": "Collapse group",
+        "expandGroup": "Expand group"
     },
     "actions": {
         "save": "Save",

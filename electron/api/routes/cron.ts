@@ -414,6 +414,41 @@ function transformCronJob(job: GatewayCronJob) {
   };
 }
 
+function mergeCronJobs(primaryJobs: GatewayCronJob[], fallbackJobs: GatewayCronJob[]): GatewayCronJob[] {
+  const fallbackById = new Map(fallbackJobs.map((job) => [job.id, job]));
+  const primaryIds = new Set(primaryJobs.map((job) => job.id));
+
+  const merged = primaryJobs.map((job) => {
+    const fallback = fallbackById.get(job.id);
+    if (!fallback) return job;
+
+    const primaryAgentId = (job as unknown as { agentId?: string | null }).agentId;
+    const fallbackAgentId = (fallback as unknown as { agentId?: string | null }).agentId;
+    const shouldFillAgentId =
+      (typeof primaryAgentId !== 'string' || !primaryAgentId.trim()) &&
+      typeof fallbackAgentId === 'string' &&
+      fallbackAgentId.trim();
+
+    return {
+      ...fallback,
+      ...job,
+      ...(shouldFillAgentId ? { agentId: fallbackAgentId.trim() } : {}),
+      state: {
+        ...(fallback.state || {}),
+        ...(job.state || {}),
+      },
+    } as GatewayCronJob;
+  });
+
+  for (const fallback of fallbackJobs) {
+    if (!primaryIds.has(fallback.id)) {
+      merged.push(fallback);
+    }
+  }
+
+  return merged;
+}
+
 async function readCronJobsFallback(): Promise<GatewayCronJob[]> {
   const cronDir = join(getOpenClawConfigDir(), 'cron');
   const raw = await readFile(join(cronDir, 'jobs.json'), 'utf-8')
@@ -520,6 +555,13 @@ export async function handleCronRoutes(
           const jobAgentId = (job as unknown as { agentId?: string }).agentId;
           const deliveryInfo = job.delivery ? `delivery={mode:${job.delivery.mode}, channel:${job.delivery.channel || '(none)'}, accountId:${job.delivery.accountId || '(none)'}, to:${job.delivery.to || '(none)'}}` : 'delivery=(none)';
           console.debug(`  - name: "${job.name}", agentId: "${jobAgentId || '(undefined)'}", ${deliveryInfo}, sessionTarget: "${job.sessionTarget || '(none)'}", payload.kind: "${job.payload?.kind || '(none)'}"`);
+        }
+
+        try {
+          const persistedJobs = await readCronJobsFallback();
+          jobs = mergeCronJobs(jobs, persistedJobs);
+        } catch {
+          // Gateway data is still usable when persisted cron files are unavailable.
         }
       } catch {
         // Fallback: read persisted cron jobs directly when Gateway RPC fails/times out.

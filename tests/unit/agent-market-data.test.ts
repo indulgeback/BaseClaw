@@ -16,6 +16,8 @@ const expectedCategoryIds = [
   'specialized',
   'support',
   'testing',
+  'life',
+  'social-fun',
 ];
 
 describe('Agency Agents market data', () => {
@@ -23,7 +25,7 @@ describe('Agency Agents market data', () => {
     const catalog = getAgentMarketCatalog();
     const ids = new Set(catalog.templates.map((template) => template.templateId));
 
-    expect(catalog.templates).toHaveLength(184);
+    expect(catalog.templates).toHaveLength(203);
     expect(catalog.categories.map((category) => category.id)).toEqual(expectedCategoryIds);
     expect(ids.size).toBe(catalog.templates.length);
     expect(catalog.templates.every((template) => expectedCategoryIds.includes(template.categoryId))).toBe(true);

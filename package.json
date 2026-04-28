@@ -59,6 +59,8 @@
     "icons": "zx scripts/generate-icons.mjs",
     "rename:brand": "node scripts/rename-brand.mjs",
     "agents:sync-agency": "node scripts/sync-agency-agents.mjs",
+    "agents:sync-life": "node scripts/sync-life-agents.mjs",
+    "agents:sync-social-fun": "node scripts/sync-social-fun-agents.mjs",
     "sprite:convert-webm": "node scripts/convert-sprite-webm-alpha.mjs",
     "package": "node scripts/generate-ext-bridge.mjs && zx scripts/bundle-skills-market-presets.mjs && node scripts/generate-skills-market-data.mjs && vite build && zx scripts/bundle-openclaw.mjs && zx scripts/bundle-openclaw-plugins.mjs && zx scripts/bundle-preinstalled-skills.mjs",
     "package:mac": "pnpm run package && electron-builder --mac --publish never",
