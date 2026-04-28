@@ -10,80 +10,150 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const ICONS_DIR = path.join(PROJECT_ROOT, 'resources', 'icons');
+const DESKTOP_ICONS_DIR = path.join(PROJECT_ROOT, 'resources', 'desktop-icons');
+const PNG_SOURCE = path.join(ICONS_DIR, 'icon-source.png');
+const DESKTOP_PNG_SOURCE = path.join(ICONS_DIR, 'desktop-icon-source.png');
 const SVG_SOURCE = path.join(ICONS_DIR, 'icon.svg');
 const TRAY_CANVAS_SIZE = 22;
 const TRAY_GLYPH_SIZE = 18;
 
 echo`🎨 Generating ClawX icons using Node.js...`;
 
-// Check if SVG source exists
-if (!fs.existsSync(SVG_SOURCE)) {
-  echo`❌ SVG source not found: ${SVG_SOURCE}`;
+// Check if an icon source exists. PNG is preferred so generated assets can be
+// refreshed from the committed brand image rather than a hand-maintained SVG.
+if (!fs.existsSync(PNG_SOURCE) && !fs.existsSync(SVG_SOURCE)) {
+  echo`❌ Icon source not found: ${PNG_SOURCE} or ${SVG_SOURCE}`;
   process.exit(1);
 }
 
 // Ensure icons directory exists
 await fs.ensureDir(ICONS_DIR);
+await fs.ensureDir(DESKTOP_ICONS_DIR);
+
+async function createMasterPngBuffer(sourcePath) {
+  return await sharp(sourcePath)
+    .resize(1024, 1024, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
+}
+
+async function generateIconSet({
+  masterPngBuffer,
+  pngName,
+  icoName,
+  icnsName,
+  linuxDir,
+  label,
+}) {
+  await sharp(masterPngBuffer)
+    .resize(512, 512)
+    .toFile(path.join(ICONS_DIR, pngName));
+  echo`  ✅ Created ${pngName} (512x512)`;
+
+  echo`🪟 Generating Windows ${label} .ico...`;
+  const icoBuffer = png2icons.createICO(masterPngBuffer, png2icons.HERMITE, 0, false);
+  if (icoBuffer) {
+    fs.writeFileSync(path.join(ICONS_DIR, icoName), icoBuffer);
+    echo`  ✅ Created ${icoName}`;
+  } else {
+    echo(chalk.red`  ❌ Failed to create ${icoName}`);
+  }
+
+  echo`🍎 Generating macOS ${label} .icns...`;
+  const icnsBuffer = png2icons.createICNS(masterPngBuffer, png2icons.HERMITE, 0);
+  if (icnsBuffer) {
+    fs.writeFileSync(path.join(ICONS_DIR, icnsName), icnsBuffer);
+    echo`  ✅ Created ${icnsName}`;
+  } else {
+    echo(chalk.red`  ❌ Failed to create ${icnsName}`);
+  }
+
+  if (linuxDir) {
+    echo`🐧 Generating ${label} PNG icons...`;
+    const linuxSizes = [16, 32, 48, 64, 128, 256, 512];
+    let generatedCount = 0;
+    await fs.ensureDir(linuxDir);
+    for (const size of linuxSizes) {
+      await sharp(masterPngBuffer)
+        .resize(size, size)
+        .toFile(path.join(linuxDir, `${size}x${size}.png`));
+      generatedCount++;
+    }
+    echo`  ✅ Created ${generatedCount} ${label} PNG icons`;
+  }
+}
+
+function writeSvgWrappers(sourceFileName) {
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">',
+    `  <image href="${sourceFileName}" width="1024" height="1024" preserveAspectRatio="xMidYMid meet"/>`,
+    '</svg>',
+    '',
+  ].join('\n');
+  fs.writeFileSync(path.join(ICONS_DIR, 'icon.svg'), svg);
+  fs.writeFileSync(path.join(ICONS_DIR, 'icon-plain.svg'), svg);
+  echo`  ✅ Updated icon.svg and icon-plain.svg wrappers`;
+}
+
+async function generateTrayTemplate(masterPngBuffer) {
+  const trayPadding = TRAY_CANVAS_SIZE - TRAY_GLYPH_SIZE;
+  const alpha = await sharp(masterPngBuffer)
+    .resize(TRAY_GLYPH_SIZE, TRAY_GLYPH_SIZE, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .ensureAlpha()
+    .extractChannel('alpha')
+    .toBuffer();
+
+  await sharp({
+    create: {
+      width: TRAY_GLYPH_SIZE,
+      height: TRAY_GLYPH_SIZE,
+      channels: 3,
+      background: { r: 0, g: 0, b: 0 },
+    },
+  })
+    .joinChannel(alpha)
+    .extend({
+      top: Math.floor(trayPadding / 2),
+      bottom: Math.ceil(trayPadding / 2),
+      left: Math.floor(trayPadding / 2),
+      right: Math.ceil(trayPadding / 2),
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toFile(path.join(ICONS_DIR, 'tray-icon-Template.png'));
+  echo`  ✅ Created tray-icon-Template.png (${TRAY_CANVAS_SIZE}x${TRAY_CANVAS_SIZE}, ${TRAY_GLYPH_SIZE}px glyph)`;
+}
 
 try {
   // 1. Generate Master PNG Buffer (1024x1024)
-  echo`  Processing SVG source...`;
-  const masterPngBuffer = await sharp(SVG_SOURCE)
-    .resize(1024, 1024)
-    .png() // Ensure it's PNG
-    .toBuffer();
-
-  // Save the main icon.png (typically 512x512 for Electron root icon)
-  await sharp(masterPngBuffer)
-    .resize(512, 512)
-    .toFile(path.join(ICONS_DIR, 'icon.png'));
-  echo`  ✅ Created icon.png (512x512)`;
-
-  // 2. Generate Windows .ico
-  // png2icons expects a buffer. It returns a buffer (or null).
-  // createICO(buffer, scalingAlgorithm, withSize, useMath)
-  // scalingAlgorithm: 1 = Bilinear (better), 2 = Hermite (good), 3 = Bezier (best/slowest)
-  // Defaulting to Bezier (3) for quality or Hermite (2) for speed. Let's use 2 (Hermite) as it's balanced.
-  echo`🪟 Generating Windows .ico...`;
-  const icoBuffer = png2icons.createICO(masterPngBuffer, png2icons.HERMITE, 0, false);
-  
-  if (icoBuffer) {
-    fs.writeFileSync(path.join(ICONS_DIR, 'icon.ico'), icoBuffer);
-    echo`  ✅ Created icon.ico`;
-  } else {
-    echo(chalk.red`  ❌ Failed to create icon.ico`);
-    // detailed error might not be available from png2icons simple API, often returns null on failure
+  const sourcePath = fs.existsSync(PNG_SOURCE) ? PNG_SOURCE : SVG_SOURCE;
+  echo`  Processing source: ${sourcePath}`;
+  const masterPngBuffer = await createMasterPngBuffer(sourcePath);
+  if (fs.existsSync(PNG_SOURCE)) {
+    writeSvgWrappers('icon-source.png');
   }
 
-  // 3. Generate macOS .icns
-  echo`🍎 Generating macOS .icns...`;
-  const icnsBuffer = png2icons.createICNS(masterPngBuffer, png2icons.HERMITE, 0);
-  
-  if (icnsBuffer) {
-    fs.writeFileSync(path.join(ICONS_DIR, 'icon.icns'), icnsBuffer);
-    echo`  ✅ Created icon.icns`;
-  } else {
-    echo(chalk.red`  ❌ Failed to create icon.icns`);
-  }
-
-  // 4. Generate Linux PNGs (various sizes)
-  echo`🐧 Generating Linux PNG icons...`;
-  const linuxSizes = [16, 32, 48, 64, 128, 256, 512];
-  let generatedCount = 0;
-  
-  for (const size of linuxSizes) {
-    await sharp(masterPngBuffer)
-      .resize(size, size)
-      .toFile(path.join(ICONS_DIR, `${size}x${size}.png`));
-    generatedCount++;
-  }
-  echo`  ✅ Created ${generatedCount} Linux PNG icons`;
+  await generateIconSet({
+    masterPngBuffer,
+    pngName: 'icon.png',
+    icoName: 'icon.ico',
+    icnsName: 'icon.icns',
+    linuxDir: ICONS_DIR,
+    label: 'app',
+  });
 
   // 5. Generate macOS Tray Icon Template
   echo`📍 Generating macOS tray icon template...`;
   const TRAY_SVG_SOURCE = path.join(ICONS_DIR, 'tray-icon-template.svg');
-  
-  if (fs.existsSync(TRAY_SVG_SOURCE)) {
+  if (fs.existsSync(PNG_SOURCE)) {
+    await generateTrayTemplate(masterPngBuffer);
+  } else if (fs.existsSync(TRAY_SVG_SOURCE)) {
     const trayPadding = TRAY_CANVAS_SIZE - TRAY_GLYPH_SIZE;
     await sharp(TRAY_SVG_SOURCE)
       .resize(TRAY_GLYPH_SIZE, TRAY_GLYPH_SIZE, {
@@ -102,6 +172,19 @@ try {
     echo`  ✅ Created tray-icon-Template.png (${TRAY_CANVAS_SIZE}x${TRAY_CANVAS_SIZE}, ${TRAY_GLYPH_SIZE}px glyph)`;
   } else {
     echo`  ⚠️  tray-icon-template.svg not found, skipping tray icon generation`;
+  }
+
+  if (fs.existsSync(DESKTOP_PNG_SOURCE)) {
+    echo`\n🖥️  Generating desktop icon assets...`;
+    const desktopMasterPngBuffer = await createMasterPngBuffer(DESKTOP_PNG_SOURCE);
+    await generateIconSet({
+      masterPngBuffer: desktopMasterPngBuffer,
+      pngName: 'desktop-icon.png',
+      icoName: 'desktop-icon.ico',
+      icnsName: 'desktop-icon.icns',
+      linuxDir: DESKTOP_ICONS_DIR,
+      label: 'desktop',
+    });
   }
 
   echo`\n✨ Icon generation complete! Files located in: ${ICONS_DIR}`;
