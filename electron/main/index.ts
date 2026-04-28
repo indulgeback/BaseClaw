@@ -154,8 +154,8 @@ function getAppIcon(): Electron.NativeImage | undefined {
   const iconsDir = getIconsDir();
   const iconPath =
     process.platform === 'win32'
-      ? join(iconsDir, 'icon.ico')
-      : join(iconsDir, 'icon.png');
+      ? join(iconsDir, 'desktop-icon.ico')
+      : join(iconsDir, 'desktop-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
   return icon.isEmpty() ? undefined : icon;
 }

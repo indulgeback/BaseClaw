@@ -12,6 +12,10 @@ beforeAll(() => {
     configurable: true,
     value: vi.fn(),
   });
+  Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
+    configurable: true,
+    value: vi.fn(),
+  });
 });
 
 describe('sprite video player queue execution', () => {
@@ -64,7 +68,7 @@ describe('sprite video player queue execution', () => {
 
     // Advance past the crossfade transition duration
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(700);
     });
 
     // B should now be the active video
@@ -73,6 +77,40 @@ describe('sprite video player queue execution', () => {
     expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-phase', 'loop');
     expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-state', 'listen');
     expect(onPlaybackChange).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
+
+  it('starts queued transition on mount when the requested state differs from the loop', async () => {
+    vi.useFakeTimers();
+
+    const idle = createSpritePlaybackSnapshot('raccoon', 'idle', 'idle');
+    const workingRequest = reconcilePlaybackSnapshot(idle, 'working');
+
+    render(
+      <SpriteVideoPlayer
+        characterId={workingRequest.characterId}
+        currentState={workingRequest.currentState}
+        settledState={workingRequest.settledState}
+        requestedState={workingRequest.requestedState}
+        activeClip={workingRequest.activeClip}
+        playbackQueue={workingRequest.playbackQueue}
+        queueVersion={workingRequest.queueVersion}
+      />,
+    );
+
+    expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-phase', 'enter');
+    expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-state', 'working');
+
+    act(() => {
+      screen.getByTestId('sprite-video-b').dispatchEvent(new Event('canplaythrough'));
+      vi.advanceTimersByTime(700);
+    });
+
+    expect(screen.getByTestId('sprite-video-a')).toHaveAttribute('data-sprite-visible', 'false');
+    expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-visible', 'true');
+    expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-phase', 'enter');
+    expect(screen.getByTestId('sprite-video-b')).toHaveAttribute('data-sprite-state', 'working');
 
     vi.useRealTimers();
   });

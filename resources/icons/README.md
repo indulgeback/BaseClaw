@@ -6,10 +6,15 @@ This directory contains the application icons for all supported platforms.
 
 | File | Platform | Description |
 |------|----------|-------------|
-| `icon.svg` | Source | Vector source for all icons |
-| `icon.icns` | macOS | Apple Icon Image format |
-| `icon.ico` | Windows | Windows ICO format |
-| `icon.png` | All | 512x512 PNG fallback |
+| `icon-source.png` | Source | Raster source for the shared app/tray icon set |
+| `desktop-icon-source.png` | Source | Raster source for desktop/window/installer icons |
+| `icon.svg` | Source | SVG wrapper around `icon-source.png` |
+| `icon.icns` | macOS | Shared app icon Apple Icon Image format |
+| `icon.ico` | Windows | Shared app icon Windows ICO format |
+| `icon.png` | All | Shared app icon 512x512 PNG fallback |
+| `desktop-icon.icns` | macOS | Desktop/app bundle icon |
+| `desktop-icon.ico` | Windows | Desktop/window/installer icon |
+| `desktop-icon.png` | All | Desktop/window icon PNG fallback |
 | `16x16.png` - `512x512.png` | Linux | PNG set for Linux |
 | `tray-icon-template.svg` | Source | macOS tray icon template source |
 | `tray-icon-Template.png` | macOS | 22x22 status bar icon with inner padding (note: "Template" suffix required) |
@@ -19,11 +24,8 @@ This directory contains the application icons for all supported platforms.
 ### Using the Script
 
 ```bash
-# Make the script executable
-chmod +x scripts/generate-icons.sh
-
 # Run icon generation
-./scripts/generate-icons.sh
+node scripts/generate-icons.mjs
 ```
 
 ### Prerequisites
@@ -73,8 +75,8 @@ If you prefer to generate icons manually:
 
 ## Updating the Icon
 
-1. Edit `icon.svg` with your vector editor (Figma, Illustrator, Inkscape)
-2. For macOS tray icon, edit `tray-icon-template.svg` (must be single-color black on transparent)
+1. Replace `icon-source.png` for shared app/tray icons.
+2. Replace `desktop-icon-source.png` for desktop/window/installer icons.
 3. Run `node scripts/generate-icons.mjs`
 4. Verify generated icons look correct
 5. Commit all generated files

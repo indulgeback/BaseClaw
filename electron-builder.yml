@@ -70,7 +70,7 @@ mac:
     - from: resources/cli/posix/
       to: cli/
   category: public.app-category.productivity
-  icon: resources/icons/icon.icns
+  icon: resources/icons/desktop-icon.icns
   target:
     - target: dmg
       arch:
@@ -96,7 +96,7 @@ dmg:
   # The final .dmg is bzip2-compressed, so this only affects the temp volume.
   size: 2g
   background: resources/dmg-background.png
-  icon: resources/icons/icon.icns
+  icon: resources/icons/desktop-icon.icns
   iconSize: 100
   window:
     width: 540
@@ -120,10 +120,12 @@ win:
       to: bin
     - from: resources/cli/win32/
       to: cli/
-  icon: resources/icons/icon.ico
+  icon: resources/icons/desktop-icon.ico
   target:
     - target: nsis
-      arch: x64
+      arch:
+        - x64
+        - arm64
 
 nsis:
   oneClick: false
@@ -138,8 +140,8 @@ nsis:
   uninstallDisplayName: PokeClaw
   license: LICENSE
   include: scripts/installer.nsh
-  installerIcon: resources/icons/icon.ico
-  uninstallerIcon: resources/icons/icon.ico
+  installerIcon: resources/icons/desktop-icon.ico
+  uninstallerIcon: resources/icons/desktop-icon.ico
 
 # Linux Configuration
 linux:
@@ -148,7 +150,7 @@ linux:
       to: bin
     - from: resources/cli/posix/
       to: cli/
-  icon: resources/icons
+  icon: resources/desktop-icons
   target:
     - target: AppImage
       arch:

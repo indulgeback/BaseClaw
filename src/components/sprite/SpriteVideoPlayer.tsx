@@ -295,7 +295,7 @@ export function SpriteVideoPlayer({
     });
   }, [incomingPlayback]);
 
-  // ── State change while looping → force crossfade ─────
+  // ── State request while looping → force crossfade ────
   const prevRequestedRef = useRef(playback.requestedState);
 
   useEffect(() => {
@@ -303,7 +303,7 @@ export function SpriteVideoPlayer({
     prevRequestedRef.current = playback.requestedState;
 
     if (
-      prev !== playback.requestedState &&
+      (prev !== playback.requestedState || playback.activeClip?.state !== playback.requestedState) &&
       playback.activeClip?.phase === 'loop' &&
       playback.playbackQueue.length > 0 &&
       !isSwitchingRef.current
