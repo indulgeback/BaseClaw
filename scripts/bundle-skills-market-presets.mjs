@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const MANIFEST_PATH = join(ROOT, 'resources', 'skills', 'market-manifest.json');
-const OUTPUT_ROOT = join(ROOT, 'build', 'skills-market-presets');
+const OUTPUT_ROOT = join(ROOT, 'resources', 'skills-market-presets');
 const TMP_ROOT = join(ROOT, 'build', '.tmp-skills-market-presets');
 const LOCK_FILE_NAME = '.skills-market-lock.json';
 

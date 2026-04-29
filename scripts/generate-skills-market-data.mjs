@@ -8,7 +8,7 @@ import { parseDocument } from 'yaml';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const MANIFEST_PATH = join(ROOT, 'resources', 'skills', 'market-manifest.json');
-const SOURCE_ROOT = join(ROOT, 'build', 'skills-market-presets');
+const SOURCE_ROOT = join(ROOT, 'resources', 'skills-market-presets');
 const LOCK_PATH = join(SOURCE_ROOT, '.skills-market-lock.json');
 const OUTPUT_DIR = join(ROOT, 'src', 'data', 'skills-market');
 const DETAILS_DIR = join(OUTPUT_DIR, 'details');
@@ -108,7 +108,7 @@ function compactDescription(frontmatter, files) {
 
 const manifest = readJson(MANIFEST_PATH);
 if (!existsSync(SOURCE_ROOT) || !existsSync(LOCK_PATH)) {
-  throw new Error('Skills market presets bundle is missing. Run bundle-skills-market-presets first.');
+  throw new Error('Skills market presets are missing from resources/skills-market-presets. Run bundle:skills-market to refresh them.');
 }
 
 const lock = readJson(LOCK_PATH);
