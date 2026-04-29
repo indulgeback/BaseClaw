@@ -46,4 +46,38 @@ describe('skills store error mapping', () => {
     const { useSkillsStore } = await import('@/stores/skills');
     await expect(useSkillsStore.getState().installSkill('demo-skill')).rejects.toThrow('installTimeoutError');
   });
+
+  it('prefers local market preset markers over generic managed gateway source', async () => {
+    rpcMock.mockResolvedValueOnce({
+      skills: [{
+        skillKey: 'pdf',
+        slug: 'pdf',
+        name: 'pdf',
+        description: 'Work with PDFs.',
+        disabled: false,
+        bundled: false,
+        source: 'openclaw-managed',
+      }],
+    });
+    hostApiFetchMock
+      .mockResolvedValueOnce({
+        success: true,
+        results: [{
+          slug: 'pdf',
+          version: 'bundle',
+          source: 'clawx-market-preset',
+          baseDir: '/tmp/skills/pdf',
+        }],
+      })
+      .mockResolvedValueOnce({});
+
+    const { useSkillsStore } = await import('@/stores/skills');
+    await useSkillsStore.getState().fetchSkills();
+
+    expect(useSkillsStore.getState().skills[0]).toEqual(expect.objectContaining({
+      id: 'pdf',
+      source: 'clawx-market-preset',
+      sourceKind: 'market-preset',
+    }));
+  });
 });

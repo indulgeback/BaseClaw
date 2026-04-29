@@ -84,6 +84,13 @@ function resolveSkillSourceKind(source: string | undefined, bundled: boolean | u
   return 'clawhub';
 }
 
+function shouldPreferInstalledSource(existingSource: string | undefined, installedSource: string | undefined): boolean {
+  if (!installedSource) return false;
+  if (!existingSource) return true;
+  if (installedSource === 'clawx-market-preset' || installedSource === 'clawx-preinstalled') return true;
+  return existingSource === 'openclaw-managed' && installedSource !== existingSource;
+}
+
 export const useSkillsStore = create<SkillsState>((set, get) => ({
   skills: [],
   searchResults: [],
@@ -151,8 +158,9 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
             if (!existing.baseDir && cs.baseDir) {
               existing.baseDir = cs.baseDir;
             }
-            if (!existing.source && cs.source) {
+            if (shouldPreferInstalledSource(existing.source, cs.source)) {
               existing.source = cs.source;
+              existing.sourceKind = resolveSkillSourceKind(cs.source, existing.isBundled);
             }
             return;
           }
