@@ -394,6 +394,13 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           TAG="${{ steps.version.outputs.tag }}"
+          CHANNEL="latest"
+          if [[ "${VERSION}" == *-* ]]; then
+            PRERELEASE="${VERSION#*-}"
+            CHANNEL="${PRERELEASE%%.*}"
+          fi
+          WIN_UPDATE_YML="${CHANNEL}.yml"
+          MAC_UPDATE_YML="${CHANNEL}-mac.yml"
 
           RELEASE_DIR="staging/releases/${TAG}"
           rm -rf staging
@@ -421,8 +428,8 @@ jobs:
           copy_required "PokeClaw-${VERSION}-mac-arm64.dmg" "macOS arm64 installer"
           copy_required "PokeClaw-${VERSION}-win-x64.exe" "Windows x64 installer"
           copy_required "PokeClaw-${VERSION}-win-arm64.exe" "Windows arm64 installer"
-          copy_required "latest.yml" "Windows updater metadata"
-          copy_required "latest-mac.yml" "macOS updater metadata"
+          copy_required "${WIN_UPDATE_YML}" "Windows updater metadata"
+          copy_required "${MAC_UPDATE_YML}" "macOS updater metadata"
 
           echo ""
           echo "=== ${RELEASE_DIR}/ ==="
@@ -461,6 +468,14 @@ jobs:
       - name: Verify OSS upload
         run: |
           TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          CHANNEL="latest"
+          if [[ "${VERSION}" == *-* ]]; then
+            PRERELEASE="${VERSION#*-}"
+            CHANNEL="${PRERELEASE%%.*}"
+          fi
+          WIN_UPDATE_YML="${CHANNEL}.yml"
+          MAC_UPDATE_YML="${CHANNEL}-mac.yml"
 
           echo "=== apps/pokeclaw/releases/${TAG}/ ==="
           ossutil ls oss://shortapi-02/apps/pokeclaw/releases/${TAG}/ --short
@@ -472,8 +487,8 @@ jobs:
             "PokeClaw-${{ steps.version.outputs.version }}-mac-arm64.dmg" \
             "PokeClaw-${{ steps.version.outputs.version }}-win-x64.exe" \
             "PokeClaw-${{ steps.version.outputs.version }}-win-arm64.exe" \
-            "latest.yml" \
-            "latest-mac.yml"
+            "${WIN_UPDATE_YML}" \
+            "${MAC_UPDATE_YML}"
           do
             ossutil stat "oss://shortapi-02/apps/pokeclaw/releases/${TAG}/${filename}" >/dev/null
             echo "Verified ${filename}"
