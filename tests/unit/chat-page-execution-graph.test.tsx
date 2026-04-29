@@ -80,6 +80,10 @@ vi.mock('@/pages/Chat/ChatInput', () => ({
   },
 }));
 
+vi.mock('@/pages/Chat/ConversationListPane', () => ({
+  ConversationListPane: () => null,
+}));
+
 describe('Chat execution graph lifecycle', () => {
   beforeEach(async () => {
     vi.resetModules();

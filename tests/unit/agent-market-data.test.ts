@@ -2,22 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { getAgentMarketCatalog, loadAgentTemplateDetail } from '../../src/lib/agent-market';
 
 const expectedCategoryIds = [
-  'academic',
-  'design',
-  'engineering',
-  'finance',
-  'game-development',
   'marketing',
-  'paid-media',
   'product',
-  'project-management',
+  'paid-media',
   'sales',
-  'spatial-computing',
-  'specialized',
-  'support',
-  'testing',
   'life',
   'social-fun',
+  'engineering',
+  'specialized',
+  'design',
+  'finance',
+  'project-management',
+  'support',
+  'testing',
+  'game-development',
+  'academic',
+  'spatial-computing',
 ];
 
 describe('Agency Agents market data', () => {

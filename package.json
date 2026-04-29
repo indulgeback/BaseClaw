@@ -1,6 +1,6 @@
 {
   "name": "pokeclaw",
-  "version": "0.4.1",
+  "version": "0.4.2-pro",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@discordjs/opus",

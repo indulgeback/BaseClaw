@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight, Compass, Lock, MoreHorizontal, Plus, Search, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Compass, MessageCirclePlus, MoreHorizontal, Plus, Search, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -20,6 +20,14 @@ interface AgentSessionGroup {
   isDefault: boolean;
   sessions: ChatSession[];
 }
+
+const CUSTOM_PARTNER_PROMPT = [
+  'I want to create a custom AI partner in PokeClaw.',
+  '',
+  'Please do not create the agent yet. First interview me so we can design it well. Ask focused follow-up questions about the partner name, role/domain, target users, personality and tone, typical tasks, workflows, boundaries, tools or skills it should use, memory/context it should keep, and preferred output formats.',
+  '',
+  'Start with the most important questions first, and guide me step by step toward a clear custom agent specification.',
+].join('\n');
 
 function getAgentIdFromSessionKey(sessionKey: string): string {
   if (!sessionKey.startsWith('agent:')) return 'main';
@@ -154,6 +162,8 @@ export function ConversationListPane({ width }: ConversationListPaneProps) {
   const sessionLabels = useChatStore((state) => state.sessionLabels);
   const sessionLastActivity = useChatStore((state) => state.sessionLastActivity);
   const switchSession = useChatStore((state) => state.switchSession);
+  const newSession = useChatStore((state) => state.newSession);
+  const sendMessage = useChatStore((state) => state.sendMessage);
   const deleteSession = useChatStore((state) => state.deleteSession);
 
   const [query, setQuery] = useState('');
@@ -185,6 +195,12 @@ export function ConversationListPane({ width }: ConversationListPaneProps) {
       })
       .filter((group) => group.agentName.toLowerCase().includes(normalizedQuery) || group.sessions.length > 0);
   }, [getSessionLabel, groups, normalizedQuery]);
+
+  const handleCreateCustomPartner = useCallback(() => {
+    setCreateMenuOpen(false);
+    newSession('main');
+    void sendMessage(CUSTOM_PARTNER_PROMPT, undefined, null);
+  }, [newSession, sendMessage]);
 
   return (
     <aside
@@ -287,14 +303,14 @@ export function ConversationListPane({ width }: ConversationListPaneProps) {
           >
             <button
               type="button"
-              disabled
               data-testid="conversation-create-custom"
-              className="flex w-full cursor-not-allowed items-center gap-3 rounded-[14px] px-3 py-2.5 text-left opacity-50"
+              onClick={handleCreateCustomPartner}
+              className="flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-left text-foreground/78 transition-colors hover:bg-accent hover:text-foreground"
             >
-              <Lock className="h-4 w-4" />
+              <MessageCirclePlus className="h-4 w-4" />
               <span className="min-w-0 flex-1">
                 <span className="block text-[13px] font-semibold">{t('conversationPanel.customPartner')}</span>
-                <span className="block text-[11px] text-foreground/50">{t('conversationPanel.comingSoon')}</span>
+                <span className="block text-[11px] text-foreground/50">{t('conversationPanel.customPartnerHint')}</span>
               </span>
             </button>
             <button

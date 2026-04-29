@@ -5,6 +5,26 @@
   "generatedAt": "2026-04-28T12:04:12.940Z",
   "categories": [
     {
+      "id": "marketing",
+      "name": "Marketing",
+      "count": 30
+    },
+    {
+      "id": "product",
+      "name": "Product",
+      "count": 5
+    },
+    {
+      "id": "paid-media",
+      "name": "Paid Media",
+      "count": 7
+    },
+    {
+      "id": "sales",
+      "name": "Sales",
+      "count": 8
+    },
+    {
       "id": "life",
       "name": "Life",
       "count": 12
@@ -15,9 +35,14 @@
       "count": 7
     },
     {
-      "id": "academic",
-      "name": "Academic",
-      "count": 5
+      "id": "engineering",
+      "name": "Engineering",
+      "count": 29
+    },
+    {
+      "id": "specialized",
+      "name": "Specialized",
+      "count": 41
     },
     {
       "id": "design",
@@ -25,54 +50,14 @@
       "count": 8
     },
     {
-      "id": "engineering",
-      "name": "Engineering",
-      "count": 29
-    },
-    {
       "id": "finance",
       "name": "Finance",
-      "count": 5
-    },
-    {
-      "id": "game-development",
-      "name": "Game Development",
-      "count": 20
-    },
-    {
-      "id": "marketing",
-      "name": "Marketing",
-      "count": 30
-    },
-    {
-      "id": "paid-media",
-      "name": "Paid Media",
-      "count": 7
-    },
-    {
-      "id": "product",
-      "name": "Product",
       "count": 5
     },
     {
       "id": "project-management",
       "name": "Project Management",
       "count": 6
-    },
-    {
-      "id": "sales",
-      "name": "Sales",
-      "count": 8
-    },
-    {
-      "id": "spatial-computing",
-      "name": "Spatial Computing",
-      "count": 6
-    },
-    {
-      "id": "specialized",
-      "name": "Specialized",
-      "count": 41
     },
     {
       "id": "support",
@@ -83,6 +68,21 @@
       "id": "testing",
       "name": "Testing",
       "count": 8
+    },
+    {
+      "id": "game-development",
+      "name": "Game Development",
+      "count": 20
+    },
+    {
+      "id": "academic",
+      "name": "Academic",
+      "count": 5
+    },
+    {
+      "id": "spatial-computing",
+      "name": "Spatial Computing",
+      "count": 6
     }
   ],
   "templates": [

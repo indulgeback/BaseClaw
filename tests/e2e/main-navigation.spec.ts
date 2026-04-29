@@ -315,7 +315,13 @@ test.describe('ClawX main navigation without setup flow', () => {
 
       await page.getByTestId('conversation-create-partner').click();
       await expect(page.getByTestId('conversation-create-menu')).toBeVisible();
-      await expect(page.getByTestId('conversation-create-custom')).toBeDisabled();
+      await expect(page.getByTestId('conversation-create-custom')).toBeEnabled();
+      await page.getByTestId('conversation-create-custom').click();
+      await expect(page.getByTestId('conversation-create-menu')).toHaveCount(0);
+      await expect(page.getByTestId('chat-message-0')).toContainText('I want to create a custom AI partner in PokeClaw.');
+      await expect(page.locator('[data-testid^="conversation-session-agent:main:session-"]')).toBeVisible();
+
+      await page.getByTestId('conversation-create-partner').click();
       await page.getByTestId('conversation-create-market').click();
       await expect(page.getByTestId('agents-page')).toBeVisible();
       await expect(page.getByTestId('agents-market')).toBeVisible();

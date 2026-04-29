@@ -18,6 +18,7 @@
         "searchPlaceholder": "Search",
         "createPartner": "Create Partner",
         "customPartner": "Custom Partner",
+        "customPartnerHint": "Guided setup",
         "chooseFromMarket": "Choose from Market",
         "comingSoon": "Coming soon",
         "defaultBadge": "default",
