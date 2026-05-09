@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Trash2,
   Cpu,
+  Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { rendererExtensionRegistry } from '@/extensions/registry';
@@ -25,20 +26,13 @@ import { useSettingsStore } from '@/stores/settings';
 import { useChatStore } from '@/stores/chat';
 import { useGatewayStore } from '@/stores/gateway';
 import { useAgentsStore } from '@/stores/agents';
+import { getSessionActivityMs, getSessionBucket, type SessionBucketKey } from './session-buckets';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { hostApiFetch } from '@/lib/host-api';
 import { useTranslation } from 'react-i18next';
 import logoSvg from '@/assets/logo.svg';
-
-type SessionBucketKey =
-  | 'today'
-  | 'yesterday'
-  | 'withinWeek'
-  | 'withinTwoWeeks'
-  | 'withinMonth'
-  | 'older';
 
 interface NavItemProps {
   to: string;
@@ -58,7 +52,7 @@ function NavItem({ to, icon, label, badge, collapsed, onClick, testId }: NavItem
       data-testid={testId}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors',
+          'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
           'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
           isActive
             ? 'bg-black/5 dark:bg-white/10 text-foreground'
@@ -88,23 +82,6 @@ function NavItem({ to, icon, label, badge, collapsed, onClick, testId }: NavItem
   );
 }
 
-function getSessionBucket(activityMs: number, nowMs: number): SessionBucketKey {
-  if (!activityMs || activityMs <= 0) return 'older';
-
-  const now = new Date(nowMs);
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const startOfYesterday = startOfToday - 24 * 60 * 60 * 1000;
-
-  if (activityMs >= startOfToday) return 'today';
-  if (activityMs >= startOfYesterday) return 'yesterday';
-
-  const daysAgo = (startOfToday - activityMs) / (24 * 60 * 60 * 1000);
-  if (daysAgo <= 7) return 'withinWeek';
-  if (daysAgo <= 14) return 'withinTwoWeeks';
-  if (daysAgo <= 30) return 'withinMonth';
-  return 'older';
-}
-
 const INITIAL_NOW_MS = Date.now();
 
 function getAgentIdFromSessionKey(sessionKey: string): string {
@@ -116,6 +93,7 @@ function getAgentIdFromSessionKey(sessionKey: string): string {
 export function Sidebar() {
   const sidebarCollapsed = useSettingsStore((state) => state.sidebarCollapsed);
   const setSidebarCollapsed = useSettingsStore((state) => state.setSidebarCollapsed);
+  const devModeUnlocked = useSettingsStore((state) => state.devModeUnlocked);
 
   const sessions = useChatStore((s) => s.sessions);
   const currentSessionKey = useChatStore((s) => s.currentSessionKey);
@@ -136,9 +114,11 @@ export function Sidebar() {
     let cancelled = false;
     const hasExistingMessages = useChatStore.getState().messages.length > 0;
     (async () => {
-      await loadSessions();
+      await Promise.allSettled([
+        loadSessions(),
+        loadHistory(hasExistingMessages),
+      ]);
       if (cancelled) return;
-      await loadHistory(hasExistingMessages);
     })();
     return () => {
       cancelled = true;
@@ -153,21 +133,25 @@ export function Sidebar() {
   const getSessionLabel = (key: string, displayName?: string, label?: string) =>
     sessionLabels[key] ?? label ?? displayName ?? key;
 
-  const openDevConsole = async () => {
+  const openControlUi = async (path: string, label: string) => {
     try {
       const result = await hostApiFetch<{
         success: boolean;
         url?: string;
         error?: string;
-      }>('/api/gateway/control-ui');
+      }>(path);
       if (result.success && result.url) {
-        window.electron.openExternal(result.url);
+        await window.electron.openExternal(result.url);
       } else {
-        console.error('Failed to get Dev Console URL:', result.error);
+        console.error(`Failed to get ${label} URL:`, result.error);
       }
     } catch (err) {
-      console.error('Error opening Dev Console:', err);
+      console.error(`Error opening ${label}:`, err);
     }
+  };
+
+  const openDevConsole = async () => {
+    await openControlUi('/api/gateway/control-ui', 'OpenClaw Page');
   };
 
   const { t } = useTranslation(['common', 'chat']);
@@ -202,10 +186,13 @@ export function Sidebar() {
     (typeof sessionBuckets)[number]
   >;
 
-  for (const session of [...sessions].sort((a, b) =>
-    (sessionLastActivity[b.key] ?? 0) - (sessionLastActivity[a.key] ?? 0)
-  )) {
-    const bucketKey = getSessionBucket(sessionLastActivity[session.key] ?? 0, nowMs);
+  for (const { session, activityMs } of sessions
+    .map((session) => ({
+      session,
+      activityMs: getSessionActivityMs(session, sessionLastActivity),
+    }))
+    .sort((a, b) => b.activityMs - a.activityMs)) {
+    const bucketKey = getSessionBucket(activityMs, nowMs);
     sessionBucketMap[bucketKey].sessions.push(session);
   }
 
@@ -218,6 +205,9 @@ export function Sidebar() {
     { to: '/channels', icon: <Network className="h-[18px] w-[18px]" strokeWidth={2} />, label: t('sidebar.channels'), testId: 'sidebar-nav-channels' },
     { to: '/skills', icon: <Puzzle className="h-[18px] w-[18px]" strokeWidth={2} />, label: t('sidebar.skills'), testId: 'sidebar-nav-skills' },
     { to: '/cron', icon: <Clock className="h-[18px] w-[18px]" strokeWidth={2} />, label: t('sidebar.cronTasks'), testId: 'sidebar-nav-cron' },
+    ...(devModeUnlocked
+      ? [{ to: '/dreams', icon: <Moon className="h-[18px] w-[18px]" strokeWidth={2} />, label: t('common:sidebar.openClawDreams'), testId: 'sidebar-nav-dreams' }]
+      : []),
   ];
 
   const navItems = [
@@ -234,7 +224,7 @@ export function Sidebar() {
     <aside
       data-testid="sidebar"
       className={cn(
-        'flex min-h-0 shrink-0 flex-col overflow-hidden border-r bg-[#eae8e1]/60 dark:bg-background transition-all duration-300',
+        'flex min-h-0 shrink-0 flex-col overflow-hidden border-r bg-surface-sidebar/60 transition-all duration-300',
         sidebarCollapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -272,7 +262,7 @@ export function Sidebar() {
             navigate('/');
           }}
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors mb-2',
+            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors mb-2',
             'bg-black/5 dark:bg-accent shadow-none border border-transparent text-foreground',
             sidebarCollapsed && 'justify-center px-0',
           )}
@@ -297,8 +287,8 @@ export function Sidebar() {
         <div className="mt-4 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-2 space-y-0.5">
           {sessionBuckets.map((bucket) => (
             bucket.sessions.length > 0 ? (
-              <div key={bucket.key} className="pt-2">
-                <div className="px-2.5 pb-1 text-[11px] font-medium text-muted-foreground/60 tracking-tight">
+              <div key={bucket.key} data-testid={`session-bucket-${bucket.key}`} className="pt-2">
+                <div className="px-2.5 pb-1 text-tiny font-medium text-muted-foreground/60 tracking-tight">
                   {bucket.label}
                 </div>
                 {bucket.sessions.map((s) => {
@@ -309,7 +299,7 @@ export function Sidebar() {
                       <button
                         onClick={() => { switchSession(s.key); navigate('/'); }}
                         className={cn(
-                          'w-full text-left rounded-lg px-2.5 py-1.5 text-[13px] transition-colors pr-7',
+                          'w-full text-left rounded-lg px-2.5 py-1.5 text-meta transition-colors pr-7',
                           'hover:bg-black/5 dark:hover:bg-white/5',
                           isOnChat && currentSessionKey === s.key
                             ? 'bg-black/5 dark:bg-white/10 text-foreground font-medium'
@@ -317,7 +307,7 @@ export function Sidebar() {
                         )}
                       >
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="shrink-0 rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] font-medium text-foreground/70 dark:bg-white/[0.08]">
+                          <span className="shrink-0 rounded-full bg-black/[0.04] px-2 py-0.5 text-2xs font-medium text-foreground/70 dark:bg-white/[0.08]">
                             {agentName}
                           </span>
                           <span className="truncate">{getSessionLabel(s.key, s.displayName, s.label)}</span>
@@ -356,7 +346,7 @@ export function Sidebar() {
             data-testid="sidebar-nav-settings"
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium transition-colors',
+                'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
                 'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
                 isActive && 'bg-black/5 dark:bg-white/10 text-foreground',
                 sidebarCollapsed ? 'justify-center px-0' : ''
@@ -373,26 +363,28 @@ export function Sidebar() {
           )}
         </NavLink>
 
-        <Button
-          data-testid="sidebar-open-dev-console"
-          variant="ghost"
-          className={cn(
-            'flex items-center gap-2.5 rounded-lg px-2.5 py-2 h-auto text-[14px] font-medium transition-colors w-full mt-1',
-            'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
-            sidebarCollapsed ? 'justify-center px-0' : 'justify-start'
-          )}
-          onClick={openDevConsole}
-        >
-          <div className="flex shrink-0 items-center justify-center text-muted-foreground">
-            <Terminal className="h-[18px] w-[18px]" strokeWidth={2} />
-          </div>
-          {!sidebarCollapsed && (
-            <>
-              <span className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap">{t('common:sidebar.openClawPage')}</span>
-              <ExternalLink className="h-3 w-3 shrink-0 ml-auto opacity-50 text-muted-foreground" />
-            </>
-          )}
-        </Button>
+        {devModeUnlocked && (
+          <Button
+            data-testid="sidebar-open-dev-console"
+            variant="ghost"
+            className={cn(
+              'flex items-center gap-2.5 rounded-lg px-2.5 py-2 h-auto text-sm font-medium transition-colors w-full mt-1',
+              'hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80',
+              sidebarCollapsed ? 'justify-center px-0' : 'justify-start'
+            )}
+            onClick={openDevConsole}
+          >
+            <div className="flex shrink-0 items-center justify-center text-muted-foreground">
+              <Terminal className="h-[18px] w-[18px]" strokeWidth={2} />
+            </div>
+            {!sidebarCollapsed && (
+              <>
+                <span className="flex-1 text-left overflow-hidden text-ellipsis whitespace-nowrap">{t('common:sidebar.openClawPage')}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 ml-auto opacity-50 text-muted-foreground" />
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <ConfirmDialog

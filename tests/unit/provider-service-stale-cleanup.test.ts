@@ -7,9 +7,12 @@ const mocks = vi.hoisted(() => ({
   saveProviderAccount: vi.fn(),
   getActiveOpenClawProviders: vi.fn(),
   getOpenClawProvidersConfig: vi.fn(),
+  getProviderApiKeyFromOpenClaw: vi.fn(),
   getOpenClawProviderKeyForType: vi.fn(),
   getAliasSourceTypes: vi.fn(),
   getProviderDefinition: vi.fn(),
+  getApiKey: vi.fn(),
+  hasApiKey: vi.fn(),
   loggerWarn: vi.fn(),
   loggerInfo: vi.fn(),
 }));
@@ -32,6 +35,7 @@ vi.mock('@electron/services/providers/provider-store', () => ({
 vi.mock('@electron/utils/openclaw-auth', () => ({
   getActiveOpenClawProviders: mocks.getActiveOpenClawProviders,
   getOpenClawProvidersConfig: mocks.getOpenClawProvidersConfig,
+  getProviderApiKeyFromOpenClaw: mocks.getProviderApiKeyFromOpenClaw,
 }));
 
 vi.mock('@electron/utils/provider-keys', () => ({
@@ -42,8 +46,8 @@ vi.mock('@electron/utils/provider-keys', () => ({
 vi.mock('@electron/utils/secure-storage', () => ({
   deleteApiKey: vi.fn(),
   deleteProvider: vi.fn(),
-  getApiKey: vi.fn(),
-  hasApiKey: vi.fn(),
+  getApiKey: mocks.getApiKey,
+  hasApiKey: mocks.hasApiKey,
   saveProvider: vi.fn(),
   setDefaultProvider: vi.fn(),
   storeApiKey: vi.fn(),
@@ -100,6 +104,9 @@ describe('ProviderService.listAccounts (openclaw.json as sole source of truth)',
     mocks.getAliasSourceTypes.mockReturnValue([]);
     mocks.getProviderDefinition.mockReturnValue(undefined);
     mocks.getOpenClawProvidersConfig.mockResolvedValue({ providers: {}, defaultModel: undefined });
+    mocks.getProviderApiKeyFromOpenClaw.mockResolvedValue(null);
+    mocks.getApiKey.mockResolvedValue(null);
+    mocks.hasApiKey.mockResolvedValue(false);
     mocks.listProviderAccounts.mockResolvedValue([]);
     service = new ProviderService();
   });
@@ -291,6 +298,49 @@ describe('ProviderService.listAccounts (openclaw.json as sole source of truth)',
     expect(ids).toContain('minimax-portal-cn-uuid');
   });
 
+  it('seeds a MiniMax CN account when minimax-portal baseUrl points at the CN endpoint', async () => {
+    mocks.listProviderAccounts.mockResolvedValue([]);
+    mocks.getActiveOpenClawProviders.mockResolvedValue(new Set(['minimax-portal']));
+    mocks.getOpenClawProvidersConfig.mockResolvedValue({
+      providers: {
+        'minimax-portal': { baseUrl: 'https://api.minimaxi.com/anthropic' },
+      },
+      defaultModel: undefined,
+    });
+    mocks.getProviderDefinition.mockImplementation((key: string) => {
+      if (key === 'minimax-portal-cn') {
+        return {
+          id: 'minimax-portal-cn',
+          name: 'MiniMax (CN)',
+          defaultAuthMode: 'oauth_device',
+          defaultModelId: 'MiniMax-M2.7',
+          providerConfig: {
+            baseUrl: 'https://api.minimaxi.com/anthropic',
+            api: 'anthropic-messages',
+          },
+        };
+      }
+      return undefined;
+    });
+
+    const result = await service.listAccounts();
+
+    expect(mocks.saveProviderAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'minimax-portal',
+        vendorId: 'minimax-portal-cn',
+        label: 'MiniMax (CN)',
+        baseUrl: 'https://api.minimaxi.com/anthropic',
+      }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(expect.objectContaining({
+      id: 'minimax-portal',
+      vendorId: 'minimax-portal-cn',
+      label: 'MiniMax (CN)',
+    }));
+  });
+
   it('seeds builtin providers discovered from auth profiles without explicit models.providers entries', async () => {
     mocks.listProviderAccounts.mockResolvedValue([]);
     mocks.getActiveOpenClawProviders.mockResolvedValue(new Set(['openai', 'anthropic']));
@@ -344,5 +394,77 @@ describe('ProviderService.listAccounts (openclaw.json as sole source of truth)',
         model: 'claude-opus-4-6',
       }),
     ]));
+  });
+});
+
+describe('ProviderService.listAccountsKeyInfo', () => {
+  let service: ProviderService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.ensureProviderStoreMigrated.mockResolvedValue(undefined);
+    setupDefaultKeyMapping();
+    mocks.getAliasSourceTypes.mockReturnValue([]);
+    mocks.getProviderDefinition.mockReturnValue(undefined);
+    mocks.getOpenClawProvidersConfig.mockResolvedValue({ providers: {}, defaultModel: undefined });
+    mocks.getProviderApiKeyFromOpenClaw.mockResolvedValue(null);
+    mocks.getApiKey.mockResolvedValue(null);
+    mocks.hasApiKey.mockResolvedValue(false);
+    service = new ProviderService();
+  });
+
+  it('prefers OpenClaw runtime auth when reporting account key status', async () => {
+    mocks.listProviderAccounts.mockResolvedValue([
+      makeAccount({
+        id: 'custom-ui-account-id',
+        vendorId: 'custom' as ProviderAccount['vendorId'],
+      }),
+    ]);
+    mocks.getActiveOpenClawProviders.mockResolvedValue(new Set(['custom-runtime']));
+    mocks.getOpenClawProvidersConfig.mockResolvedValue({
+      providers: { 'custom-runtime': { baseUrl: 'https://llm.example.com/v1' } },
+      defaultModel: undefined,
+    });
+    mocks.getOpenClawProviderKeyForType.mockReturnValue('custom-runtime');
+    mocks.getProviderApiKeyFromOpenClaw.mockResolvedValue('sk-openclaw-runtime-key');
+
+    const result = await service.listAccountsKeyInfo();
+
+    expect(mocks.getProviderApiKeyFromOpenClaw).toHaveBeenCalledWith('custom-runtime');
+    expect(mocks.getApiKey).not.toHaveBeenCalled();
+    expect(result).toEqual([
+      {
+        accountId: 'custom-ui-account-id',
+        hasKey: true,
+        keyMasked: 'sk-o***************-key',
+      },
+    ]);
+  });
+
+  it('falls back to ClawX local secrets when OpenClaw has no runtime key', async () => {
+    mocks.listProviderAccounts.mockResolvedValue([
+      makeAccount({
+        id: 'openrouter-ui-account-id',
+        vendorId: 'openrouter' as ProviderAccount['vendorId'],
+      }),
+    ]);
+    mocks.getActiveOpenClawProviders.mockResolvedValue(new Set(['openrouter']));
+    mocks.getOpenClawProvidersConfig.mockResolvedValue({
+      providers: { openrouter: { baseUrl: 'https://openrouter.ai/api/v1' } },
+      defaultModel: undefined,
+    });
+    mocks.getOpenClawProviderKeyForType.mockReturnValue('openrouter');
+    mocks.getApiKey.mockImplementation(async (id: string) => (
+      id === 'openrouter-ui-account-id' ? 'sk-local-provider-key' : null
+    ));
+
+    const result = await service.listAccountsKeyInfo();
+
+    expect(mocks.getProviderApiKeyFromOpenClaw).toHaveBeenCalledWith('openrouter');
+    expect(mocks.getApiKey).toHaveBeenCalledWith('openrouter-ui-account-id');
+    expect(result[0]).toMatchObject({
+      accountId: 'openrouter-ui-account-id',
+      hasKey: true,
+    });
   });
 });

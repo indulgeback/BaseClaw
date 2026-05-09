@@ -39,7 +39,7 @@ type ClawHubListResult = {
 function mapErrorCodeToSkillErrorKey(
   code: AppError['code'],
   operation: 'fetch' | 'search' | 'install',
-): string {
+): string | null {
   if (code === 'TIMEOUT') {
     return operation === 'search'
       ? 'searchTimeoutError'
@@ -54,7 +54,7 @@ function mapErrorCodeToSkillErrorKey(
         ? 'installRateLimitError'
         : 'fetchRateLimitError';
   }
-  return 'rateLimitError';
+  return null;
 }
 
 interface SkillsState {
@@ -67,7 +67,7 @@ interface SkillsState {
   error: string | null;
 
   // Actions
-  fetchSkills: () => Promise<void>;
+  fetchSkills: () => Promise<boolean>;
   searchSkills: (query: string) => Promise<void>;
   installSkill: (slug: string, version?: string) => Promise<void>;
   uninstallSkill: (slug: string) => Promise<void>;
@@ -92,14 +92,25 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       set({ loading: true, error: null });
     }
     try {
-      // 1. Fetch from Gateway (running skills)
-      const gatewayData = await useGatewayStore.getState().rpc<GatewaySkillsStatusResult>('skills.status');
+      // Fetch all skill sources in parallel to reduce first-load latency.
+      const gatewayDataPromise = useGatewayStore.getState().rpc<GatewaySkillsStatusResult>('skills.status');
+      const clawhubResultPromise = hostApiFetch<{ success: boolean; results?: ClawHubListResult[]; error?: string }>('/api/clawhub/list');
+      const configResultPromise = hostApiFetch<Record<string, { apiKey?: string; env?: Record<string, string> }>>('/api/skills/configs');
+      const [gatewayDataResult, clawhubResult, configResult] = await Promise.allSettled([
+        gatewayDataPromise,
+        clawhubResultPromise,
+        configResultPromise,
+      ]);
 
-      // 2. Fetch from ClawHub (installed on disk)
-      const clawhubResult = await hostApiFetch<{ success: boolean; results?: ClawHubListResult[]; error?: string }>('/api/clawhub/list');
+      if (gatewayDataResult.status !== 'fulfilled') {
+        throw gatewayDataResult.reason;
+      }
 
-      // 3. Fetch configurations directly from Electron (since Gateway doesn't return them)
-      const configResult = await hostApiFetch<Record<string, { apiKey?: string; env?: Record<string, string> }>>('/api/skills/configs');
+      const gatewayData = gatewayDataResult.value;
+      const clawhubData = clawhubResult.status === 'fulfilled' ? clawhubResult.value : undefined;
+      const configData = configResult.status === 'fulfilled' && configResult.value && typeof configResult.value === 'object'
+        ? configResult.value
+        : {};
 
       let combinedSkills: Skill[] = [];
       const currentSkills = get().skills;
@@ -108,7 +119,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       if (gatewayData.skills) {
         combinedSkills = gatewayData.skills.map((s: GatewaySkillStatus) => {
           // Merge with direct config if available
-          const directConfig = configResult[s.skillKey] || {};
+          const directConfig = configData[s.skillKey] || {};
 
           return {
             id: s.skillKey,
@@ -136,8 +147,8 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       }
 
       // Merge with ClawHub results
-      if (clawhubResult.success && clawhubResult.results) {
-        clawhubResult.results.forEach((cs: ClawHubListResult) => {
+      if (clawhubData?.success && clawhubData.results) {
+        clawhubData.results.forEach((cs: ClawHubListResult) => {
           const existing = combinedSkills.find(s => s.id === cs.slug);
           if (existing) {
             if (!existing.baseDir && cs.baseDir) {
@@ -148,7 +159,7 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
             }
             return;
           }
-          const directConfig = configResult[cs.slug] || {};
+          const directConfig = configData[cs.slug] || {};
           combinedSkills.push({
             id: cs.slug,
             slug: cs.slug,
@@ -167,12 +178,30 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
         });
       }
 
-      set({ skills: combinedSkills, loading: false });
+      const partialError = clawhubResult.status === 'rejected'
+        ? clawhubResult.reason
+        : configResult.status === 'rejected'
+          ? configResult.reason
+          : clawhubData?.success === false
+            ? new Error(clawhubData.error || 'Failed to fetch marketplace skills')
+            : null;
+
+      if (partialError) {
+        const appError = normalizeAppError(partialError, { module: 'skills', operation: 'fetch' });
+        const errorKey = mapErrorCodeToSkillErrorKey(appError.code, 'fetch');
+        set({ skills: combinedSkills, loading: false, error: errorKey ?? appError.message });
+      } else {
+        set({ skills: combinedSkills, loading: false, error: null });
+      }
+
+      return true;
     } catch (error) {
       console.error('Failed to fetch skills:', error);
       const appError = normalizeAppError(error, { module: 'skills', operation: 'fetch' });
+      const errorKey = mapErrorCodeToSkillErrorKey(appError.code, 'fetch');
       // Preserve previous skills on error (stale-while-revalidate).
-      set((prev) => ({ loading: false, error: mapErrorCodeToSkillErrorKey(appError.code, 'fetch'), skills: prev.skills }));
+      set((prev) => ({ loading: false, error: errorKey ?? appError.message, skills: prev.skills }));
+      return false;
     }
   },
 
@@ -193,7 +222,8 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
       }
     } catch (error) {
       const appError = normalizeAppError(error, { module: 'skills', operation: 'search' });
-      set({ searchError: mapErrorCodeToSkillErrorKey(appError.code, 'search') });
+      const errorKey = mapErrorCodeToSkillErrorKey(appError.code, 'search');
+      set({ searchError: errorKey ?? appError.message });
     } finally {
       set({ searching: false });
     }
@@ -211,7 +241,8 @@ export const useSkillsStore = create<SkillsState>((set, get) => ({
           module: 'skills',
           operation: 'install',
         });
-        throw new Error(mapErrorCodeToSkillErrorKey(appError.code, 'install'));
+        const errorKey = mapErrorCodeToSkillErrorKey(appError.code, 'install');
+        throw new Error(errorKey ?? appError.message);
       }
       // Refresh skills after install
       await get().fetchSkills();

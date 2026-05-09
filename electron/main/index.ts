@@ -9,6 +9,7 @@ import { GatewayManager } from '../gateway/manager';
 import { registerIpcHandlers } from './ipc-handlers';
 import { createTray } from './tray';
 import { createMenu } from './menu';
+import { registerZoomShortcuts } from './zoom-shortcuts';
 
 import { appUpdater, registerUpdateHandlers } from './updater';
 import { logger } from '../utils/logger';
@@ -40,7 +41,7 @@ import { createSignalQuitHandler } from './signal-quit';
 import { acquireProcessInstanceFileLock } from './process-instance-lock';
 import { getSetting } from '../utils/store';
 import { ensureBuiltinSkillsInstalled, ensurePreinstalledSkillsInstalled } from '../utils/skill-config';
-import { ensureAllBundledPluginsInstalled } from '../utils/plugin-install';
+
 import { startHostApiServer } from '../api/server';
 import { HostEventBus } from '../api/event-bus';
 import { deviceOAuthManager } from '../utils/device-oauth';
@@ -181,6 +182,8 @@ function createWindow(): BrowserWindow {
     frame: isMac || !useCustomTitleBar,
     show: false,
   });
+
+  registerZoomShortcuts(win);
 
   // Handle external links — only allow safe protocols to prevent arbitrary
   // command execution via shell.openExternal() (e.g. file://, ms-msdt:, etc.)
@@ -389,14 +392,10 @@ async function initialize(): Promise<void> {
     });
   }
 
-  // Pre-deploy/upgrade bundled OpenClaw plugins (dingtalk, wecom, feishu, wechat)
-  // to ~/.openclaw/extensions/ so they are always up-to-date after an app update.
-  // Note: qqbot was moved to a built-in channel in OpenClaw 3.31.
-  if (!isE2EMode) {
-    void ensureAllBundledPluginsInstalled().catch((error) => {
-      logger.warn('Failed to install/upgrade bundled plugins:', error);
-    });
-  }
+  // Plugin installation is now configuration-driven:
+  // - When a channel is added via UI: ensureXxxPluginInstalled() in IPC handlers
+  // - When Gateway starts: ensureConfiguredPluginsUpgraded() in config-sync.ts
+  // No need to pre-install all bundled plugins at app startup.
 
   // Bridge gateway and host-side events before any auto-start logic runs, so
   // renderer subscribers observe the full startup lifecycle.
@@ -415,6 +414,14 @@ async function initialize(): Promise<void> {
 
   gatewayManager.on('notification', (notification) => {
     hostEventBus.emit('gateway:notification', notification);
+  });
+
+  gatewayManager.on('gateway:health', (data) => {
+    hostEventBus.emit('gateway:health', data);
+  });
+
+  gatewayManager.on('gateway:presence', (data) => {
+    hostEventBus.emit('gateway:presence', data);
   });
 
   gatewayManager.on('chat:message', (data) => {

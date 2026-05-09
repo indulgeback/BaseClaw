@@ -15,7 +15,11 @@ import { hostApiFetch } from '@/lib/host-api';
 import { subscribeHostEvent } from '@/lib/host-events';
 import { CHANNEL_ICONS, CHANNEL_NAMES, type ChannelType } from '@/types/channel';
 import type { AgentSummary } from '@/types/agent';
-import type { ProviderAccount, ProviderVendorInfo, ProviderWithKeyInfo } from '@/lib/providers';
+import {
+  buildRuntimeProviderOptions,
+  splitModelRef,
+  type RuntimeProviderOption,
+} from '@/lib/model-options';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -43,53 +47,6 @@ interface ChannelGroupItem {
   defaultAccountId: string;
   status: 'connected' | 'connecting' | 'disconnected' | 'error';
   accounts: ChannelAccountItem[];
-}
-
-interface RuntimeProviderOption {
-  runtimeProviderKey: string;
-  accountId: string;
-  label: string;
-  modelIdPlaceholder?: string;
-  configuredModelId?: string;
-}
-
-function resolveRuntimeProviderKey(account: ProviderAccount): string {
-  if (account.authMode === 'oauth_browser') {
-    if (account.vendorId === 'google') return 'google-gemini-cli';
-    if (account.vendorId === 'openai') return 'openai-codex';
-  }
-
-  if (account.vendorId === 'custom' || account.vendorId === 'ollama') {
-    const suffix = account.id.replace(/-/g, '').slice(0, 8);
-    return `${account.vendorId}-${suffix}`;
-  }
-
-  if (account.vendorId === 'minimax-portal-cn') {
-    return 'minimax-portal';
-  }
-
-  return account.vendorId;
-}
-
-function splitModelRef(modelRef: string | null | undefined): { providerKey: string; modelId: string } | null {
-  const value = (modelRef || '').trim();
-  if (!value) return null;
-  const separatorIndex = value.indexOf('/');
-  if (separatorIndex <= 0 || separatorIndex >= value.length - 1) return null;
-  return {
-    providerKey: value.slice(0, separatorIndex),
-    modelId: value.slice(separatorIndex + 1),
-  };
-}
-
-function hasConfiguredProviderCredentials(
-  account: ProviderAccount,
-  statusById: Map<string, ProviderWithKeyInfo>,
-): boolean {
-  if (account.authMode === 'oauth_device' || account.authMode === 'oauth_browser' || account.authMode === 'local') {
-    return true;
-  }
-  return statusById.get(account.id)?.hasKey ?? false;
 }
 
 export function Agents() {
@@ -180,26 +137,23 @@ export function Agents() {
       <div className="w-full max-w-5xl mx-auto flex flex-col h-full p-10 pt-16">
         <div className="flex flex-col md:flex-row md:items-start justify-between mb-12 shrink-0 gap-4">
           <div>
-            <h1
-              className="text-5xl md:text-6xl font-serif text-foreground mb-3 font-normal tracking-tight"
-              style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-            >
+            <h1 className="text-5xl md:text-6xl font-serif text-foreground mb-3 font-normal tracking-tight">
               {t('title')}
             </h1>
-            <p className="text-[17px] text-foreground/70 font-medium">{t('subtitle')}</p>
+            <p className="text-subtitle text-foreground/70 font-medium">{t('subtitle')}</p>
           </div>
           <div className="flex items-center gap-3 md:mt-2">
             <Button
               variant="outline"
               onClick={handleRefresh}
-              className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground transition-colors"
+              className="h-9 text-meta font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground transition-colors"
             >
               <RefreshCw className={cn('h-3.5 w-3.5 mr-2', isUsingStableValue && 'animate-spin')} />
               {t('refresh')}
             </Button>
             <Button
               onClick={() => setShowAddDialog(true)}
-              className="h-9 text-[13px] font-medium rounded-full px-4 shadow-none"
+              className="h-9 text-meta font-medium rounded-full px-4 shadow-none"
             >
               <Plus className="h-3.5 w-3.5 mr-2" />
               {t('addAgent')}
@@ -327,11 +281,11 @@ function AgentCard({
       <div className="flex flex-col flex-1 min-w-0 py-0.5 mt-1">
         <div className="flex items-center justify-between gap-3 mb-1">
           <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-[16px] font-semibold text-foreground truncate">{agent.name}</h2>
+            <h2 className="text-base font-semibold text-foreground truncate">{agent.name}</h2>
             {agent.isDefault && (
               <Badge
                 variant="secondary"
-                className="flex items-center gap-1 font-mono text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border-0 shadow-none text-foreground/70"
+                className="flex items-center gap-1 font-mono text-2xs font-medium px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border-0 shadow-none text-foreground/70"
               >
                 <Check className="h-3 w-3" />
                 {t('defaultBadge')}
@@ -364,13 +318,13 @@ function AgentCard({
             </Button>
           </div>
         </div>
-        <p className="text-[13.5px] text-muted-foreground line-clamp-2 leading-[1.5]">
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-[1.5]">
           {t('modelLine', {
             model: agent.modelDisplay,
             suffix: agent.inheritedModel ? ` (${t('inherited')})` : '',
           })}
         </p>
-        <p className="text-[13.5px] text-muted-foreground line-clamp-2 leading-[1.5]">
+        <p className="text-sm text-muted-foreground line-clamp-2 leading-[1.5]">
           {t('channelsLine', { channels: channelsText })}
         </p>
       </div>
@@ -378,9 +332,9 @@ function AgentCard({
   );
 }
 
-const inputClasses = 'h-[44px] rounded-xl font-mono text-[13px] bg-[#eeece3] dark:bg-muted border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground placeholder:text-foreground/40';
-const selectClasses = 'h-[44px] w-full rounded-xl font-mono text-[13px] bg-[#eeece3] dark:bg-muted border border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground px-3';
-const labelClasses = 'text-[14px] text-foreground/80 font-bold';
+const inputClasses = 'h-[44px] rounded-xl font-mono text-meta bg-surface-input border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground placeholder:text-foreground/40';
+const selectClasses = 'h-[44px] w-full rounded-xl font-mono text-meta bg-surface-input border border-black/10 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:border-blue-500 shadow-sm transition-all text-foreground px-3';
+const labelClasses = 'text-sm text-foreground/80 font-bold';
 
 function ChannelLogo({ type }: { type: ChannelType }) {
   switch (type) {
@@ -401,7 +355,7 @@ function ChannelLogo({ type }: { type: ChannelType }) {
     case 'qqbot':
       return <img src={qqIcon} alt="QQ" className="w-[20px] h-[20px] dark:invert" />;
     default:
-      return <span className="text-[20px] leading-none">{CHANNEL_ICONS[type] || '💬'}</span>;
+      return <span className="text-xl leading-none">{CHANNEL_ICONS[type] || '💬'}</span>;
   }
 }
 
@@ -432,12 +386,12 @@ function AddAgentDialog({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card className="w-full max-w-md rounded-3xl border-0 shadow-2xl bg-surface-modal overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-2xl font-serif font-normal tracking-tight">
             {t('createDialog.title')}
           </CardTitle>
-          <CardDescription className="text-[15px] mt-1 text-foreground/70">
+          <CardDescription className="text-sm mt-1 text-foreground/70">
             {t('createDialog.description')}
           </CardDescription>
         </CardHeader>
@@ -455,7 +409,7 @@ function AddAgentDialog({
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="inherit-workspace" className={labelClasses}>{t('createDialog.inheritWorkspaceLabel')}</Label>
-              <p className="text-[13px] text-foreground/60">{t('createDialog.inheritWorkspaceDescription')}</p>
+              <p className="text-meta text-foreground/60">{t('createDialog.inheritWorkspaceDescription')}</p>
             </div>
             <Switch
               id="inherit-workspace"
@@ -467,14 +421,14 @@ function AddAgentDialog({
             <Button
               variant="outline"
               onClick={onClose}
-              className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+              className="h-9 text-meta font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
             >
               {t('common:actions.cancel')}
             </Button>
             <Button
               onClick={() => void handleSubmit()}
               disabled={saving || !name.trim()}
-              className="h-9 text-[13px] font-medium rounded-full px-4 shadow-none"
+              className="h-9 text-meta font-medium rounded-full px-4 shadow-none"
             >
               {saving ? (
                 <>
@@ -551,13 +505,13 @@ function AgentSettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border-0 shadow-2xl bg-surface-modal overflow-hidden">
         <CardHeader className="flex flex-row items-start justify-between pb-2 shrink-0">
           <div>
             <CardTitle className="text-2xl font-serif font-normal tracking-tight">
               {t('settingsDialog.title', { name: agent.name })}
             </CardTitle>
-            <CardDescription className="text-[15px] mt-1 text-foreground/70">
+            <CardDescription className="text-sm mt-1 text-foreground/70">
               {t('settingsDialog.description')}
             </CardDescription>
           </div>
@@ -587,7 +541,7 @@ function AgentSettingsModal({
                     variant="outline"
                     onClick={() => void handleSaveName()}
                     disabled={savingName || !name.trim() || name.trim() === agent.name}
-                    className="h-[44px] text-[13px] font-medium rounded-xl px-4 border-black/10 dark:border-white/10 bg-[#eeece3] dark:bg-muted hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+                    className="h-[44px] text-meta font-medium rounded-xl px-4 border-black/10 dark:border-white/10 bg-surface-input hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
                   >
                     {savingName ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -601,24 +555,24 @@ function AgentSettingsModal({
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-transparent p-4">
-                <p className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/80 font-medium">
+                <p className="text-tiny uppercase tracking-[0.08em] text-muted-foreground/80 font-medium">
                   {t('settingsDialog.agentIdLabel')}
                 </p>
-                <p className="font-mono text-[13px] text-foreground">{agent.id}</p>
+                <p className="font-mono text-meta text-foreground">{agent.id}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowModelModal(true)}
                 className="space-y-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-transparent p-4 text-left hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
-                <p className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground/80 font-medium">
+                <p className="text-tiny uppercase tracking-[0.08em] text-muted-foreground/80 font-medium">
                   {t('settingsDialog.modelLabel')}
                 </p>
-                <p className="text-[13.5px] text-foreground">
+                <p className="text-sm text-foreground">
                   {agent.modelDisplay}
                   {agent.inheritedModel ? ` (${t('inherited')})` : ''}
                 </p>
-                <p className="font-mono text-[12px] text-foreground/70 break-all">
+                <p className="font-mono text-xs text-foreground/70 break-all">
                   {agent.modelRef || defaultModelRef || '-'}
                 </p>
               </button>
@@ -631,12 +585,12 @@ function AgentSettingsModal({
                 <h3 className="text-xl font-serif text-foreground font-normal tracking-tight">
                   {t('settingsDialog.channelsTitle')}
                 </h3>
-                <p className="text-[14px] text-foreground/70 mt-1">{t('settingsDialog.channelsDescription')}</p>
+                <p className="text-sm text-foreground/70 mt-1">{t('settingsDialog.channelsDescription')}</p>
               </div>
             </div>
 
             {assignedChannels.length === 0 && agent.channelTypes.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-4 text-[13.5px] text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-4 text-sm text-muted-foreground">
                 {t('settingsDialog.noChannels')}
               </div>
             ) : (
@@ -648,8 +602,8 @@ function AgentSettingsModal({
                         <ChannelLogo type={channel.channelType} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[15px] font-semibold text-foreground">{channel.name}</p>
-                        <p className="text-[13.5px] text-muted-foreground">
+                        <p className="text-sm font-semibold text-foreground">{channel.name}</p>
+                        <p className="text-sm text-muted-foreground">
                           {CHANNEL_NAMES[channel.channelType]} · {channel.accountId === 'default' ? t('settingsDialog.mainAccount') : channel.accountId}
                         </p>
                         {channel.error && (
@@ -661,7 +615,7 @@ function AgentSettingsModal({
                   </div>
                 ))}
                 {assignedChannels.length === 0 && agent.channelTypes.length > 0 && (
-                  <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-4 text-[13.5px] text-muted-foreground">
+                  <div className="rounded-2xl border border-dashed border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-4 text-sm text-muted-foreground">
                     {t('settingsDialog.channelsManagedInChannels')}
                   </div>
                 )}
@@ -711,40 +665,15 @@ function AgentModelModal({
   const [savingModel, setSavingModel] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
-  const runtimeProviderOptions = useMemo<RuntimeProviderOption[]>(() => {
-    const vendorMap = new Map<string, ProviderVendorInfo>(providerVendors.map((vendor) => [vendor.id, vendor]));
-    const statusById = new Map<string, ProviderWithKeyInfo>(providerStatuses.map((status) => [status.id, status]));
-    const entries = providerAccounts
-      .filter((account) => account.enabled && hasConfiguredProviderCredentials(account, statusById))
-      .sort((left, right) => {
-        if (left.id === providerDefaultAccountId) return -1;
-        if (right.id === providerDefaultAccountId) return 1;
-        return right.updatedAt.localeCompare(left.updatedAt);
-      });
-
-    const deduped = new Map<string, RuntimeProviderOption>();
-    for (const account of entries) {
-      const runtimeProviderKey = resolveRuntimeProviderKey(account);
-      if (!runtimeProviderKey || deduped.has(runtimeProviderKey)) continue;
-      const vendor = vendorMap.get(account.vendorId);
-      const label = `${account.label} (${vendor?.name || account.vendorId})`;
-      const configuredModelId = account.model
-        ? (account.model.startsWith(`${runtimeProviderKey}/`)
-          ? account.model.slice(runtimeProviderKey.length + 1)
-          : account.model)
-        : undefined;
-
-      deduped.set(runtimeProviderKey, {
-        runtimeProviderKey,
-        accountId: account.id,
-        label,
-        modelIdPlaceholder: vendor?.modelIdPlaceholder,
-        configuredModelId,
-      });
-    }
-
-    return [...deduped.values()];
-  }, [providerAccounts, providerDefaultAccountId, providerStatuses, providerVendors]);
+  const runtimeProviderOptions = useMemo<RuntimeProviderOption[]>(
+    () => buildRuntimeProviderOptions(
+      providerAccounts,
+      providerStatuses,
+      providerVendors,
+      providerDefaultAccountId,
+    ),
+    [providerAccounts, providerDefaultAccountId, providerStatuses, providerVendors],
+  );
 
   useEffect(() => {
     const override = splitModelRef(agent.overrideModelRef);
@@ -826,13 +755,13 @@ function AgentModelModal({
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-xl rounded-3xl border-0 shadow-2xl bg-[#f3f1e9] dark:bg-card overflow-hidden">
+      <Card className="w-full max-w-xl rounded-3xl border-0 shadow-2xl bg-surface-modal overflow-hidden">
         <CardHeader className="flex flex-row items-start justify-between pb-2">
           <div>
             <CardTitle className="text-2xl font-serif font-normal tracking-tight">
               {t('settingsDialog.modelLabel')}
             </CardTitle>
-            <CardDescription className="text-[15px] mt-1 text-foreground/70">
+            <CardDescription className="text-sm mt-1 text-foreground/70">
               {t('settingsDialog.modelOverrideDescription', { defaultModel: defaultModelRef || '-' })}
             </CardDescription>
           </div>
@@ -847,7 +776,7 @@ function AgentModelModal({
         </CardHeader>
         <CardContent className="space-y-4 p-6 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="agent-model-provider" className="text-[12px] text-foreground/70">{t('settingsDialog.modelProviderLabel')}</Label>
+            <Label htmlFor="agent-model-provider" className="text-xs text-foreground/70">{t('settingsDialog.modelProviderLabel')}</Label>
             <select
               id="agent-model-provider"
               value={selectedRuntimeProviderKey}
@@ -870,7 +799,7 @@ function AgentModelModal({
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="agent-model-id" className="text-[12px] text-foreground/70">{t('settingsDialog.modelIdLabel')}</Label>
+            <Label htmlFor="agent-model-id" className="text-xs text-foreground/70">{t('settingsDialog.modelIdLabel')}</Label>
             <Input
               id="agent-model-id"
               value={modelIdInput}
@@ -880,12 +809,12 @@ function AgentModelModal({
             />
           </div>
           {!!nextModelRef && (
-            <p className="text-[12px] font-mono text-foreground/70 break-all">
+            <p className="text-xs font-mono text-foreground/70 break-all">
               {t('settingsDialog.modelPreview')}: {nextModelRef}
             </p>
           )}
           {runtimeProviderOptions.length === 0 && (
-            <p className="text-[12px] text-amber-600 dark:text-amber-400">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
               {t('settingsDialog.modelProviderEmpty')}
             </p>
           )}
@@ -894,21 +823,21 @@ function AgentModelModal({
               variant="outline"
               onClick={handleUseDefaultModel}
               disabled={savingModel || !normalizedDefaultModelRef || isUsingDefaultModelInForm}
-              className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+              className="h-9 text-meta font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
             >
               {t('settingsDialog.useDefaultModel')}
             </Button>
             <Button
               variant="outline"
               onClick={handleRequestClose}
-              className="h-9 text-[13px] font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
+              className="h-9 text-meta font-medium rounded-full px-4 border-black/10 dark:border-white/10 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 shadow-none text-foreground/80 hover:text-foreground"
             >
               {t('common:actions.cancel')}
             </Button>
             <Button
               onClick={() => void handleSaveModel()}
               disabled={savingModel || !selectedRuntimeProviderKey || !trimmedModelId || !modelChanged}
-              className="h-9 text-[13px] font-medium rounded-full px-4 shadow-none"
+              className="h-9 text-meta font-medium rounded-full px-4 shadow-none"
             >
               {savingModel ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />

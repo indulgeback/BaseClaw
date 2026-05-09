@@ -23,6 +23,12 @@ let _historyPollTimer: ReturnType<typeof setTimeout> | null = null;
 // before committing the error to give the recovery path a chance.
 let _errorRecoveryTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Track the last run ID that was explicitly aborted by the user.
+// Prevents lingering Gateway events from the aborted run from re-arming
+// the sending state after abortRun clears it.
+let _lastAbortedRunId: string | null = null;
+const _blockedRunEvents = new Map<string, Record<string, unknown>[]>();
+
 function clearErrorRecoveryTimer(): void {
   if (_errorRecoveryTimer) {
     clearTimeout(_errorRecoveryTimer);
@@ -128,8 +134,31 @@ function normalizeStreamingMessage(message: unknown): unknown {
     : rawMessage;
 }
 
+/**
+ * Strip Gateway-injected metadata that does NOT exist on the renderer's
+ * optimistic user message but is echoed back when the Gateway persists it:
+ *   - leading timestamp `[Wed 2026-04-22 10:30 GMT+8] `
+ *   - `[message_id: uuid]` tags sprinkled throughout the text
+ *   - `[media attached: path (mime) | path]` references appended when the
+ *     renderer sends attachments via `chat:sendWithMedia`
+ *   - Gateway-injected "Conversation info (untrusted metadata): ..." blocks
+ *
+ * Keeping this aligned with `cleanUserText` in `pages/Chat/message-utils.ts`
+ * is important: the user bubble renders the cleaned text, so the comparison
+ * used to dedupe optimistic vs server echoes must operate on the same
+ * cleaned form — otherwise the same visible message renders twice.
+ */
+function stripGatewayUserMetadata(text: string): string {
+  return text
+    .replace(/^\s*\[(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+[^\]]+\]\s*/i, '')
+    .replace(/\s*\[media attached:[^\]]*\]/g, '')
+    .replace(/\s*\[message_id:\s*[^\]]+\]/g, '')
+    .replace(/^Conversation info\s*\([^)]*\):\s*```[a-z]*\n[\s\S]*?```\s*/i, '')
+    .replace(/^Conversation info\s*\([^)]*\):\s*\{[\s\S]*?\}\s*/i, '');
+}
+
 function normalizeComparableUserText(content: unknown): string {
-  return getMessageText(content)
+  return stripGatewayUserMetadata(getMessageText(content))
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -220,6 +249,30 @@ function getMessageText(content: unknown): string {
   return '';
 }
 
+function getMessageStopReason(message: RawMessage | unknown): string | null {
+  if (!message || typeof message !== 'object') return null;
+  const msg = message as Record<string, unknown>;
+  const rawStopReason = msg.stopReason ?? msg.stop_reason;
+  if (typeof rawStopReason !== 'string') return null;
+  const normalized = rawStopReason.trim().toLowerCase();
+  return normalized || null;
+}
+
+function getMessageErrorMessage(message: RawMessage | unknown): string | null {
+  if (!message || typeof message !== 'object') return null;
+  const msg = message as Record<string, unknown>;
+  const rawError = msg.errorMessage ?? msg.error_message;
+  if (typeof rawError !== 'string') return null;
+  const normalized = rawError.trim();
+  return normalized || null;
+}
+
+function isTerminalAssistantErrorMessage(message: RawMessage | unknown): boolean {
+  if (!message || typeof message !== 'object') return false;
+  const msg = message as Record<string, unknown>;
+  return msg.role === 'assistant' && getMessageStopReason(message) === 'error';
+}
+
 /** Extract media file refs from [media attached: <path> (<mime>) | ...] patterns */
 function extractMediaRefs(text: string): Array<{ filePath: string; mimeType: string }> {
   const refs: Array<{ filePath: string; mimeType: string }> = [];
@@ -281,27 +334,78 @@ function mimeFromExtension(filePath: string): string {
   return map[ext] || 'application/octet-stream';
 }
 
+const DIRECTORY_MIME_TYPE = 'application/x-directory';
+
+function trimPathTerminators(filePath: string): string {
+  return filePath.replace(/[，。；;,.!?]+$/u, '');
+}
+
 /**
  * Extract raw file paths from message text.
  * Detects absolute paths (Unix: / or ~/, Windows: C:\ etc.) ending with common file extensions.
  * Handles both image and non-image files, consistent with channel push message behavior.
+ *
+ * Also recognises the `MEDIA:` / `media:` prefix the OpenClaw runtime
+ * emits for produced artifacts (e.g.
+ * `MEDIA:/Users/me/.openclaw/media/outbound/report.xlsx`) — without this
+ * the leading colon trips the URL guard below and the file goes unsurfaced.
  */
 function extractRawFilePaths(text: string): Array<{ filePath: string; mimeType: string }> {
   const refs: Array<{ filePath: string; mimeType: string }> = [];
   const seen = new Set<string>();
   const exts = 'png|jpe?g|gif|webp|bmp|avif|svg|pdf|docx?|xlsx?|pptx?|txt|csv|md|rtf|epub|zip|tar|gz|rar|7z|mp3|wav|ogg|aac|flac|m4a|mp4|mov|avi|mkv|webm|m4v';
+  // Tagged media references (MEDIA:/path, media:~/path, ...).  The agent
+  // runtime uses this prefix as an explicit "this is an artifact" marker,
+  // so we want them recognised even though the leading colon would
+  // normally look like a URL scheme.  After matching we punch the entire
+  // `MEDIA:<path>` span out of the working text so the generic unix
+  // regex below doesn't double-count the bare `/path` suffix.
+  // The character class deliberately allows ASCII spaces inside the path so
+  // that macOS' default screenshot filename ("截屏 2026-05-06 17.46.51.png")
+  // and other space-containing paths the agent emits with the explicit
+  // `MEDIA:` marker still resolve. Newline and quote characters remain
+  // path terminators so we don't accidentally swallow trailing prose.
+  // The non-greedy `*?` anchored to `\.<ext>` keeps the match minimal so
+  // multiple `MEDIA:` markers in one paragraph still match independently.
+  const taggedRegex = new RegExp(`(?:^|[\\s(\\[{>])(?:MEDIA|media):((?:\\/|~\\/)[^\\n"'()\\[\\],<>` + '`' + `]*?\\.(?:${exts}))(?=$|[\\s\\n"'()\\[\\],<>` + '`' + `]|[，。；;,.!?])`, 'g');
+  let workingText = text;
+  let taggedMatch: RegExpExecArray | null;
+  while ((taggedMatch = taggedRegex.exec(text)) !== null) {
+    const p = taggedMatch[1];
+    if (p && !seen.has(p)) {
+      seen.add(p);
+      refs.push({ filePath: p, mimeType: mimeFromExtension(p) });
+    }
+    // Mask the matched span so subsequent regexes can't re-discover the
+    // same path (e.g. `/two.xlsx` from `MEDIA:~/two.xlsx`).
+    const start = taggedMatch.index;
+    const end = start + taggedMatch[0].length;
+    workingText = workingText.slice(0, start) + ' '.repeat(end - start) + workingText.slice(end);
+  }
   // Unix absolute paths (/... or ~/...) — lookbehind rejects mid-token slashes
   // (e.g. "path/to/file.mp4", "https://example.com/file.mp4")
-  const unixRegex = new RegExp(`(?<![\\w./:])((?:\\/|~\\/)[^\\s\\n"'()\\[\\],<>]*?\\.(?:${exts}))`, 'gi');
+  const unixRegex = new RegExp(`(?<![\\w./:])((?:\\/|~\\/)[^\\s\\n"'()\`\\[\\],<>]*?\\.(?:${exts}))`, 'gi');
   // Windows absolute paths (C:\... D:\...) — lookbehind rejects drive letter glued to a word
-  const winRegex = new RegExp(`(?<![\\w])([A-Za-z]:\\\\[^\\s\\n"'()\\[\\],<>]*?\\.(?:${exts}))`, 'gi');
-  for (const regex of [unixRegex, winRegex]) {
+  const winRegex = new RegExp(`(?<![\\w])([A-Za-z]:\\\\[^\\s\\n"'()\`\\[\\],<>]*?\\.(?:${exts}))`, 'gi');
+  // OpenClaw skill directories do not have file extensions, but they are
+  // user-facing artifacts that should render as clickable folder cards.
+  const skillPathBoundary = '(?=$|\\s|[\\x5b\\x5d"\'`(),<>，。；;,.!?])';
+  const skillPathPart = '[^\\\\/\\s\\n"\'`()\\x5b\\x5d,<>]+';
+  const skillPathTail = '[^\\s\\n"\'`()\\x5b\\x5d,<>]*?';
+  const skillDirRegex = new RegExp(
+    `(?<![\\w./:])((?:~[\\\\/]\\.openclaw[\\\\/]skills[\\\\/]${skillPathPart})|(?:(?:\\/|[A-Za-z]:\\\\)${skillPathTail}[\\\\/]\\.openclaw[\\\\/]skills[\\\\/]${skillPathPart}))${skillPathBoundary}`,
+    'gi',
+  );
+  for (const regex of [unixRegex, winRegex, skillDirRegex]) {
     let match;
-    while ((match = regex.exec(text)) !== null) {
-      const p = match[1];
+    while ((match = regex.exec(workingText)) !== null) {
+      const p = trimPathTerminators(match[1]);
       if (p && !seen.has(p)) {
         seen.add(p);
-        refs.push({ filePath: p, mimeType: mimeFromExtension(p) });
+        refs.push({
+          filePath: p,
+          mimeType: regex === skillDirRegex ? DIRECTORY_MIME_TYPE : mimeFromExtension(p),
+        });
       }
     }
   }
@@ -347,6 +451,26 @@ function extractImagesAsAttachedFiles(content: unknown): AttachedFileMeta[] {
           mimeType,
           fileSize: 0,
           preview: `data:${mimeType};base64,${block.data}`,
+        });
+      }
+      // Path 3: Flat URL form from Gateway-injected assistant-media messages.
+      // Shape: `{ type:'image', url:'/api/chat/media/outgoing/<sessionKey>/<id>/full',
+      //          mimeType, width, height, alt, openUrl }`. The URL is relative
+      // to the Gateway HTTP server which the renderer cannot reach directly
+      // (CORS / env drift). We surface it as an `_attachedFiles` entry whose
+      // preview is filled in later by `loadMissingPreviews` -> Main proxy.
+      else if (block.url) {
+        const mimeType = block.mimeType || 'image/jpeg';
+        const fileName = typeof block.alt === 'string' && block.alt
+          ? block.alt
+          : 'image';
+        files.push({
+          fileName,
+          mimeType,
+          fileSize: 0,
+          preview: null,
+          gatewayUrl: block.url,
+          source: 'gateway-media',
         });
       }
     }
@@ -471,8 +595,14 @@ function enrichWithToolResultFiles(messages: RawMessage[]): RawMessage[] {
       // Resolve file path from the matching tool call
       const matchedPath = msg.toolCallId ? toolCallPaths.get(msg.toolCallId) : undefined;
 
-      // 1. Image/file content blocks in the structured content array
-      const imageFiles = extractImagesAsAttachedFiles(msg.content);
+      // 1. Image/file content blocks in the structured content array.
+      //    Images embedded inside a tool result are the model's vision data
+      //    (e.g. `read /tmp/foo.png` re-encoded as JPEG so the model can
+      //    "see" the file) — they are NOT user-facing artifacts. The agent
+      //    surfaces user-facing images through `MEDIA:/path` text + the
+      //    Gateway's `assistant-media` injection.
+      const imageFiles = extractImagesAsAttachedFiles(msg.content)
+        .filter(file => !file.mimeType.startsWith('image/'));
       if (matchedPath) {
         for (const f of imageFiles) {
           if (!f.filePath) {
@@ -491,11 +621,14 @@ function enrichWithToolResultFiles(messages: RawMessage[]): RawMessage[] {
         for (const ref of mediaRefs) {
           pending.push(makeAttachedFile(ref, 'tool-result'));
         }
-        // 3. Raw file paths in tool result text (documents, audio, video, etc.)
+        // 3. Raw NON-image file paths in tool result text (documents,
+        //    audio, video, ...). Image paths from intermediate tool stdout
+        //    (`ls -la *.png`, `sips ... && ls`, `file /tmp/x.png`, etc.)
+        //    are deliberately ignored — see comment on Path 1.
         for (const ref of extractRawFilePaths(text)) {
-          if (!mediaRefPaths.has(ref.filePath)) {
-            pending.push(makeAttachedFile(ref, 'tool-result'));
-          }
+          if (mediaRefPaths.has(ref.filePath)) continue;
+          if (ref.mimeType.startsWith('image/')) continue;
+          pending.push(makeAttachedFile(ref, 'tool-result'));
         }
       }
 
@@ -528,10 +661,35 @@ function enrichWithToolResultFiles(messages: RawMessage[]): RawMessage[] {
  * Uses local cache for previews when available; missing previews are loaded async.
  */
 function enrichWithCachedImages(messages: RawMessage[]): RawMessage[] {
+  // Pre-compute, per index, whether the *next* assistant message is a
+  // Gateway-injected `assistant-media` bubble (i.e. has at least one
+  // `image` content block carrying a flat URL). When that bubble exists,
+  // the canonical user-facing rendering of the artifact is the bubble
+  // itself — anything the agent emitted via `MEDIA:/path` in its prior
+  // text turn would just duplicate the same image, so image-typed raw
+  // refs on that prior message are dropped here.
+  const nextHasGatewayMediaBubble = messages.map((_, idx) => {
+    const next = messages[idx + 1];
+    if (!next || next.role !== 'assistant') return false;
+    return extractImagesAsAttachedFiles(next.content).some(f => f.gatewayUrl);
+  });
+
   return messages.map((msg, idx) => {
-    // Only process user and assistant messages; skip if already enriched
-    if ((msg.role !== 'user' && msg.role !== 'assistant') || msg._attachedFiles) return msg;
+    // Only process user and assistant messages. Messages may already carry
+    // attachments from tool-result enrichment; still merge in raw paths from
+    // the visible assistant text so `/path/to/report.xlsx` becomes a card.
+    if (msg.role !== 'user' && msg.role !== 'assistant') return msg;
     const text = getMessageText(msg.content);
+
+    // Path 0: Gateway-injected outgoing media — `image` content blocks with
+    // a flat `url` field (e.g. `/api/chat/media/outgoing/<sessionKey>/<id>/full`).
+    // The renderer cannot fetch the URL directly, so we surface it as an
+    // `_attachedFiles` entry whose preview is filled in later by
+    // `loadMissingPreviews` -> Main `media:getThumbnails` (which dereferences
+    // the URL to the original file in `~/.openclaw/media/outgoing/`).
+    const gatewayMediaFiles: AttachedFileMeta[] = msg.role === 'assistant'
+      ? extractImagesAsAttachedFiles(msg.content).filter(file => file.gatewayUrl)
+      : [];
 
     // Path 1: [media attached: path (mime) | path] — guaranteed format from attachment button
     const mediaRefs = extractMediaRefs(text);
@@ -566,16 +724,34 @@ function enrichWithCachedImages(messages: RawMessage[]): RawMessage[] {
       }
     }
 
-    const allRefs = [...mediaRefs, ...rawRefs];
-    if (allRefs.length === 0) return msg;
+    // Dedup vs Gateway-injected bubble: when the very next assistant
+    // message is an `assistant-media` bubble, drop image-typed raw refs
+    // on *this* message — the bubble already covers the artifact.
+    if (msg.role === 'assistant' && nextHasGatewayMediaBubble[idx]) {
+      rawRefs = rawRefs.filter(r => !r.mimeType.startsWith('image/'));
+    }
 
-    const files: AttachedFileMeta[] = allRefs.map(ref => {
+    const allRefs = [...mediaRefs, ...rawRefs];
+    if (allRefs.length === 0 && gatewayMediaFiles.length === 0) return msg;
+
+    const existingFiles = msg._attachedFiles || [];
+    const existingPaths = new Set(existingFiles.map(file => file.filePath).filter(Boolean));
+    const existingGatewayUrls = new Set(
+      existingFiles.map(file => file.gatewayUrl).filter(Boolean) as string[],
+    );
+    const files: AttachedFileMeta[] = allRefs
+      .filter(ref => !existingPaths.has(ref.filePath))
+      .map(ref => {
       const cached = _imageCache.get(ref.filePath);
       if (cached) return { ...cached, filePath: ref.filePath, source: 'message-ref' };
       const fileName = ref.filePath.split(/[\\/]/).pop() || 'file';
       return { fileName, mimeType: ref.mimeType, fileSize: 0, preview: null, filePath: ref.filePath, source: 'message-ref' };
     });
-    return { ...msg, _attachedFiles: files };
+    const dedupedGatewayMedia = gatewayMediaFiles.filter(
+      file => file.gatewayUrl && !existingGatewayUrls.has(file.gatewayUrl),
+    );
+    if (files.length === 0 && dedupedGatewayMedia.length === 0) return msg;
+    return { ...msg, _attachedFiles: [...existingFiles, ...files, ...dedupedGatewayMedia] };
   });
 }
 
@@ -585,24 +761,34 @@ function enrichWithCachedImages(messages: RawMessage[]): RawMessage[] {
  * Handles both [media attached: ...] patterns and raw filePath entries.
  */
 async function loadMissingPreviews(messages: RawMessage[]): Promise<boolean> {
-  // Collect all image paths that need previews
-  const needPreview: Array<{ filePath: string; mimeType: string }> = [];
-  const seenPaths = new Set<string>();
+  // Collect all image refs that need previews. The IPC handler accepts:
+  //   - { filePath, mimeType }   — local on-disk files
+  //   - { gatewayUrl, mimeType } — Gateway-injected outgoing media; the
+  //                                handler resolves the URL to a local file
+  //                                via `~/.openclaw/media/outgoing/records/`.
+  // We use `filePath || gatewayUrl` as the dedupe / lookup key on the way
+  // back; a file always carries at most one of the two.
+  type PreviewRef = { filePath?: string; gatewayUrl?: string; mimeType: string };
+  const needPreview: PreviewRef[] = [];
+  const seenKeys = new Set<string>();
 
   for (const msg of messages) {
     if (!msg._attachedFiles) continue;
 
-    // Path 1: files with explicit filePath field (raw path detection or enriched refs)
+    // Path 1: files with explicit filePath OR gatewayUrl
     for (const file of msg._attachedFiles) {
-      const fp = file.filePath;
-      if (!fp || seenPaths.has(fp)) continue;
+      const key = file.filePath || file.gatewayUrl;
+      if (!key || seenKeys.has(key)) continue;
       // Images: need preview. Non-images: need file size (for FileCard display).
       const needsLoad = file.mimeType.startsWith('image/')
         ? !file.preview
         : file.fileSize === 0;
-      if (needsLoad) {
-        seenPaths.add(fp);
-        needPreview.push({ filePath: fp, mimeType: file.mimeType });
+      if (!needsLoad) continue;
+      seenKeys.add(key);
+      if (file.filePath) {
+        needPreview.push({ filePath: file.filePath, mimeType: file.mimeType });
+      } else if (file.gatewayUrl) {
+        needPreview.push({ gatewayUrl: file.gatewayUrl, mimeType: file.mimeType });
       }
     }
 
@@ -613,11 +799,11 @@ async function loadMissingPreviews(messages: RawMessage[]): Promise<boolean> {
       for (let i = 0; i < refs.length; i++) {
         const file = msg._attachedFiles[i];
         const ref = refs[i];
-        if (!file || !ref || seenPaths.has(ref.filePath)) continue;
+        if (!file || !ref || seenKeys.has(ref.filePath)) continue;
         const needsLoad = ref.mimeType.startsWith('image/') ? !file.preview : file.fileSize === 0;
         if (needsLoad) {
-          seenPaths.add(ref.filePath);
-          needPreview.push(ref);
+          seenKeys.add(ref.filePath);
+          needPreview.push({ filePath: ref.filePath, mimeType: ref.mimeType });
         }
       }
     }
@@ -635,15 +821,20 @@ async function loadMissingPreviews(messages: RawMessage[]): Promise<boolean> {
     for (const msg of messages) {
       if (!msg._attachedFiles) continue;
 
-      // Update files that have filePath
+      // Update files that have filePath OR gatewayUrl
       for (const file of msg._attachedFiles) {
-        const fp = file.filePath;
-        if (!fp) continue;
-        const thumb = thumbnails[fp];
+        const key = file.filePath || file.gatewayUrl;
+        if (!key) continue;
+        const thumb = thumbnails[key];
         if (thumb && (thumb.preview || thumb.fileSize)) {
           if (thumb.preview) file.preview = thumb.preview;
           if (thumb.fileSize) file.fileSize = thumb.fileSize;
-          _imageCache.set(fp, { ...file });
+          // Only persist local-path entries to the localStorage cache.
+          // Gateway outgoing URLs are tied to a specific session/attachment
+          // id and can be stale across runs, so caching is harmful.
+          if (file.filePath) {
+            _imageCache.set(file.filePath, { ...file });
+          }
           updated = true;
         }
       }
@@ -737,9 +928,46 @@ function isToolResultRole(role: unknown): boolean {
 /** True for internal plumbing messages that should never be shown in the UI. */
 function isInternalMessage(msg: { role?: unknown; content?: unknown }): boolean {
   if (msg.role === 'system') return true;
+  const text = getMessageText(msg.content);
   if (msg.role === 'assistant') {
-    const text = getMessageText(msg.content);
     if (/^(HEARTBEAT_OK|NO_REPLY)\s*$/.test(text)) return true;
+  }
+  // Runtime system injections: these arrive as user or assistant-role messages
+  // but are internal plumbing (exec results, async-command notices, time pings, etc.)
+  if ((msg.role === 'user' || msg.role === 'assistant') && isRuntimeSystemInjection(text)) return true;
+  return false;
+}
+
+/**
+ * Detect runtime-injected system messages that should be hidden from the chat UI.
+ * These are injected by the OpenClaw runtime as user-role messages and include:
+ *   - "System (untrusted): ..." — exec results, tool output, etc.
+ *   - "An async command you ran earlier has completed" — async completion notices
+ *   - "Current time: ..." followed by nothing else — periodic heartbeat time pings
+ *   - "Handle the result internally. Do not relay it to the user" — internal directives
+ */
+function isRuntimeSystemInjection(text: string): boolean {
+  if (!text) return false;
+  const normalized = text.trim();
+  // "System (untrusted): ..." at the start (with optional leading whitespace)
+  if (/^\s*System\s*\(untrusted\)\s*:/i.test(normalized)) return true;
+
+  // Async command completion notice + internal relay directive commonly arrive together.
+  // Require both markers to avoid hiding normal conversational text that quotes one phrase.
+  if (
+    /An async command you ran earlier has completed/i.test(normalized)
+    && /Do not relay it to the user unless explicitly requested/i.test(normalized)
+  ) {
+    return true;
+  }
+
+  // Standalone time injection (e.g. "Current time: Wednesday, April 22nd, 2026 - 10:06 (Asia/Shanghai) / 2026-04-22 02:06 UTC")
+  // Only match when the full message is the time announcement.
+  if (
+    /^\s*Current time\s*:/i.test(normalized)
+    && /^\s*Current time\s*:[^\n]*\/\s*\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+UTC\s*$/i.test(normalized)
+  ) {
+    return true;
   }
   return false;
 }
@@ -960,12 +1188,36 @@ function getLastChatEventAt(): number {
   return _lastChatEventAt;
 }
 
+function setLastAbortedRunId(id: string | null): void {
+  _lastAbortedRunId = id;
+}
+
+function getLastAbortedRunId(): string | null {
+  return _lastAbortedRunId;
+}
+
+function queueBlockedRunEvent(runId: string, event: Record<string, unknown>): void {
+  const events = _blockedRunEvents.get(runId) ?? [];
+  events.push({ ...event });
+  if (events.length > 100) events.shift();
+  _blockedRunEvents.set(runId, events);
+}
+
+function takeBlockedRunEvents(runId: string): Record<string, unknown>[] {
+  const events = _blockedRunEvents.get(runId) ?? [];
+  _blockedRunEvents.delete(runId);
+  return events;
+}
+
 export {
   toMs,
   clearErrorRecoveryTimer,
   clearHistoryPoll,
   extractImagesAsAttachedFiles,
   getMessageText,
+  getMessageStopReason,
+  getMessageErrorMessage,
+  isTerminalAssistantErrorMessage,
   extractMediaRefs,
   extractRawFilePaths,
   makeAttachedFile,
@@ -990,4 +1242,8 @@ export {
   setErrorRecoveryTimer,
   setLastChatEventAt,
   getLastChatEventAt,
+  setLastAbortedRunId,
+  getLastAbortedRunId,
+  queueBlockedRunEvent,
+  takeBlockedRunEvents,
 };
